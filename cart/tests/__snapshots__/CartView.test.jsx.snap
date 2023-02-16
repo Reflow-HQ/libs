@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`button text changes when clicked 1`] = `
+[
+  <div
+    className="ref-loading-backdrop "
+  />,
+  <button
+    className="test123"
+    onClick={[Function]}
+  >
+    Banana
+     
+    You clicked zero times.
+  </button>,
+]
+`;
