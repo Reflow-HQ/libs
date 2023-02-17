@@ -1,0 +1,19 @@
+{
+  "name": "@reflowhq/auth",
+  "version": "0.0.1",
+  "description": "",
+  "exports": "auth.js",
+  "type": "module",
+  "keywords": [],
+  "author": "Reflow HQ",
+  "license": "MIT",
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "publish": "echo Todo"
+  },
+  "devDependencies": {
+    "jest": "^29.4.3",
+    "jest-environment-jsdom": "^29.4.3",
+    "prettier": "^2.8.4"
+  }
+}
