@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>Auth Example</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootswatch@5.2.3/dist/zephyr/bootstrap.min.css"
+    />
+
+    <script type="module">
+      import Auth from "../../index.js";
+
+      let auth = new Auth({ storeID: 267418190 });
+
+      if (auth.isSignedIn()) {
+        showProfile(auth.profile);
+      }
+
+      auth.on("signin", ({ profile, isNew }) => {
+        showProfile(auth.profile);
+      });
+
+      auth.on("signout", () => {
+        location.reload();
+      });
+
+      auth.on("change", () => {
+        location.reload();
+      });
+
+      document.addEventListener("click", async (e) => {
+        if (e.target.matches("#signin")) {
+          auth.signIn();
+        }
+
+        if (e.target.matches("#signout")) {
+          auth.signOut();
+        }
+
+        if (e.target.matches("#addmeta")) {
+          // Get the latest profile data from the server
+          await auth.refresh();
+          
+          let meta = auth.profile.meta;
+
+          if (!meta.example) {
+            meta.example = [];
+          }
+
+          // Generate a random address
+          meta.example.push({
+            key:
+              "Some Key " + Math.round(Math.random() * 10000),
+            value:
+              "Some Value " +
+              Math.round(Math.random() * 10000),
+          });
+
+          auth.updateProfile({ meta });
+        }
+
+        if (e.target.matches("#clearmeta")) {
+          auth.updateProfile({ meta: {} });
+        }
+
+        if (e.target.matches("#changename")) {
+          let newName = window.prompt("Enter New Name");
+          if (newName?.trim().length) {
+            auth.updateProfile({ name: newName.trim() });
+          }
+        }
+      });
+
+      function showProfile(profile) {
+        console.log('Showing profile', profile);
+
+        let con = document.querySelector(".container");
+
+        con.innerHTML = `
+            <h1 class="mb-5">You are logged in <button class="btn btn-danger" id="signout">Sign Out</button></h1>
+            <img src="${profile.photo}" />
+            <h2 class="mt-5">
+                <span></span>
+                <button class="btn btn-primary me-2" id="changename">Change Name</button>
+            </h2>
+            <p></p>
+            
+            <h3 class="mt-5">Custom Metadata</h3>
+            <p class="mb-3">Store custom pieces of meta data or preferences in your profile.</p>
+            <div id="metaview" class="mb-3"></div>
+            <button class="btn btn-primary me-2" id="addmeta">Add Meta</button>
+            <button class="btn btn-danger" id="clearmeta">Clear Meta</button>
+        `;
+
+        con.querySelector("h2 span").textContent = profile.name;
+        con.querySelector("p").textContent = profile.email || "Email was not provided";
+
+        let metaview = con.querySelector("#metaview");
+
+        if (profile.meta?.example) {
+            let pre = document.createElement("pre");
+            pre.className = "mb-0";
+            pre.append(JSON.stringify(profile.meta.example));
+            metaview.append(pre);
+        } else {
+          metaview.textContent = "No metadata set";
+        }
+      }
+
+      function showError(message, error) {
+        console.error(message, error);
+        document.querySelector(".container").innerHTML =
+          '<span class="text-danger">' + message + "</span>";
+      }
+    </script>
+  </head>
+
+  <body>
+    <div class="container pt-5">
+      <h1 class="mb-4">Basic Sign-in example with Reflow Auth</h1>
+      <p>
+        This is a static web page with Vanilla.js which demonstrates how to authenticate users with
+        the Reflow Auth library.
+      </p>
+      <div class="alert alert-warning" role="alert">
+        <span
+          ><strong>Note</strong> to test this example, serve the <code>auth</code> folder on
+          localhost:8080 using a local web server, then
+          <a href="http://localhost:8080/examples/basic-signin/">open this page</a> (If the link
+          doesn't work you haven't started the webserver correctly) and click the button below.
+        </span>
+      </div>
+      <button id="signin" class="btn btn-primary">Sign In</button>
+    </div>
+  </body>
+</html>

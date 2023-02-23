@@ -1,30 +1,68 @@
-# Reflow Auth
+# Reflow Auth-React
 
-This is a JS library for adding user accounts to any frontend using [Reflow](https://reflowhq.com/docs/store-management/registrations.html). It is written in vanilla JS and can work in any project and framework. For React projects, you can check out [the hook](https://github.com/reflow-hq/reflow-libs/tree/main/auth-react) version of this library.
+This is a React hook which you can use to add user accounts and authentication to any app using [Reflow](https://reflowhq.com/docs/store-management/registrations.html). It is compatible with React 18+ and builds upon the [vanilla Auth](https://github.com/reflow-hq/reflow-libs/tree/main/auth) library.
+
+The hook handles event syncing between open tabs and automatically syncs profile information with the Reflow backend, making it a robust auth solution for frontend apps.
 
 ## Installation
 
-If you've configured sign in providers in your Reflow Store, this library makes it super simple for users to authenticate in your app. You just need to install it in your project with npm or another package manager:
+To install this hook in your react project:
 
 ```bash
-npm install @reflowhq/auth
+npm install @reflowhq/auth-react
 ```
 
 ## Usage
 
-This library is meant to run in the browser. The recommended way to use it is to create an instance and assign it to the window object so that it is available globally. You can find your storeID on your Reflow admin page.
+This library is designed to run in the browser. Just import the hook and pass your storeID, which you can obtain from Reflow's website:
 
 ```js
-import Auth from "@reflowhq/auth";
-
-window.auth = new Auth({ storeID: "<your storeid here>" });
+const auth = useAuth({ storeID: 12345678 });
 ```
 
-You can see a full featured example in the [examples](https://github.com/reflow-hq/reflow-libs/tree/main/auth/examples) directory.
+Full example:
+
+```jsx
+import React, { useState } from "react";
+import useAuth from "@reflowhq/auth-react";
+
+function MyComponent() {
+  const auth = useAuth({ storeID: 12345678 });
+
+  if (auth.isSignedIn()) {
+    return (
+      <div>
+        <p>Hello, {auth.profile.name}!</p>
+        <button
+          onClick={() => {
+            auth.signOut();
+          }}
+        >
+          Sign Out
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => {
+          auth.signIn();
+        }}
+      >
+        Sign In
+      </button>
+    </div>
+  );
+}
+```
+
+You can see a full featured example in the [examples](https://github.com/reflow-hq/reflow-libs/tree/main/auth-react/examples) directory. You can also browse the test directory or read the source directly, it's only 50 lines long.
 
 ## API
 
-The auth instance gives you access to a number of properties and methods for managing the user account of the current user.
+Calling the `useAuth` hook returns an object with several methods.
 
 ### `auth.profile`
 
@@ -133,66 +171,6 @@ However, data can become out of sync with Reflow. For this reason the library au
 
 ```js
 auth.refresh();
-```
-
-## Events
-
-The library implements a simplified event system which you can subscribe to. It works only for a single event type at a time (you can't subscribe for multiple events or add namespaces).
-
-Note that the library handles cross-tab communication and syncs with the Reflow backend periodically, so these events may not necessarily originate in the current tab or device.
-
-### `signin`
-
-This event is triggered when the user signs in successfully.
-
-```js
-auth.on("signin", (profile) => {
-  if (auth.isNew()) {
-    alert("Great to meet you, " + profile.name + "!");
-  } else {
-    alert("Hello again, " + profile.name + "!");
-  }
-});
-```
-
-### `signout`
-
-This event is triggered when the user signs out from their account.
-
-```js
-auth.on("signout", () => {
-  alert("Goodbye!");
-});
-```
-
-### `change`
-
-This event is triggered in these cases:
-
-- The user signs in or out of their account.
-- The user profile is edited with the updateProfile method.
-- The profile has been edited in the Reflow backend.
-
-You can use it to trigger updates to your application's UI state.
-
-```js
-auth.on("change", () => {
-  console.log("a change occurred!");
-});
-```
-
-### Unsubscribing from events
-
-The library exposes a corresponding `off` method. You need to pass the same callback which you used to subscribe.
-
-```js
-const changeCb = () => console.log("a change occurred!");
-
-auth.on("change", changeCb);
-
-// Unsubscribe
-
-auth.off("change", changeCb);
 ```
 
 ## License

@@ -1,0 +1,6 @@
+{
+  "name": "reflow-libs",
+  "workspaces": [
+    "auth", "auth-react", "cart"
+  ]
+}

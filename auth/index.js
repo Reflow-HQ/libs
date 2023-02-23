@@ -1,5 +1,5 @@
 class Auth {
-  constructor({ storeID, apiBase = "https://api.reflowhq.com/v1" }) {
+  constructor({ storeID, apiBase = "https://api.reflowhq.com/v1", autoBind = true }) {
     this.storeID = storeID;
     this.apiBase = apiBase;
 
@@ -12,73 +12,9 @@ class Auth {
     this._signInWindow = null;
     this._authIframe = null;
 
-    // Listen to the broadcast channel for cross-tab communication
-
-    if ("BroadcastChannel" in window) {
-      this._broadcastChannel = new BroadcastChannel("reflow-auth");
-      this._broadcastChannel.onmessage = (e) => {
-        if (e.data.type == "signout") {
-          this.clear();
-          this.trigger("signout", {
-            error: e.data.error,
-          });
-        }
-        if (e.data.type == "signin") {
-          this.trigger("signin", {
-            profile: e.data.profile,
-            isNew: e.data.isNew,
-          });
-        }
-        if (e.data.type == "profile-refreshed") {
-          this.trigger("profile-refreshed");
-        }
-      };
+    if (autoBind) {
+      this.bind();
     }
-
-    // Listen for messages from the iframe
-
-    this._messageListener = (e) => {
-      if (!this._authIframe) {
-        return;
-      }
-
-      if (e.source !== this._authIframe.contentWindow) {
-        return;
-      }
-
-      if (e.data.type == "signin") {
-        this.set({
-          key: e.data.session,
-          expiresAt: Date.now() + e.data.lifetime * 1000,
-          profile: e.data.profile,
-        });
-
-        this.trigger("signin", {
-          profile: e.data.profile,
-          isNew: e.data.isNew,
-        });
-
-        if (this._broadcastChannel) {
-          this._broadcastChannel.postMessage({
-            type: "signin",
-            profile: e.data.profile,
-            isNew: e.data.isNew,
-          });
-        }
-
-        this.scheduleRefresh();
-      }
-    };
-
-    setInterval(async () => {
-      if (this.isSignedIn() && this.get("refreshAt") < Date.now()) {
-        // Fetch the profile from server and update the local storage object.
-
-        await this.getProfile();
-      }
-    }, 1000 * 60); // Check every minute
-
-    window.addEventListener("message", this._messageListener);
   }
 
   api(endpoint, options) {
@@ -98,15 +34,15 @@ class Auth {
     );
   }
 
-  get(key) {
+  get(key, def = null) {
     let data = {};
 
     try {
-      data = JSON.parse(localStorage.reflowAuth);
+      data = JSON.parse(localStorage["reflowAuth" + this.storeID]);
     } catch (e) {}
 
     if (key) {
-      return data[key];
+      return key in data ? data[key] : def;
     }
 
     return data;
@@ -115,11 +51,11 @@ class Auth {
   set(obj) {
     let data = this.get();
     Object.assign(data, obj);
-    localStorage.reflowAuth = JSON.stringify(data);
+    localStorage["reflowAuth" + this.storeID] = JSON.stringify(data);
   }
 
   clear() {
-    delete localStorage.reflowAuth;
+    delete localStorage["reflowAuth" + this.storeID];
   }
 
   isSignedIn() {
@@ -133,7 +69,9 @@ class Auth {
       this._listeners[event] = [];
     }
 
-    this._listeners[event].push(cb);
+    if (!this._listeners[event].includes(cb)) {
+      this._listeners[event].push(cb);
+    }
   }
 
   off(event, cb) {
@@ -148,6 +86,10 @@ class Auth {
     }
 
     this._listeners[event].splice(this._listeners[event].indexOf(cb), 1);
+
+    if (!this._listeners[event].length) {
+      delete this._listeners[event];
+    }
   }
 
   trigger(event, data) {
@@ -162,6 +104,106 @@ class Auth {
 
   get profile() {
     return this.get("profile");
+  }
+
+  profileSameAs(prof) {
+    return JSON.stringify(this.profile) === JSON.stringify(prof);
+  }
+
+  setIsNew() {
+    sessionStorage["reflowAuth" + this.storeID + "IsNew"] = "1";
+  }
+
+  isNew() {
+    return sessionStorage["reflowAuth" + this.storeID + "IsNew"] === "1";
+  }
+
+  bind() {
+    // Listen to the broadcast channel for cross-tab communication
+
+    if ("BroadcastChannel" in window) {
+      this._broadcastChannel = new BroadcastChannel("reflow-auth");
+      this._broadcastChannel.onmessage = (e) => {
+        if (e.data.type == "signout") {
+          this.clear();
+          this.trigger("signout", {
+            error: e.data.error,
+          });
+          this.trigger("change");
+        }
+        if (e.data.type == "signin") {
+          if (e.data.isNew) this.setIsNew();
+
+          this.trigger("signin", {
+            profile: e.data.profile,
+          });
+
+          this.trigger("change");
+        }
+        if (e.data.type == "change") {
+          this.trigger("change");
+        }
+      };
+    }
+
+    // Listen for messages from the iframe
+
+    this._messageListener = (e) => {
+      if (!this._authIframe) {
+        return;
+      }
+
+      if (e.source !== this._authIframe.contentWindow) {
+        return;
+      }
+
+      if (e.data.type == "signin") {
+        if (e.data.isNew) this.setIsNew();
+
+        this.set({
+          key: e.data.session,
+          expiresAt: Date.now() + e.data.lifetime * 1000,
+          profile: e.data.profile,
+        });
+
+        this.trigger("signin", {
+          profile: e.data.profile,
+        });
+
+        this.trigger("change");
+
+        if (this._broadcastChannel) {
+          this._broadcastChannel.postMessage({
+            type: "signin",
+            profile: e.data.profile,
+            isNew: e.data.isNew,
+          });
+        }
+
+        this.scheduleRefresh();
+      }
+    };
+
+    window.addEventListener("message", this._messageListener);
+
+    this._refreshInterval = setInterval(() => {
+      if (this.isSignedIn() && this.get("refreshAt") < Date.now()) {
+        // Fetch the profile from server and update the local storage object.
+        this.refresh();
+      }
+    }, 1000 * 60); // Check every minute
+  }
+
+  unbind() {
+    clearInterval(this._refreshInterval);
+    clearInterval(this._checkWindowClosedInterval);
+
+    window.removeEventListener("message", this._messageListener);
+
+    if (this._broadcastChannel) {
+      this._broadcastChannel.close();
+      this._broadcastChannel = null;
+    }
   }
 
   scheduleRefresh() {
@@ -184,7 +226,7 @@ class Auth {
     }
   }
 
-  async getProfile() {
+  async refresh() {
     // Requests the profile from the server without caching
 
     try {
@@ -194,13 +236,12 @@ class Auth {
         },
       });
 
-      this.set({ profile: result });
-
-      this.broadcastEvent("profile-refreshed");
-
       this.scheduleRefresh();
 
-      return result;
+      if (!this.profileSameAs(result)) {
+        this.set({ profile: result });
+        this.broadcastEvent("change");
+      }
     } catch (e) {
       console.error("Reflow: Unable to fetch profile");
       if (e.data) console.error(e.data);
@@ -211,13 +252,14 @@ class Auth {
 
         this.clear();
         this.broadcastEvent("signout", { error: "profile_not_found" });
+        this.broadcastEvent("change");
       }
 
       throw e;
     }
   }
 
-  async updateProfile(data, successCB, failCB) {
+  async updateProfile(data) {
     try {
       let body = new FormData();
 
@@ -240,24 +282,22 @@ class Auth {
         body,
       });
 
-      this.set({ profile: result.profile });
-
-      this.broadcastEvent("profile-refreshed");
-
       this.scheduleRefresh();
 
-      if (successCB) successCB();
+      if (!this.profileSameAs(result.profile)) {
+        this.set({ profile: result.profile });
+        this.broadcastEvent("change");
+      }
 
       return result;
     } catch (e) {
       console.error("Reflow: Unable to update profile.");
       if (e.data) console.error(e.data);
 
-      if (failCB) failCB();
-
       if (e.status == 403) {
         this.clear();
         this.broadcastEvent("signout", { error: "profile_not_found" });
+        this.broadcastEvent("change");
       }
 
       throw e;
@@ -359,6 +399,7 @@ class Auth {
 
     this.clear();
     this.broadcastEvent("signout", { error: false });
+    this.broadcastEvent("change");
 
     return true;
   }

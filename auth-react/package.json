@@ -1,7 +1,7 @@
 {
-  "name": "@reflowhq/auth",
+  "name": "@reflowhq/auth-react",
   "version": "0.0.1",
-  "description": "Authentication library for login and account management with Reflow",
+  "description": "React hook for login and account management with Reflow",
   "exports": "./index.js",
   "type": "module",
   "directories": {
@@ -14,7 +14,8 @@
     "signin",
     "auth",
     "login",
-    "profile"
+    "profile",
+    "react"
   ],
   "author": "Reflow HQ",
   "license": "MIT",
@@ -23,9 +24,16 @@
     "publish": "echo Todo"
   },
   "devDependencies": {
+    "@testing-library/react": "^14.0.0",
+    "esbuild": "^0.17.10",
     "jest": "^29.4.3",
     "jest-environment-jsdom": "^29.4.3",
-    "prettier": "^2.8.4"
+    "prettier": "^2.8.4",
+    "react-bootstrap": "^2.7.2"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   },
   "repository": {
     "type": "git",
@@ -34,5 +42,8 @@
   "bugs": {
     "url": "https://github.com/reflow-hq/libs/issues"
   },
-  "homepage": "https://github.com/reflow-hq/libs#readme"
+  "homepage": "https://github.com/reflow-hq/libs#readme",
+  "dependencies": {
+    "@reflowhq/auth": "^0.0.1"
+  }
 }
