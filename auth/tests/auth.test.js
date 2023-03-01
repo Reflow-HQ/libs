@@ -45,18 +45,28 @@ describe("Auth", () => {
     expect(auth._listeners).toStrictEqual({});
 
     let cb = jest.fn();
+    let cb2 = jest.fn();
 
     auth.on("asdf", cb);
     expect(auth._listeners).toStrictEqual({ asdf: [cb] });
 
     auth.on("asdf", cb);
     expect(auth._listeners).toStrictEqual({ asdf: [cb] });
+
+    auth.on("asdf", cb2);
+    expect(auth._listeners).toStrictEqual({ asdf: [cb, cb2] });
 
     expect(cb).toHaveBeenCalledTimes(0);
     auth.trigger("asdf", "BananaArg");
+    expect(cb).toHaveBeenCalledTimes(1);
     expect(cb).toHaveBeenCalledWith("BananaArg");
+    expect(cb2).toHaveBeenCalledTimes(1);
+    expect(cb2).toHaveBeenCalledWith("BananaArg");
 
     auth.off("asdf", cb);
+    expect(auth._listeners).toStrictEqual({ asdf: [cb2] });
+
+    auth.off("asdf", cb2);
     expect(auth._listeners).toStrictEqual({});
 
     expect(() => {
@@ -95,6 +105,55 @@ describe("Auth", () => {
     expect(auth.profile.name).toBe("J Doe");
   });
 
+  it("should sign in", async () => {
+    global.fetch = jest.fn((url) => {
+      let response = {};
+
+      if (url.includes("/auth/urls")) {
+        response = { signinURL: "https://banana123.com/" };
+      } else if (url.includes("/auth/validate-token")) {
+        response = {
+          valid: true,
+          isNew: true,
+          session: "sess123",
+          profile: { name: "Name Here", photo: "Image Here" },
+        };
+      }
+
+      return Promise.resolve({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve(response),
+      });
+    });
+
+    let signInWindow = {};
+
+    global.open = jest.fn(() => signInWindow);
+
+    let auth = new Auth({ storeID: "2345", apiBase: "http://api.reflow.local/v1" });
+    expect(auth.isSignedIn()).toBe(false);
+    expect(auth._loginCheckInterval).toBeNull();
+
+    await auth.signIn();
+
+    expect(auth._loginCheckInterval).toBeTruthy();
+    expect(global.open).toHaveBeenCalledTimes(1);
+    expect(global.open).toHaveBeenCalledWith(
+      "about:blank",
+      "reflow-signin",
+      "width=600,height=600,top=84,left=212"
+    );
+
+    expect(auth._signInWindow).toEqual(signInWindow);
+    expect(auth._signInWindow.location).toEqual(
+      "https://banana123.com/?origin=http%3A%2F%2Flocalhost"
+    );
+
+    // Todo: think of a way to simulate the window open postMessage response
+    // and test the _loginCheckInterval
+  });
+
   it("should fail to fetch the profile and logout", async () => {
     // We will not be testing the same behavior in other auth api methods
     // as they follows the same pattern and exact same code.
@@ -121,7 +180,7 @@ describe("Auth", () => {
     });
     expect(auth.trigger).toHaveBeenCalledTimes(2);
     expect(auth.trigger).toHaveBeenCalledWith("signout", { error: "profile_not_found" });
-    expect(auth.trigger).toHaveBeenCalledWith("change", undefined);
+    expect(auth.trigger).toHaveBeenCalledWith("change");
 
     // Log Back in
 
@@ -155,8 +214,9 @@ describe("Auth", () => {
         Authorization: `Bearer key123`,
       },
     });
-    expect(auth.trigger).toHaveBeenCalledTimes(1);
-    expect(auth.trigger).toHaveBeenCalledWith("change", undefined);
+    expect(auth.trigger).toHaveBeenCalledTimes(2);
+    expect(auth.trigger).toHaveBeenCalledWith("modify");
+    expect(auth.trigger).toHaveBeenCalledWith("change");
   });
 
   it("should update the user profile successfully", async () => {
@@ -188,8 +248,9 @@ describe("Auth", () => {
     expect(auth.profile.email).toBe(email);
     expect(auth.profile.meta.phone).toBe(meta.phone);
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(auth.trigger).toHaveBeenCalledTimes(1);
-    expect(auth.trigger).toHaveBeenCalledWith("change", undefined);
+    expect(auth.trigger).toHaveBeenCalledTimes(2);
+    expect(auth.trigger).toHaveBeenCalledWith("modify");
+    expect(auth.trigger).toHaveBeenCalledWith("change");
   });
 
   it("should fail to update the user profile because of validation", async () => {
@@ -235,7 +296,7 @@ describe("Auth", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(auth.trigger).toHaveBeenCalledTimes(2);
     expect(auth.trigger).toHaveBeenCalledWith("signout", { error: false });
-    expect(auth.trigger).toHaveBeenCalledWith("change", undefined);
+    expect(auth.trigger).toHaveBeenCalledWith("change");
 
     auth.trigger.mockReset();
 
@@ -318,24 +379,71 @@ describe("Auth", () => {
     expect(removeEventListener).toHaveBeenCalledTimes(1);
     expect(removeEventListener).toHaveBeenCalledWith("message", auth6._messageListener);
     expect(setInterval).toHaveBeenCalledTimes(2);
-    expect(clearInterval).toHaveBeenCalledTimes(2);
+    expect(clearInterval).toHaveBeenCalledTimes(3);
     expect(clearInterval).toHaveBeenCalledWith(auth6._refreshInterval);
-    expect(clearInterval).toHaveBeenCalledWith(auth6._checkWindowClosedInterval);
+    expect(clearInterval).toHaveBeenCalledWith(null);
+    expect(auth6._checkWindowClosedInterval).toBe(null);
+    expect(auth6._loginCheckInterval).toBe(null);
 
     auth5.on("change", () => {});
 
     expect(setTimeout).toHaveBeenCalledTimes(0);
     expect(setInterval).toHaveBeenCalledTimes(2);
-    expect(clearInterval).toHaveBeenCalledTimes(2);
+    expect(clearInterval).toHaveBeenCalledTimes(3);
     expect(auth5._listeners["change"].length).toBe(1);
 
     auth5.unbind();
 
-    expect(clearInterval).toHaveBeenCalledTimes(4);
+    expect(clearInterval).toHaveBeenCalledTimes(6);
     expect(clearInterval).toHaveBeenCalledWith(auth5._refreshInterval);
     expect(clearInterval).toHaveBeenCalledWith(auth5._checkWindowClosedInterval);
     expect(auth5._listeners["change"].length).toBe(1);
     expect(removeEventListener).toHaveBeenCalledWith("message", auth5._messageListener);
+
+    // Test multiple bind/unbind
+
+    expect(auth5.isBound()).toBe(false);
+
+    auth5.bind();
+
+    expect(auth5._boundCounter).toBe(1);
+    expect(setInterval).toHaveBeenCalledTimes(3);
+    expect(auth5.isBound()).toBe(true);
+
+    auth5.bind();
+
+    expect(auth5._boundCounter).toBe(2);
+    expect(setInterval).toHaveBeenCalledTimes(3);
+    expect(auth5.isBound()).toBe(true);
+
+    auth5.bind();
+    auth5.bind();
+
+    expect(auth5._boundCounter).toBe(4);
+    expect(setInterval).toHaveBeenCalledTimes(3);
+    expect(auth5.isBound()).toBe(true);
+
+    auth5.unbind();
+
+    expect(auth5._boundCounter).toBe(3);
+    expect(setInterval).toHaveBeenCalledTimes(3);
+    expect(clearInterval).toHaveBeenCalledTimes(6);
+    expect(auth5.isBound()).toBe(true);
+
+    auth5.unbind();
+    auth5.unbind();
+
+    expect(auth5._boundCounter).toBe(1);
+    expect(setInterval).toHaveBeenCalledTimes(3);
+    expect(clearInterval).toHaveBeenCalledTimes(6);
+    expect(auth5.isBound()).toBe(true);
+
+    auth5.unbind();
+
+    expect(auth5._boundCounter).toBe(0);
+    expect(setInterval).toHaveBeenCalledTimes(3);
+    expect(clearInterval).toHaveBeenCalledTimes(9);
+    expect(auth5.isBound()).toBe(false);
 
     jest.useRealTimers();
   });
