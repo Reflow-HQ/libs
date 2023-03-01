@@ -165,9 +165,19 @@ auth.on("signout", () => {
 });
 ```
 
+### `modify`
+
+This event is triggered when the user profile info is edited with the updateProfile method or from the Reflow backend.
+
+```js
+auth.on("modify", () => {
+  console.log("the profile was modified!");
+});
+```
+
 ### `change`
 
-This event is triggered in these cases:
+This event is triggered in all cases that can lead to a change in the authentication status or info:
 
 - The user signs in or out of their account.
 - The user profile is edited with the updateProfile method.

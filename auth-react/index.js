@@ -1,41 +1,53 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Auth from "@reflowhq/auth";
 
-export default function useAuth(config = {}) {
-  const authRef = useRef(null);
+// Shared auth instances between react hooks
+const authMap = new Map();
 
-  if (authRef.current === null) {
-    if (config instanceof Auth) {
-      authRef.current = config;
-    } else if (config.storeID) {
-      authRef.current = new Auth({ ...config, autoBind: false });
-    } else {
-      throw new Error("storeID config option is required");
+function useAuth(config = {}) {
+  let authInstance;
+
+  if (config instanceof Auth) {
+    authInstance = config;
+  } else if (config.storeID) {
+    if (!authMap.has(config.storeID)) {
+      authMap.set(config.storeID, new Auth({ ...config, autoBind: false }));
     }
+
+    authInstance = authMap.get(config.storeID);
+  } else {
+    throw new Error("storeID config option is required");
   }
 
-  const [authObj, setAuthObj] = useState(makeAuthObject(authRef.current));
+  const [authObj, setAuthObj] = useState(makeAuthObject(authInstance));
 
   useEffect(() => {
     // Subscribe for auth events and cleanup
     // when the component is unmounted
 
-    authRef.current.bind();
+    authInstance.bind();
 
     let authCb = () => {
-      setAuthObj(makeAuthObject(authRef.current));
+      setAuthObj(makeAuthObject(authInstance));
     };
 
-    authRef.current.on("change", authCb);
+    authInstance.on("change", authCb);
 
     return () => {
-      authRef.current.unbind();
-      authRef.current.off("change", authCb);
+      authInstance.unbind();
+      authInstance.off("change", authCb);
+
+      if (!authInstance.isBound() && authMap.has(config.storeID)) {
+        // No other hook is using this instance
+        authMap.delete(config.storeID);
+      }
     };
   }, []);
 
   return authObj;
 }
+
+export { useAuth as default, authMap as _authMap };
 
 function makeAuthObject(auth) {
   // Wrap the auth in a new object which exposes

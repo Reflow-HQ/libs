@@ -3,6 +3,8 @@ class Auth {
     this.storeID = storeID;
     this.apiBase = apiBase;
 
+    this._boundCounter = 0;
+
     if (this.get("expiresAt") < Date.now()) {
       this.clear();
     }
@@ -10,7 +12,10 @@ class Auth {
     this._listeners = {};
 
     this._signInWindow = null;
-    this._authIframe = null;
+    this._authToken = null;
+
+    this._checkWindowClosedInterval = null;
+    this._loginCheckInterval = null;
 
     if (autoBind) {
       this.bind();
@@ -118,7 +123,18 @@ class Auth {
     return sessionStorage["reflowAuth" + this.storeID + "IsNew"] === "1";
   }
 
+  clearIsNew() {
+    delete sessionStorage["reflowAuth" + this.storeID + "IsNew"];
+  }
+
   bind() {
+    this._boundCounter++;
+
+    if (this._boundCounter > 1) {
+      // Only one set of event listeners can be bound at a time so we don't proceed further.
+      return;
+    }
+
     // Listen to the broadcast channel for cross-tab communication
 
     if ("BroadcastChannel" in window) {
@@ -140,47 +156,26 @@ class Auth {
 
           this.trigger("change");
         }
-        if (e.data.type == "change") {
+        if (e.data.type == "modify") {
+          this.trigger("modify");
           this.trigger("change");
         }
       };
     }
 
-    // Listen for messages from the iframe
+    // Listen for messages from the signin window
 
     this._messageListener = (e) => {
-      if (!this._authIframe) {
+      if (!this._signInWindow) {
         return;
       }
 
-      if (e.source !== this._authIframe.contentWindow) {
+      if (e.source !== this._signInWindow) {
         return;
       }
 
-      if (e.data.type == "signin") {
-        if (e.data.isNew) this.setIsNew();
-
-        this.set({
-          key: e.data.session,
-          expiresAt: Date.now() + e.data.lifetime * 1000,
-          profile: e.data.profile,
-        });
-
-        this.trigger("signin", {
-          profile: e.data.profile,
-        });
-
-        this.trigger("change");
-
-        if (this._broadcastChannel) {
-          this._broadcastChannel.postMessage({
-            type: "signin",
-            profile: e.data.profile,
-            isNew: e.data.isNew,
-          });
-        }
-
-        this.scheduleRefresh();
+      if (e.data.authToken) {
+        this._authToken = e.data.authToken;
       }
     };
 
@@ -195,8 +190,16 @@ class Auth {
   }
 
   unbind() {
+    this._boundCounter = Math.max(this._boundCounter - 1, 0);
+
+    if (this._boundCounter > 0) {
+      // This auth instance still has other users. Don't unbind.
+      return;
+    }
+
     clearInterval(this._refreshInterval);
     clearInterval(this._checkWindowClosedInterval);
+    clearInterval(this._loginCheckInterval);
 
     window.removeEventListener("message", this._messageListener);
 
@@ -204,6 +207,10 @@ class Auth {
       this._broadcastChannel.close();
       this._broadcastChannel = null;
     }
+  }
+
+  isBound() {
+    return this._boundCounter > 0;
   }
 
   scheduleRefresh() {
@@ -215,9 +222,7 @@ class Auth {
     });
   }
 
-  broadcastEvent(event, passthrough) {
-    this.trigger(event, passthrough);
-
+  broadcast(event, passthrough) {
     if (this._broadcastChannel) {
       this._broadcastChannel.postMessage({
         type: event,
@@ -240,7 +245,9 @@ class Auth {
 
       if (!this.profileSameAs(result)) {
         this.set({ profile: result });
-        this.broadcastEvent("change");
+        this.trigger("modify");
+        this.trigger("change");
+        this.broadcast("modify");
       }
     } catch (e) {
       console.error("Reflow: Unable to fetch profile");
@@ -251,8 +258,9 @@ class Auth {
         // Delete the local session and signout components.
 
         this.clear();
-        this.broadcastEvent("signout", { error: "profile_not_found" });
-        this.broadcastEvent("change");
+        this.trigger("signout", { error: "profile_not_found" });
+        this.trigger("change");
+        this.broadcast("signout", { error: "profile_not_found" });
       }
 
       throw e;
@@ -286,7 +294,9 @@ class Auth {
 
       if (!this.profileSameAs(result.profile)) {
         this.set({ profile: result.profile });
-        this.broadcastEvent("change");
+        this.trigger("modify");
+        this.trigger("change");
+        this.broadcast("modify");
       }
 
       return result;
@@ -296,8 +306,9 @@ class Auth {
 
       if (e.status == 403) {
         this.clear();
-        this.broadcastEvent("signout", { error: "profile_not_found" });
-        this.broadcastEvent("change");
+        this.trigger("signout", { error: "profile_not_found" });
+        this.trigger("change");
+        this.broadcast("signout", { error: "profile_not_found" });
       }
 
       throw e;
@@ -306,18 +317,13 @@ class Auth {
 
   async signIn() {
     if (this.isSignedIn() || this._isLoading) {
-      return false;
+      return;
     }
 
     if (this._signInWindow) {
       // Already open
       this._signInWindow.focus();
-      return false;
-    }
-
-    if (!("BroadcastChannel" in window)) {
-      alert("Please upgrade to a newer browser to use the login feature.");
-      throw new Error("Browser has no BroadcastChannel support");
+      return;
     }
 
     // Open the signin window. Center it relative to the current one.
@@ -352,18 +358,6 @@ class Auth {
       throw e;
     }
 
-    if (!this._authIframe) {
-      this._authIframe = document.createElement("iframe");
-      this._authIframe.src =
-        response.iframeURL + "?origin=" + encodeURIComponent(window.location.origin);
-
-      this._authIframe.style.display = "none !important";
-      this._authIframe.style.width = "0";
-      this._authIframe.style.height = "0";
-
-      document.body.appendChild(this._authIframe);
-    }
-
     this._signInWindow.location =
       response.signinURL + "?origin=" + encodeURIComponent(window.location.origin);
 
@@ -376,6 +370,66 @@ class Auth {
         clearInterval(this._checkWindowClosedInterval);
       }
     }, 500);
+
+    let hasFocus = document.hasFocus();
+
+    clearInterval(this._loginCheckInterval);
+    this._loginCheckInterval = setInterval(async () => {
+      if (this.isSignedIn()) {
+        clearInterval(this._loginCheckInterval);
+        return;
+      }
+
+      if (!this._authToken) {
+        return;
+      }
+
+      if (!hasFocus && document.hasFocus()) {
+        // We've switched back to this page/window. Check the login status
+        hasFocus = true;
+        let status;
+
+        try {
+          status = await this.api("/auth/validate-token?auth-token=" + this._authToken, {
+            method: "POST",
+          });
+        } catch (e) {
+          clearInterval(this._loginCheckInterval);
+          return;
+        }
+
+        this.scheduleRefresh();
+
+        if (status.valid) {
+          this.clearIsNew();
+
+          if (status.isNew) {
+            this.setIsNew();
+          }
+
+          this.set({
+            key: status.session,
+            expiresAt: Date.now() + status.lifetime * 1000,
+            profile: status.profile,
+          });
+
+          this.trigger("signin", {
+            profile: status.profile,
+          });
+
+          this.trigger("change");
+
+          this.broadcast("signin", {
+            profile: status.profile,
+            isNew: status.isNew,
+          });
+
+          this.scheduleRefresh();
+        }
+      }
+
+      hasFocus = document.hasFocus();
+    }, 250);
   }
 
   async signOut() {
@@ -398,8 +452,10 @@ class Auth {
     // Regardless of the response, delete the local session and signout components
 
     this.clear();
-    this.broadcastEvent("signout", { error: false });
-    this.broadcastEvent("change");
+
+    this.trigger("signout", { error: false });
+    this.trigger("change");
+    this.broadcast("signout", { error: false });
 
     return true;
   }
