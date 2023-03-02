@@ -1,48 +1,22 @@
-import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
+import { useState } from "react";
 
-import IntlMessageFormat from "intl-messageformat";
+import { useShoppingCart } from "./CartContext";
+import CartSlide from "./steps/CartSlide";
+import CheckoutSlide from "./steps/CheckoutSlide";
 
-const defaultLocalization = {
-  locale: "en-US",
-  "button.click": `You clicked {clickNum, plural, =0 {zero times.} =1 {one time.} other {# times.}}`,
-};
+const CartView = () => {
+  const [step, setStep] = useState("cart");
 
-global.R1 = React;
+  const { cartState, t } = useShoppingCart();
+  const { products, isLoading } = cartState;
 
-const CartView = ({ text, cartManager, localization = {} }) => {
-  const [isLoading, setLoading] = useState(false);
-  const [clickNum, setClicks] = useState(0);
-
-  useEffect(() => {
-    // Subscribing for events on the cart manager instance
-
-    const subID = cartManager.subscribe((event, data) => {
-      if (event == "loading") {
-        setLoading(true);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      cartManager.unsubscribe(subID);
-    };
-  });
-
-  const loc = {
-    ...defaultLocalization,
-    ...localization,
-  };
-
-  function t(key, data) {
-    return new IntlMessageFormat(loc[key], loc.locale).format(data);
+  function renderActiveSlide() {
+    if (step === "cart") {
+      return <CartSlide setStep={setStep} />;
+    } else {
+      return <CheckoutSlide setStep={setStep} />;
+    }
   }
-
-  const onClick = () => {
-    cartManager.addProduct({ productID: 12345 });
-    setClicks(clickNum + 1);
-  };
 
   /* Todo: write tests with jest. I need to have a variant that uses a static state as well. I also need
     to show different attributes for customizing panels, layout, injecting components, placing things in the URL(?)
@@ -50,17 +24,15 @@ const CartView = ({ text, cartManager, localization = {} }) => {
    */
 
   return (
-    <>
+    <div className="reflow-shopping-cart">
       <div className={"ref-loading-backdrop " + (isLoading ? "active" : "")}></div>
-      <button className="test123" onClick={onClick}>
-        {text} {t("button.click", { clickNum })}
-      </button>
-    </>
+      {products.length ? (
+        renderActiveSlide()
+      ) : (
+        <div className="ref-message">{t("cart.errors.empty")}</div>
+      )}
+    </div>
   );
-};
-
-CartView.propTypes = {
-  text: PropTypes.string.isRequired,
 };
 
 export default CartView;
