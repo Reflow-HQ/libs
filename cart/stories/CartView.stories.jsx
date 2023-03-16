@@ -1,6 +1,5 @@
 import React from "react";
 
-import { ShoppingCartProvider } from "../src/CartContext.js";
 import CartView from "../src/CartView.jsx";
 import "../src/cartview.css";
 
@@ -41,10 +40,20 @@ const localization = {
   postcode: "Пощенски код",
 };
 
-Localization.decorators = [
-  (Story) => (
-    <ShoppingCartProvider config={config} localization={localization}>
-      <Story />
-    </ShoppingCartProvider>
-  ),
-];
+Localization.args = {
+  config,
+  localization,
+  onError: (error) => {
+    let message = "";
+
+    if (error.title) {
+      message += `Title: ${error.title}`;
+    }
+
+    if (error.description) {
+      message += `\nDescription: ${error.description}`;
+    }
+
+    alert(message || "Error");
+  },
+};

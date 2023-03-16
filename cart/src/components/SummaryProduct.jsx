@@ -3,9 +3,12 @@ import { useShoppingCart } from "../CartContext";
 import shortenString from "../utilities/shortenString";
 
 export default function SummaryProduct({ product }) {
-  const { cartManager, t } = useShoppingCart();
+  const { cartManager, t } = useShoppingCart((s) => ({
+    cartManager: s.cartManager,
+    t: s.t,
+  }));
 
-  const quantityErrorMessage = "";
+  let quantityErrorMessage = "";
 
   if (product.inStock) {
     if (product.quantity > product.availableQuantity) {

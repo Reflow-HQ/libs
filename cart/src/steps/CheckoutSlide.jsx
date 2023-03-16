@@ -1,20 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import debounce from "lodash.debounce";
 
-import { useShoppingCart } from "../CartContext";
+import { useShoppingCart, useAuth } from "../CartContext";
 
 import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
 
-import SummaryProduct from "../components/SummaryProduct";
 import AddressWidget from "../widgets/AddressWidget";
+import AuthButton from "../components/AuthButton";
+import Summary from "../components/Summary";
 
-import shortenString from "../utilities/shortenString";
-
-export default function CheckoutSlide({ setStep }) {
+export default function CheckoutSlide({ successURL, cancelURL, onError, step, setStep }) {
   const [email, setEmail] = useLocalStorageFormData("email");
   const [phone, setPhone] = useLocalStorageFormData("phone");
   const [name, setName] = useLocalStorageFormData("name");
   const [note, setNote] = useLocalStorageFormData("note");
-  const [couponCode, setCouponCode] = useState("");
 
   const [shippingAddress, setShippingAddress] = useLocalStorageFormData("shippingAddress", {});
   const [billingAddress, setBillingAddress] = useLocalStorageFormData("billingAddress", {});
@@ -22,22 +21,16 @@ export default function CheckoutSlide({ setStep }) {
 
   const [showBilling, setShowBilling] = useState(() => isBillingFilled());
 
-  const [isSummaryOpen, setSummaryOpen] = useState(false);
   const [isNoteFieldOpen, setNoteFieldOpen] = useState(true);
   const [isTaxFieldOpen, setTaxFieldOpen] = useState(true);
 
-  const { cartState, cartManager, t, locale } = useShoppingCart();
+  const [instructions, setInstructions] = useState({});
+  const [formErrors, setFormErrors] = useState({});
 
-  const [shippingLabel, setShippingLabel] = useState(t("shipping"));
-  const [shippingPrice, setShippingPrice] = useState(t("cart.shipping_not_selected"));
+  const auth = useAuth();
 
   const {
-    products,
-    coupon,
-    discount,
-    total,
-    subtotal,
-    currency,
+    errors,
     locations,
     shippingMethods,
     shippableCountries,
@@ -46,19 +39,51 @@ export default function CheckoutSlide({ setStep }) {
     taxExemption,
     vacationMode,
     paymentProviders,
+    signInProviders,
     deliveryMethod,
     selectedLocation,
     selectedShippingMethod,
     setDeliveryMethod,
     setSelectedLocation,
     setSelectedShippingMethod,
-  } = cartState;
+    cartManager,
+    showLoading,
+    hideLoading,
+    t,
+    locale,
+  } = useShoppingCart((s) => ({
+    cartManager: s.cartManager,
+    t: s.t,
+    locale: s.locale,
+    errors: s.errors,
+    locations: s.locations,
+    shippingMethods: s.shippingMethods,
+    shippableCountries: s.shippableCountries,
+    footerLinks: s.footerLinks,
+    taxes: s.taxes,
+    taxExemption: s.taxExemption,
+    vacationMode: s.vacationMode,
+    paymentProviders: s.paymentProviders,
+    signInProviders: s.signInProviders,
+    deliveryMethod: s.deliveryMethod,
+    selectedLocation: s.selectedLocation,
+    selectedShippingMethod: s.selectedShippingMethod,
+    setDeliveryMethod: s.setDeliveryMethod,
+    setSelectedLocation: s.setSelectedLocation,
+    setSelectedShippingMethod: s.setSelectedShippingMethod,
+    showLoading: s.showLoading,
+    hideLoading: s.hideLoading,
+  }));
+
+  const debouncedUpdateAddress = useCallback(debounce(updateAddress, 500), []);
+
+  const detailsForm = useRef();
 
   function isDeliveryMethodActive(method) {
     return deliveryMethod === method;
   }
 
-  function updateModel(model, key, value) {
+  function updateAddressModel(model, key, value) {
     return {
       ...model,
       [key]: value,
@@ -140,6 +165,40 @@ export default function CheckoutSlide({ setStep }) {
     return ret;
   }
 
+  function isShippingFilled() {
+    return !!getShippingAddress();
+  }
+
+  function getShippingAddressInput() {
+    if (!auth.isSignedIn()) {
+      return shippingAddress;
+    }
+
+    const profile = auth.profile;
+    const newShippingAddress = {};
+
+    if (profile.name) {
+      if (!shippingAddress.name) {
+        newShippingAddress.name = profile.name;
+      }
+    }
+
+    if (profile.meta.address) {
+      const address = profile.meta.address;
+
+      for (const prop of ["address", "city", "country", "postcode", "state"]) {
+        if (address[prop] && !shippingAddress[prop]) {
+          newShippingAddress[prop] = address[prop];
+        }
+      }
+    }
+
+    return {
+      ...shippingAddress,
+      ...newShippingAddress,
+    };
+  }
+
   // Returns the address for digital carts.
 
   function getDigitalAddress() {
@@ -212,30 +271,188 @@ export default function CheckoutSlide({ setStep }) {
     });
   }
 
-  function invalidateTaxExemption(address) {
-    cartManager.invalidateTaxExemption({ address });
-    // TODO: show error if taxExemptionRemoved
+  function checkFormValidity(form) {
+    // TODO
+    return true;
   }
 
-  function submitCouponForm(e) {
-    e.preventDefault();
-    addCoupon(couponCode);
+  function getSuccessURL(queryParams = {}) {
+    // The URL we redirect to when a cart purchase is successfully completed.
+
+    try {
+      if (!successURL) throw Error("invalid");
+      // Turns relative URLs into absolute ones using the current URL as a base.
+      // This gives users the ability to pass relative addresses as the value of
+      // the data-reflow-success-url attribute and it will be resolved correctly.
+
+      let url = new URL(successURL, window.location.href);
+
+      // Add the search parameters. It's done this way instead of with url.searchParams
+      // because of Stripe's session_id={CHECKOUT_SESSION_ID} which is escaped with searchParams.
+
+      let search = url.search;
+
+      for (const key in queryParams) {
+        search += !search.length ? "?" : "&";
+        search += `${key}=${queryParams[key]}`;
+      }
+
+      url.search = search;
+
+      return url.href;
+    } catch (e) {
+      return window.location.href;
+    }
   }
 
-  function addCoupon(code) {
-    cartManager.addCoupon({ code }).then(() => setCouponCode(""));
+  function getCancelURL() {
+    try {
+      // Analogous to success url.
+      if (!cancelURL) throw Error("invalid");
+      return new URL(cancelURL, window.location.href).href;
+    } catch (e) {
+      return window.location.href;
+    }
   }
 
-  function removeCoupon() {
-    cartManager.removeCoupon();
+  function clearFormErrors() {
+    setFormErrors({});
   }
 
-  function checkout() {
+  async function checkout(paymentMethod, paymentID) {
     if (vacationMode?.enabled) {
       const message = vacationMode.message || t("store_unavailable");
 
-      // TODO: handle system error
+      onError({ description: message });
       return;
+    }
+
+    clearFormErrors();
+
+    if (!checkFormValidity(detailsForm.current)) {
+      return;
+    }
+
+    const customerFormData = new FormData(detailsForm.current);
+    const data = {
+      ...Object.fromEntries(customerFormData.entries()),
+      "success-url": getSuccessURL({ session_id: "{CHECKOUT_SESSION_ID}" }),
+      "cancel-url": getCancelURL(),
+      "payment-method": paymentMethod,
+      "payment-id": paymentID,
+    };
+
+    // TODO: add auth
+    if (auth.isSignedIn()) {
+      data["auth-account-id"] = auth.profile.id;
+    }
+
+    showLoading();
+
+    try {
+      // Before trying to complete the payment,
+      // refresh the state to fetch any store changes and show them in the interface.
+      await cartManager.refresh();
+
+      if (!cartManager.canFinish()) {
+        // TODO: handle error
+        onError({ description: cartManager.getStateErrors()[0] });
+        return;
+      }
+
+      const result = await cartManager.checkout(data);
+
+      if (!result.success) return;
+
+      // Order total was 0 - the checkout is completed
+
+      if (result.order && result.order.amount == 0) {
+        // Redirect to the success page
+        window.location = getSuccessURL({
+          order_id: result.order.id,
+          secure_hash: result.order.secure_hash,
+        });
+        return;
+      }
+
+      // Zero value cart payment was attempted, but the cart total turned out to be > 0.
+      // No order is created, instead the cart refreshes and new payment methods are shown.
+
+      if (paymentMethod === "zero-value-cart" && !result.order) {
+        await cartManager.refresh();
+      }
+
+      // Stripe payment - redirect to the Stripe checkout page where the customer will finish payment.
+
+      if (paymentMethod === "stripe" && result.stripeCheckoutURL) {
+        window.location = result.stripeCheckoutURL;
+        return;
+      }
+
+      // Custom payment - show instructions or redirect to successURL.
+
+      if (paymentMethod === "custom" && result.order) {
+        const method = Object.entries(paymentProviders).find((pm) => pm.id === paymentID);
+
+        if (!method) return;
+
+        if (!method.instructions) {
+          // Redirect to the success page
+          window.location = getSuccessURL({
+            order_id: result.order.id,
+            secure_hash: result.order.secure_hash,
+          });
+          return;
+        }
+
+        setInstructions((prevInstructions) => ({
+          ...prevInstructions,
+          title: method.name,
+          description: method.instructions
+            .replaceAll("{orderid}", result.order.id)
+            .replaceAll("{amount}", cartManager.formatCurrency(result.order.amount)),
+        }));
+
+        setStep("instructions");
+      }
+
+      // Pay in store - customer will pay in person, show instructions or redirect to successURL
+
+      if (paymentMethod === "pay-in-store" && result.order) {
+        const location = locations.find((l) => l.chosen);
+
+        if (!location || !location.instructions) {
+          // Redirect to the success page
+          window.location = getSuccessURL({
+            order_id: result.order.id,
+            secure_hash: result.order.secure_hash,
+          });
+          return;
+        }
+
+        setInstructions((prevInstructions) => ({
+          ...prevInstructions,
+          title: t("pickup_at_store"),
+          description: location.instructions
+            .replaceAll("{orderid}", result.order.id)
+            .replaceAll("{amount}", cartManager.formatCurrency(result.order.amount)),
+        }));
+
+        setStep("instructions");
+      }
+    } catch (e) {
+      if (e.data && e.data.errors) {
+        setFormErrors(e.data.errors);
+
+        if (e.data.errors.system) {
+          onError({
+            title: t("cart.errors.cannot_complete"),
+            description: getErrorText(e, "system"),
+          });
+        }
+      }
+    } finally {
+      hideLoading();
     }
   }
 
@@ -247,7 +464,7 @@ export default function CheckoutSlide({ setStep }) {
 
   function renderPaymentProviderButtons() {
     return paymentProviders.map((pm) =>
-      pm.provider == "custom" ? (
+      pm.provider === "custom" ? (
         <div
           key={pm.id}
           className="ref-button ref-payment-button"
@@ -255,7 +472,7 @@ export default function CheckoutSlide({ setStep }) {
         >
           {pm.name}
         </div>
-      ) : pm.provider == "pay-in-store" ? (
+      ) : pm.provider === "pay-in-store" ? (
         <div
           key={pm.provider}
           className="ref-button ref-payment-button"
@@ -263,7 +480,7 @@ export default function CheckoutSlide({ setStep }) {
         >
           {t("pay_on_pickup")}
         </div>
-      ) : pm.provider == "stripe" && pm.supported && pm.paymentOptions.length ? (
+      ) : pm.provider === "stripe" && pm.supported && pm.paymentOptions.length ? (
         pm.paymentOptions.map((paymentOption) =>
           paymentOption.id === "card" ? (
             <div key={paymentOption.id}>
@@ -288,88 +505,70 @@ export default function CheckoutSlide({ setStep }) {
     );
   }
 
-  useEffect(() => {
-    const location = locations[selectedLocation];
-    if (!location) return;
-
-    invalidateTaxExemption(location.address);
-  }, [selectedLocation]);
-
-  useEffect(() => {
-    let address;
-
-    if (deliveryMethod === "shipping") {
-      address = getShippingAddress();
-    }
-
-    if (deliveryMethod == "digital") {
-      address = getDigitalAddress();
-    }
-
+  function updateAddress(deliveryMethod, address) {
     if (!address) return;
 
     cartManager.updateAddress({
       address,
       deliveryMethod,
     });
-  }, [shippingAddress, digitalAddress]);
+  }
+
+  function hasShippingMethods() {
+    return !!shippingMethods.length;
+  }
+
+  function canShipToAddress() {
+    return isShippingFilled() && cartManager.canShip();
+  }
+
+  function canShowShippingMethods() {
+    return canShipToAddress() && hasShippingMethods();
+  }
+
+  function hasSignInProviders() {
+    return !!(signInProviders && signInProviders.length);
+  }
 
   useEffect(() => {
-    if (!cartManager.hasPhysicalProducts()) {
-      setShippingLabel("");
-      setShippingPrice("");
-      return;
+    if (!canShipToAddress()) {
+      setFormErrors((prevFormErrors) => {
+        return {
+          ...prevFormErrors,
+          "shipping-country": t("cart.errors.address_not_supported"),
+        };
+      });
     }
-
-    let s1 = t("shipping");
-    let s2 = t("cart.shipping_not_selected");
-
-    if (isDeliveryMethodActive("shipping")) {
-      for (let s of shippingMethods) {
-        if (s.chosen) {
-          s1 = `${t("shipping")} (${s.name})`;
-          s2 = cartManager.formatCurrency(s.price);
-        }
-      }
-    }
-
-    if (isDeliveryMethodActive("pickup")) {
-      s1 = t("pickup_at_store");
-      s2 = cartManager.formatCurrency(0);
-
-      for (let l of locations) {
-        if (l.chosen) {
-          s1 = t("cart.pickup_at_store", { store: l.name });
-        }
-      }
-    }
-
-    setShippingLabel(s1);
-    setShippingPrice(s2);
-  }, [shippingMethods, deliveryMethod]);
+  }, [shippingMethods, errors]);
 
   const hasPhysicalProds = cartManager.hasPhysicalProducts();
   const isDigital = !hasPhysicalProds;
   const offersShipping = hasPhysicalProds && cartManager.offersShipping();
   const offersPickup = hasPhysicalProds && cartManager.offersLocalPickup();
   const isTabbable = offersShipping && offersPickup;
-  const taxDetails = taxes?.details;
-  const taxRate = taxDetails?.taxRate;
 
-  const couponLabel = coupon?.name || coupon?.code.toUpperCase() || "";
+  const taxDetails = taxes?.details;
 
   return (
     <div className="ref-checkout">
       <div className="ref-checkout-content">
-        <form className="ref-details">
+        <form
+          ref={detailsForm}
+          className="ref-details"
+          style={{ display: step === "details" ? "block" : "none" }}
+        >
           <div className="ref-back" onClick={() => setStep("cart")}>
             ← {t("cart.back_to_cart")}
           </div>
           <div className="ref-heading">{t("cart.customer_details")}</div>
 
-          {/* <div className="text-center ref-auth-button-holder">
-            <div className="ref-auth-button" data-reflow-type="auth-button"></div>
-          </div> */}
+          {hasSignInProviders() && (
+            <div className="text-center ref-auth-button-holder">
+              <div className="ref-auth-button">
+                <AuthButton />
+              </div>
+            </div>
+          )}
 
           <label>
             <span>{t("email")}</span>
@@ -378,11 +577,13 @@ export default function CheckoutSlide({ setStep }) {
               name="email"
               id="ref-field-email"
               className="ref-form-control"
-              value={email}
+              value={email || auth.profile?.email || ""}
               required
               onChange={(e) => setEmail(e.target.value)}
             />
-            <div className="ref-validation-error"></div>
+            {formErrors["email"] && (
+              <div className="ref-validation-error">{formErrors["email"]}</div>
+            )}
           </label>
           <label className="ref-phone-input">
             <span>{t("phone")}</span>
@@ -391,13 +592,15 @@ export default function CheckoutSlide({ setStep }) {
               name="phone"
               id="ref-field-phone"
               className="ref-form-control"
-              value={phone}
+              value={phone || auth.profile?.meta.phone || ""}
               pattern="[0-9 \\+\\-]{5,30}"
               placeholder="+1234567890"
               required
               onChange={(e) => setPhone(e.target.value)}
             />
-            <div className="ref-validation-error"></div>
+            {formErrors["phone"] && (
+              <div className="ref-validation-error">{formErrors["phone"]}</div>
+            )}
           </label>
           {(isDeliveryMethodActive("pickup") || isDigital) && (
             <label className="ref-customer-name-input">
@@ -406,12 +609,14 @@ export default function CheckoutSlide({ setStep }) {
                 type="text"
                 name="customer-name"
                 className="ref-form-control"
-                value={name}
+                value={name || auth.profile?.name || ""}
                 minLength="5"
                 required
                 onChange={(e) => setName(e.target.value)}
               />
-              <div className="ref-validation-error"></div>
+              {formErrors["customer-name"] && (
+                <div className="ref-validation-error">{formErrors["customer-name"]}</div>
+              )}
             </label>
           )}
 
@@ -424,9 +629,10 @@ export default function CheckoutSlide({ setStep }) {
                   fields={["country"]}
                   isDigital={true}
                   model={digitalAddress}
-                  updateModel={(key, value) =>
-                    setDigitalAddress((prevModel) => updateModel(prevModel, key, value))
-                  }
+                  onChange={(key, value) => {
+                    setDigitalAddress((prevModel) => updateAddressModel(prevModel, key, value));
+                    debouncedUpdateAddress("digital", getDigitalAddress());
+                  }}
                 />
               </div>
               <input type="hidden" name="delivery-method" value="digital" />
@@ -502,6 +708,10 @@ export default function CheckoutSlide({ setStep }) {
                           </div>
                         </label>
                       ))}
+
+                      {formErrors["store-location"] && (
+                        <div className="ref-validation-error">{formErrors["store-location"]}</div>
+                      )}
                     </div>
 
                     <div className="ref-billing-container">
@@ -521,8 +731,10 @@ export default function CheckoutSlide({ setStep }) {
                               countries={shippableCountries}
                               prefix="billing"
                               model={billingAddress}
-                              updateModel={(key, value) =>
-                                setBillingAddress((prevModel) => updateModel(prevModel, key, value))
+                              onChange={(key, value) =>
+                                setBillingAddress((prevModel) =>
+                                  updateAddressModel(prevModel, key, value)
+                                )
                               }
                             />
                           </div>
@@ -559,24 +771,29 @@ export default function CheckoutSlide({ setStep }) {
                       <AddressWidget
                         countries={shippableCountries}
                         prefix="shipping"
-                        model={shippingAddress}
-                        updateModel={(key, value) =>
-                          setShippingAddress((prevModel) => updateModel(prevModel, key, value))
-                        }
+                        model={getShippingAddressInput()}
+                        onChange={(key, value) => {
+                          setShippingAddress((prevModel) =>
+                            updateAddressModel(prevModel, key, value)
+                          );
+                          debouncedUpdateAddress("shipping", getShippingAddress());
+                        }}
                       />
                     </div>
 
-                    {/* <div className="ref-auth-save-address">
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="auth-save-address"
-                      checked
-                      onChange={(e) => e.target.value}
-                    />
-                    <span>{t("cart.save_address")}</span>
-                  </label>
-                </div> */}
+                    {auth.isSignedIn() && (
+                      <div className="ref-auth-save-address">
+                        <label>
+                          <input
+                            type="checkbox"
+                            name="auth-save-address"
+                            checked
+                            onChange={(e) => e.target.value}
+                          />
+                          <span>{t("cart.save_address")}</span>
+                        </label>
+                      </div>
+                    )}
 
                     <div className="ref-billing-container">
                       {showBilling ? (
@@ -595,8 +812,10 @@ export default function CheckoutSlide({ setStep }) {
                               countries={shippableCountries}
                               prefix="billing"
                               model={billingAddress}
-                              updateModel={(key, value) =>
-                                setBillingAddress((prevModel) => updateModel(prevModel, key, value))
+                              onChange={(key, value) =>
+                                setBillingAddress((prevModel) =>
+                                  updateAddressModel(prevModel, key, value)
+                                )
                               }
                             />
                           </div>
@@ -611,7 +830,7 @@ export default function CheckoutSlide({ setStep }) {
                       )}
                     </div>
 
-                    {!!shippingMethods.length && (
+                    {canShowShippingMethods() && (
                       <>
                         <div className="ref-heading-shipping-methods ref-heading-small">
                           {t("shipping_method")}
@@ -645,6 +864,12 @@ export default function CheckoutSlide({ setStep }) {
                               </div>
                             </label>
                           ))}
+
+                          {formErrors["shipping-method"] && (
+                            <div className="ref-validation-error">
+                              {formErrors["shipping-method"]}
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
@@ -692,7 +917,11 @@ export default function CheckoutSlide({ setStep }) {
                               onTaxExemptionChange("tax-exemption-file", e.target.files[0])
                             }
                           />
-                          <div className="ref-validation-error"></div>
+                          {formErrors["tax-exemption-file"] && (
+                            <div className="ref-validation-error">
+                              {formErrors["tax-exemption-file"]}
+                            </div>
+                          )}
                         </label>
                       )}
                     </div>
@@ -749,7 +978,7 @@ export default function CheckoutSlide({ setStep }) {
                 onChange={(e) => setNote(e.target.value)}
               ></textarea>
             </label>
-            <div className="ref-validation-error"></div>
+            {formErrors["note"] && <div className="ref-validation-error">{formErrors["note"]}</div>}
           </div>
 
           <hr />
@@ -775,10 +1004,15 @@ export default function CheckoutSlide({ setStep }) {
           </div>
         </form>
 
-        {/* <div className="ref-instructions">
-          <div className="ref-heading ref-payment-method-name"></div>
-          <div className="ref-payment-method-instructions"></div>
-        </div> */}
+        {instructions && (
+          <div
+            className="ref-instructions"
+            style={{ display: step === "instructions" ? "block" : "none" }}
+          >
+            <div className="ref-heading ref-payment-method-name">{instructions.title}</div>
+            <div className="ref-payment-method-instructions">{instructions.description}</div>
+          </div>
+        )}
 
         <div className="ref-links">
           {footerLinks.map((link) => (
@@ -789,114 +1023,7 @@ export default function CheckoutSlide({ setStep }) {
         </div>
       </div>
 
-      <div className={`ref-checkout-summary${isSummaryOpen ? " open" : ""}`}>
-        <div className="ref-heading">{t("cart.order_summary")}</div>
-        <div className="ref-products">
-          {products.map((product, index) => (
-            <SummaryProduct
-              key={product.id + (product.variant?.id || "") + index}
-              product={product}
-            ></SummaryProduct>
-          ))}
-        </div>
-        <hr />
-        {!coupon && (
-          <>
-            <div className="ref-coupon-code">
-              <form className="ref-coupon-container" onSubmit={(e) => submitCouponForm(e)}>
-                <div className="ref-coupon-input-holder">
-                  <input
-                    id="ref-coupon-input"
-                    className="ref-form-control"
-                    name="coupon-code"
-                    type="text"
-                    value={couponCode}
-                    maxLength="32"
-                    autoComplete="off"
-                    placeholder={t("cart.coupon_placeholder")}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                  />
-                  {couponCode && (
-                    <span
-                      className="ref-coupon-input-clear"
-                      title={t("clear")}
-                      onClick={() => setCouponCode("")}
-                    >
-                      ✕
-                    </span>
-                  )}
-                </div>
-                <button
-                  className={`ref-button ref-button-success ref-add-code${
-                    couponCode ? "" : " inactive"
-                  }`}
-                >
-                  {t("apply")}
-                </button>
-              </form>
-              <div className="ref-validation-error"></div>
-            </div>
-            <hr />
-          </>
-        )}
-        <div className="ref-totals">
-          <div className="ref-subtotal">
-            <div className="ref-row">
-              <span>{t("subtotal")}</span>
-              <span>{cartManager.formatCurrency(subtotal)}</span>
-            </div>
-          </div>
-          {!!coupon && (
-            <div className="ref-applied-coupon">
-              <div className="ref-row">
-                <div className="ref-row">
-                  <span>{shortenString(couponLabel, 15)}</span>
-                  <span className="ref-remove-coupon" onClick={removeCoupon}>
-                    {t("remove")}
-                  </span>
-                </div>
-                <span>{coupon.errorCode ? "" : "-" + cartManager.formatCurrency(discount)}</span>
-              </div>
-              <div className="ref-applied-coupon-error"></div>
-            </div>
-          )}
-          {hasPhysicalProds && (
-            <div className="ref-shipping">
-              <div className="ref-row">
-                <span>{shippingLabel}</span>
-                <span>{shippingPrice}</span>
-              </div>
-            </div>
-          )}
-          {taxes && (
-            <div className="ref-taxes">
-              <div className="ref-row">
-                <span>
-                  {`${taxRate.name} (${taxRate.rate}%)` +
-                    (taxDetails.exemption ? " – " + taxDetails.exemption : "")}
-                </span>
-                <span>{cartManager.formatCurrency(taxes.amount)}</span>
-              </div>
-            </div>
-          )}
-        </div>
-        <hr />
-        <div className="ref-total">
-          <div className="ref-row">
-            <span>{t("total")}</span>
-            <span>{cartManager.formatCurrency(total)}</span>
-          </div>
-          <div className="ref-total-note">
-            {t("cart.prices_currency_description", { currency })}
-          </div>
-        </div>
-      </div>
-      <div className={`ref-summary-toggle ref-field-collapsible${isSummaryOpen ? " open" : ""}`}>
-        <span className="ref-field-toggle" onClick={() => setSummaryOpen(!isSummaryOpen)}>
-          <span className="ref-field-toggle-title">{t("cart.show_summary")}</span>
-          <span className="ref-summary-total"></span>
-        </span>
-      </div>
+      <Summary />
     </div>
   );
 }

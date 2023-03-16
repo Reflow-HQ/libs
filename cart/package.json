@@ -9,11 +9,13 @@
   "license": "MIT",
   "dependencies": {
     "intl-messageformat": "^10.3.0",
-    "prop-types": "^15.8.1"
+    "lodash.debounce": "^4.0.8",
+    "prop-types": "^15.8.1",
+    "use-sync-external-store": "^1.2.0"
   },
   "scripts": {
     "test": "jest",
-    "watch": "start-storybook -p 6006",
+    "watch": "start-storybook -p 8080",
     "build-storybook": "build-storybook"
   },
   "devDependencies": {

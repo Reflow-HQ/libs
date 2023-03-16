@@ -5,10 +5,13 @@ import { useShoppingCart } from "../CartContext";
 import shortenString from "../utilities/shortenString";
 
 export default function CartProduct({ product }) {
-  const { cartManager, t } = useShoppingCart();
+  const { cartManager, t } = useShoppingCart((s) => ({
+    cartManager: s.cartManager,
+    t: s.t,
+  }));
 
   const category = product.categories[0]?.name || t("product");
-  const quantityErrorMessage = "";
+  let quantityErrorMessage = "";
 
   function updateProductQuantity(quantity) {
     cartManager.updateProduct({

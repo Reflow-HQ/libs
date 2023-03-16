@@ -26,6 +26,11 @@
 	--ref-btn-border-radius: var(--ref-border-radius);
 }
 
+.text-primary {
+  --bs-text-opacity: 1;
+  color: rgba(var(--bs-primary-rgb),var(--bs-text-opacity))!important;
+}
+
 .ref-button {
 	display: inline-block;
 	text-decoration: none;
@@ -80,6 +85,38 @@
   display: flex;
   flex-wrap: wrap;
 }
+
+/* Auth Button */
+
+.reflow-auth-button {
+	text-align: center;
+}
+
+.reflow-auth-button .ref-profile-info {
+	text-decoration: none;
+}
+
+.reflow-auth-button .ref-profile-info .ref-profile-name {
+	color: var(--ref-body-color);
+	font-weight: bold;
+}
+
+.reflow-auth-button .ref-profile-info .ref-profile-photo {
+	width: 2em;
+	height: 2em;
+	border-radius: 50%;
+	margin-right: 10px;
+}
+
+.reflow-auth-button .ref-button.ref-sign-out {
+	margin-left: 20px;
+}
+
+.reflow-auth-button .ref-register {
+	cursor: pointer;
+}
+
+/* Cart */
 
 .ref-loading-backdrop {
 	display: block;
@@ -425,7 +462,7 @@
 
 .ref-quantity-widget.inactive,
 .ref-quantity-widget .ref-increase.inactive {
-	opacity: 0.6;
+	opacity: 0.3;
 	pointer-events: none;
 }
 

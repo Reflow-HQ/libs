@@ -1,20 +1,32 @@
 import { useState } from "react";
 
-import { useShoppingCart } from "./CartContext";
+import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import CartSlide from "./steps/CartSlide";
 import CheckoutSlide from "./steps/CheckoutSlide";
 
-const CartView = () => {
+const CartView = ({ config, localization = {}, onError }) => {
+  return (
+    <ShoppingCartProvider config={config} localization={localization}>
+      <CartUI onError={onError} />
+    </ShoppingCartProvider>
+  );
+};
+
+function CartUI({ onError }) {
   const [step, setStep] = useState("cart");
 
-  const { cartState, t } = useShoppingCart();
-  const { products, isLoading } = cartState;
+  const { products, isLoading, isUnavailable, t } = useShoppingCart((s) => ({
+    products: s.products,
+    isLoading: s.isLoading,
+    isUnavailable: s.isUnavailable,
+    t: s.t,
+  }));
 
   function renderActiveSlide() {
     if (step === "cart") {
-      return <CartSlide setStep={setStep} />;
+      return <CartSlide step={step} setStep={setStep} onError={onError} />;
     } else {
-      return <CheckoutSlide setStep={setStep} />;
+      return <CheckoutSlide step={step} setStep={setStep} onError={onError} />;
     }
   }
 
@@ -26,13 +38,15 @@ const CartView = () => {
   return (
     <div className="reflow-shopping-cart">
       <div className={"ref-loading-backdrop " + (isLoading ? "active" : "")}></div>
-      {products.length ? (
+      {isUnavailable ? (
+        <div className="ref-message">{t("cart.errors.unavailable")}</div>
+      ) : products.length ? (
         renderActiveSlide()
       ) : (
         <div className="ref-message">{t("cart.errors.empty")}</div>
       )}
     </div>
   );
-};
+}
 
 export default CartView;

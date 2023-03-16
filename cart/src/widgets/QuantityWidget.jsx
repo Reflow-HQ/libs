@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+
+import debounce from "lodash.debounce";
 
 export default function QuantityWidget({ product, onChange }) {
   const [quantity, setQuantity] = useState(() => product.quantity);
+
+  const updateQuantity = useCallback(debounce(onChange, 500), []);
 
   function getMinQuantity() {
     return 1;
@@ -16,24 +20,27 @@ export default function QuantityWidget({ product, onChange }) {
   }
 
   function increaseQuantity() {
-    changeQuantity(quantity + 1);
+    const newQuantity = quantity + 1;
+
+    if (newQuantity <= getMaxQuantity()) {
+      changeQuantity(newQuantity);
+    }
   }
 
   function decreaseQuantity() {
-    changeQuantity(quantity - 1);
+    const newQuantity = quantity - 1;
+
+    if (newQuantity >= getMinQuantity()) {
+      changeQuantity(newQuantity);
+    }
   }
 
   function changeQuantity(newQuantity) {
     if (isNaN(newQuantity)) return;
 
-    const minQuantity = getMinQuantity();
-    const maxQuantity = getMaxQuantity();
-
-    newQuantity = Math.min(Math.max(minQuantity, newQuantity), maxQuantity);
-
     if (newQuantity !== quantity) {
       setQuantity(newQuantity);
-      onChange(newQuantity);
+      updateQuantity(newQuantity);
     }
   }
 

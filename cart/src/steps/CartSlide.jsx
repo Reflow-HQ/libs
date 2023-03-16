@@ -3,16 +3,40 @@ import CartProduct from "../components/CartProduct";
 import { useShoppingCart } from "../CartContext";
 import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
 
-const CartSlide = ({ setStep }) => {
+const CartSlide = ({ onError, setStep }) => {
   const [termsAccepted, setTermsAccepted] = useLocalStorageFormData("termsAccepted", false);
-  const { cartState, cartManager, t } = useShoppingCart();
-  const { products, footerLinks, subtotal } = cartState;
+  const { errors, products, footerLinks, subtotal, cartManager, t } = useShoppingCart((s) => ({
+    errors: s.errors,
+    products: s.products,
+    subtotal: s.subtotal,
+    footerLinks: s.footerLinks,
+    cartManager: s.cartManager,
+    t: s.t,
+  }));
 
   function onSubmit(e) {
     e.preventDefault();
 
-    // TODO: Check for state errors and send them through an onError callback
+    // Check for state errors and send them through an onError callback
     // so the user can handle them however they see fit
+
+    for (const err of errors) {
+      if (
+        err.severity == "fatal" &&
+        [
+          "unavailable-quantity",
+          "product-min-qty-not-reached",
+          "product-max-qty-exceeded",
+        ].includes(err.type)
+      ) {
+        onError({ title: cartManager.getStateErrorMessage(err) });
+        return;
+      }
+
+      // The "min-val-not-reached" error is not displayed in this step
+      // because discounts are not shown here but are accounted for when calculating min cart val.
+      // The error is shown in the next steps instead.
+    }
 
     setStep("details");
   }

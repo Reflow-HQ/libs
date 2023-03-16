@@ -2,8 +2,9 @@ import { useShoppingCart } from "../CartContext";
 
 export default function AddressWidget({
   model = {},
-  updateModel,
+  onChange,
   fields,
+  errors = {},
   countries = [],
   prefix = "",
   isDigital = false,
@@ -18,10 +19,16 @@ export default function AddressWidget({
   const showPostcode = showRegionZip && country?.has_postcode;
   const showState = showRegionZip && country?.has_regions;
 
-  const { t } = useShoppingCart();
+  const { t } = useShoppingCart((s) => ({
+    t: s.t,
+  }));
 
   function shouldShowField(field) {
     return fields.includes(field);
+  }
+
+  function getFieldID(name) {
+    return `${prefix ? prefix + "-" : ""}${name}`;
   }
 
   return (
@@ -33,12 +40,14 @@ export default function AddressWidget({
             type="text"
             className="ref-form-control ref-field-details-name"
             value={model.name || ""}
-            name={`${prefix ? prefix + "-" : ""}name`}
+            name={getFieldID("name")}
             required
             minLength="5"
-            onChange={(e) => updateModel("name", e.target.value)}
+            onChange={(e) => onChange("name", e.target.value)}
           />
-          <div className="ref-validation-error"></div>
+          {errors[getFieldID("name")] && (
+            <div className="ref-validation-error">{errors[getFieldID("name")]}</div>
+          )}
         </label>
       )}
       {shouldShowField("address") && (
@@ -48,12 +57,14 @@ export default function AddressWidget({
             row="2"
             className="ref-form-control ref-field-details-address-line"
             value={model.address || ""}
-            name={`${prefix ? prefix + "-" : ""}address`}
+            name={getFieldID("address")}
             required
             minLength="5"
-            onChange={(e) => updateModel("address", e.target.value)}
+            onChange={(e) => onChange("address", e.target.value)}
           ></textarea>
-          <div className="ref-validation-error"></div>
+          {errors[getFieldID("name")] && (
+            <div className="ref-validation-error">{errors[getFieldID("address")]}</div>
+          )}
         </label>
       )}
       {shouldShowField("city") && (
@@ -63,12 +74,14 @@ export default function AddressWidget({
             type="text"
             className="ref-form-control ref-field-details-city"
             value={model.city || ""}
-            name={`${prefix ? prefix + "-" : ""}city`}
+            name={getFieldID("city")}
             required
             minLength="2"
-            onChange={(e) => updateModel("city", e.target.value)}
+            onChange={(e) => onChange("city", e.target.value)}
           />
-          <div className="ref-validation-error"></div>
+          {errors[getFieldID("city")] && (
+            <div className="ref-validation-error">{errors[getFieldID("city")]}</div>
+          )}
         </label>
       )}
 
@@ -78,10 +91,10 @@ export default function AddressWidget({
             <span>{t("country")}</span>
             <select
               className="ref-form-control ref-field-details-country"
-              name={`${prefix ? prefix + "-" : ""}country`}
+              name={getFieldID("country")}
               required
               value={model.countryCode || ""}
-              onChange={(e) => updateModel("countryCode", e.target.value)}
+              onChange={(e) => onChange("countryCode", e.target.value)}
             >
               <option value="">{t("cart.select_country")}</option>
               {countries.map((c) => (
@@ -97,14 +110,16 @@ export default function AddressWidget({
                 <span>{country.region_title}</span>
                 <select
                   className="ref-form-control ref-field-details-region"
-                  name={`${prefix ? prefix + "-" : ""}state`}
+                  name={getFieldID("state")}
                   value={model.state || ""}
                   required
-                  onChange={(e) => updateModel("state", e.target.value)}
+                  onChange={(e) => onChange("state", e.target.value)}
                 >
                   <option value="">{country.region_title}</option>
                   {Object.entries(country.regions).map(([rCode, rName]) => (
-                    <option value={rCode}>{rName}</option>
+                    <option key={rCode} value={rCode}>
+                      {rName}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -115,15 +130,18 @@ export default function AddressWidget({
                 <input
                   type="text"
                   className="ref-form-control ref-field-details-postcode"
-                  name={`${prefix ? prefix + "-" : ""}postcode`}
+                  name={getFieldID("postcode")}
                   value={model.postcode || ""}
                   required
-                  onChange={(e) => updateModel("postcode", e.target.value)}
+                  onChange={(e) => onChange("postcode", e.target.value)}
                 />
               </label>
             )}
           </div>
-          <div className="ref-validation-error"></div>
+
+          {errors[getFieldID("county")] && (
+            <div className="ref-validation-error">{errors[getFieldID("county")]}</div>
+          )}
         </div>
       )}
     </div>
