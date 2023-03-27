@@ -13,16 +13,42 @@ export default function CartProduct({ product }) {
   const category = product.categories[0]?.name || t("product");
   let quantityErrorMessage = "";
 
+  function getUnitPrice() {
+    let price = product.unitPrice;
+
+    if (cartManager.getTaxPricingType() === "inclusive") {
+      price += product.tax / product.quantity;
+    }
+
+    return cartManager.formatCurrency(price);
+  }
+
+  function getTotalPrice() {
+    let price = product.price;
+
+    if (cartManager.getTaxPricingType() === "inclusive") {
+      price += product.tax;
+    }
+
+    return cartManager.formatCurrency(price);
+  }
+
   function updateProductQuantity(quantity) {
-    cartManager.updateProduct({
-      product,
-      quantity,
-    });
+    cartManager.updateProductQuantity(
+      {
+        id: product.id,
+        variantID: product.variant?.id,
+        personalization: product.personalization,
+      },
+      quantity
+    );
   }
 
   function removeProduct() {
     cartManager.removeProduct({
-      product,
+      id: product.id,
+      variantID: product.variant?.id,
+      personalization: product.personalization,
     });
   }
 
@@ -71,9 +97,7 @@ export default function CartProduct({ product }) {
                   </div>
                 )}
               </div>
-              <div className="ref-product-price ref-mobile-product-price">
-                {cartManager.formatCurrency(product.unitPrice)}
-              </div>
+              <div className="ref-product-price ref-mobile-product-price">{getUnitPrice()}</div>
             </div>
             <div className="ref-product-controls ref-mobile-product-controls">
               <div className="ref-product-quantity">
@@ -95,7 +119,7 @@ export default function CartProduct({ product }) {
         </div>
       </div>
       <div className="ref-price-col">
-        <div className="ref-product-price">{cartManager.formatCurrency(product.unitPrice)}</div>
+        <div className="ref-product-price">{getUnitPrice()}</div>
       </div>
       <div className="ref-quantity-col">
         <div className="ref-product-quantity">
@@ -111,7 +135,7 @@ export default function CartProduct({ product }) {
       <div className="ref-total-col">
         <div className="ref-product-total">
           <div className={(product.outOfStock ? "out-of-stock " : "") + "ref-product-total-sum"}>
-            {product.inStock ? cartManager.formatCurrency(product.price) : t("out_of_stock")}
+            {product.inStock ? getTotalPrice() : t("out_of_stock")}
           </div>
         </div>
       </div>

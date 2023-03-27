@@ -4,15 +4,34 @@ import { useShoppingCart } from "../CartContext";
 import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
 
 const CartSlide = ({ onError, setStep }) => {
-  const [termsAccepted, setTermsAccepted] = useLocalStorageFormData("termsAccepted", false);
-  const { errors, products, footerLinks, subtotal, cartManager, t } = useShoppingCart((s) => ({
-    errors: s.errors,
-    products: s.products,
-    subtotal: s.subtotal,
-    footerLinks: s.footerLinks,
-    cartManager: s.cartManager,
-    t: s.t,
-  }));
+  const { storeID, errors, products, footerLinks, subtotal, taxes, cartManager, t } =
+    useShoppingCart((s) => ({
+      storeID: s.storeID,
+      errors: s.errors,
+      products: s.products,
+      subtotal: s.subtotal,
+      taxes: s.taxes,
+      footerLinks: s.footerLinks,
+      cartManager: s.cartManager,
+      t: s.t,
+    }));
+
+  const formDataKey = `reflowFormData${storeID}`;
+  const useFormData = useLocalStorageFormData(formDataKey);
+
+  const [termsAccepted, setTermsAccepted] = useFormData("termsAccepted", false);
+
+  const taxAmount = taxes?.amount || 0;
+
+  function getSubtotal() {
+    let price = subtotal;
+
+    if (cartManager.getTaxPricingType() === "inclusive") {
+      price += taxAmount;
+    }
+
+    return cartManager.formatCurrency(price);
+  }
 
   function onSubmit(e) {
     e.preventDefault();
@@ -95,8 +114,8 @@ const CartSlide = ({ onError, setStep }) => {
         <div className="ref-total-col">{t("total")}</div>
       </div>
       <div className="ref-cart-table">
-        {products.map((product, index) => (
-          <CartProduct key={product.id + (product.variant?.id || "") + index} product={product} />
+        {products.map((product) => (
+          <CartProduct key={cartManager.getProductKey(product)} product={product} />
         ))}
       </div>
       <div className="ref-footer">
@@ -108,9 +127,7 @@ const CartSlide = ({ onError, setStep }) => {
           ))}
         </div>
         <div className="ref-totals">
-          <div className="ref-subtotal">
-            {`${t("subtotal")}: ` + cartManager.formatCurrency(subtotal)}
-          </div>
+          <div className="ref-subtotal">{`${t("subtotal")}: ` + getSubtotal()}</div>
           {renderTermsOfAgreement()}
           {/* TODO: add PayPal button */}
         </div>

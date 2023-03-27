@@ -5,8 +5,8 @@ import { useShoppingCart } from "../CartContext";
 import SummaryProduct from "../components/SummaryProduct";
 import shortenString from "../utilities/shortenString";
 
-export default function Summary() {
-  const [couponCode, setCouponCode] = useState("");
+export default function Summary({ readOnly = false, onError }) {
+  const [discountCode, setDiscountCode] = useState("");
   const [isSummaryOpen, setSummaryOpen] = useState(false);
 
   const [formErrors, setFormErrors] = useState({});
@@ -14,6 +14,7 @@ export default function Summary() {
   const {
     products,
     coupon,
+    giftCard,
     discount,
     total,
     subtotal,
@@ -27,6 +28,7 @@ export default function Summary() {
   } = useShoppingCart((s) => ({
     products: s.products,
     coupon: s.coupon,
+    giftCard: s.giftCard,
     discount: s.discount,
     total: s.total,
     subtotal: s.subtotal,
@@ -41,6 +43,8 @@ export default function Summary() {
 
   const [shippingLabel, setShippingLabel] = useState(t("shipping"));
   const [shippingPrice, setShippingPrice] = useState(t("cart.shipping_not_selected"));
+
+  const shouldShowDiscountForm = !readOnly && (!coupon || !giftCard);
 
   useEffect(() => {
     if (!cartManager.hasPhysicalProducts()) {
@@ -76,17 +80,20 @@ export default function Summary() {
     setShippingPrice(s2);
   }, [shippingMethods, deliveryMethod]);
 
-  function submitCouponForm(e) {
+  function submitDicountForm(e) {
     e.preventDefault();
-    addCoupon(couponCode);
+    applyDiscountCode(discountCode);
   }
 
-  function addCoupon(code) {
+  function applyDiscountCode(code) {
     return cartManager
-      .addCoupon({ code })
-      .then(resetCoupon)
+      .applyDiscountCode({ code })
+      .then((result) => {
+        // TODO: onMessage title: t('cart.' + result.type +  '_added')
+        resetCoupon();
+      })
       .catch((e) => {
-        updateCouponError(cartManager.getErrorText(e, "coupon-code"));
+        updateDicountError(cartManager.getErrorText(e));
       });
   }
 
@@ -98,20 +105,28 @@ export default function Summary() {
     });
   }
 
+  function removeGiftCard() {
+    return cartManager.removeGiftCard().catch(() => {
+      onError({
+        title: t("error"),
+      });
+    });
+  }
+
   function resetCoupon() {
-    setCouponCode("");
-    resetCouponError();
+    setDiscountCode("");
+    resetDiscountError();
   }
 
-  function resetCouponError() {
-    updateCouponError("");
+  function resetDiscountError() {
+    updateDicountError("");
   }
 
-  function updateCouponError(errorText = "") {
+  function updateDicountError(errorText = "") {
     setFormErrors((prevFormErrors) => {
       return {
         ...prevFormErrors,
-        "coupon-code": errorText,
+        "discount-code": errorText,
       };
     });
   }
@@ -126,33 +141,33 @@ export default function Summary() {
       <div className={`ref-checkout-summary${isSummaryOpen ? " open" : ""}`}>
         <div className="ref-heading">{t("cart.order_summary")}</div>
         <div className="ref-products">
-          {products.map((product, index) => (
+          {products.map((product) => (
             <SummaryProduct
-              key={product.id + (product.variant?.id || "") + index}
+              key={cartManager.getProductKey(product)}
               product={product}
             ></SummaryProduct>
           ))}
         </div>
         <hr />
-        {!coupon && (
+        {shouldShowDiscountForm && (
           <>
-            <div className="ref-coupon-code">
-              <form className="ref-coupon-container" onSubmit={(e) => submitCouponForm(e)}>
-                <div className="ref-coupon-input-holder">
+            <div className="ref-discount-code">
+              <form className="ref-discount-code-container" onSubmit={(e) => submitDicountForm(e)}>
+                <div className="ref-discount-code-input-holder">
                   <input
-                    id="ref-coupon-input"
+                    id="ref-discount-code-input"
                     className="ref-form-control"
-                    name="coupon-code"
+                    name="discount-code"
                     type="text"
-                    value={couponCode}
+                    value={discountCode}
                     maxLength="32"
                     autoComplete="off"
-                    placeholder={t("cart.coupon_placeholder")}
-                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder={t("cart.discount_code_placeholder")}
+                    onChange={(e) => setDiscountCode(e.target.value)}
                   />
-                  {couponCode && (
+                  {discountCode && (
                     <span
-                      className="ref-coupon-input-clear"
+                      className="ref-discount-code-input-clear"
                       title={t("clear")}
                       onClick={resetCoupon}
                     >
@@ -162,14 +177,14 @@ export default function Summary() {
                 </div>
                 <button
                   className={`ref-button ref-button-success ref-add-code${
-                    couponCode ? "" : " inactive"
+                    discountCode ? "" : " inactive"
                   }`}
                 >
                   {t("apply")}
                 </button>
               </form>
-              {formErrors["coupon-code"] && (
-                <div className="ref-validation-error">{formErrors["coupon-code"]}</div>
+              {formErrors["discount-code"] && (
+                <div className="ref-validation-error">{formErrors["discount-code"]}</div>
               )}
             </div>
             <hr />
@@ -187,9 +202,11 @@ export default function Summary() {
               <div className="ref-row">
                 <div className="ref-row">
                   <span>{shortenString(couponLabel, 15)}</span>
-                  <span className="ref-remove-coupon" onClick={removeCoupon}>
-                    {t("remove")}
-                  </span>
+                  {!readOnly && (
+                    <span className="ref-remove-coupon" onClick={removeCoupon}>
+                      {t("remove")}
+                    </span>
+                  )}
                 </div>
                 <span>{coupon.errorCode ? "" : "-" + cartManager.formatCurrency(discount)}</span>
               </div>
@@ -212,6 +229,35 @@ export default function Summary() {
                     (taxDetails.exemption ? " – " + taxDetails.exemption : "")}
                 </span>
                 <span>{cartManager.formatCurrency(taxes.amount)}</span>
+              </div>
+            </div>
+          )}
+          {giftCard && (
+            <div class="ref-applied-gift-card">
+              <div class="ref-row">
+                <div class="ref-row">
+                  <span>{giftCard.code}</span>
+                  {!readOnly && (
+                    <span class="ref-remove-gift-card" onClick={removeGiftCard}>
+                      ${t("remove")}
+                    </span>
+                  )}
+                </div>
+                <span>
+                  {giftCard.errorCode
+                    ? ""
+                    : "-" + cartManager.formatCurrency(giftCard.discountAmount)}
+                </span>
+              </div>
+              <div class="ref-row">
+                {"(" +
+                  t("cart.gift_card_balance", {
+                    amount: cartManager.formatCurrency(giftCard.balance),
+                  }) +
+                  ")"}
+              </div>
+              <div class="ref-applied-gift-card-error">
+                {cartManager.getErrorText({ data: { errorCode: giftCard.errorCode } }) || ""}
               </div>
             </div>
           )}

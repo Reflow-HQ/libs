@@ -10,14 +10,18 @@ import AuthButton from "../components/AuthButton";
 import Summary from "../components/Summary";
 
 export default function CheckoutSlide({ successURL, cancelURL, onError, step, setStep }) {
-  const [email, setEmail] = useLocalStorageFormData("email");
-  const [phone, setPhone] = useLocalStorageFormData("phone");
-  const [name, setName] = useLocalStorageFormData("name");
-  const [note, setNote] = useLocalStorageFormData("note");
+  const storeID = useShoppingCart((s) => s.storeID);
+  const formDataKey = `reflowFormData${storeID}`;
+  const useFormData = useLocalStorageFormData(formDataKey);
 
-  const [shippingAddress, setShippingAddress] = useLocalStorageFormData("shippingAddress", {});
-  const [billingAddress, setBillingAddress] = useLocalStorageFormData("billingAddress", {});
-  const [digitalAddress, setDigitalAddress] = useLocalStorageFormData("digitalAddress", {});
+  const [email, setEmail] = useFormData("email");
+  const [phone, setPhone] = useFormData("phone");
+  const [name, setName] = useFormData("name");
+  const [note, setNote] = useFormData("note");
+
+  const [shippingAddress, setShippingAddress] = useFormData("shippingAddress", {});
+  const [billingAddress, setBillingAddress] = useFormData("billingAddress", {});
+  const [digitalAddress, setDigitalAddress] = useFormData("digitalAddress", {});
 
   const [showBilling, setShowBilling] = useState(() => isBillingFilled());
 
@@ -272,7 +276,22 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
   }
 
   function checkFormValidity(form) {
-    // TODO
+    for (const input of form.querySelectorAll("input, textarea, select")) {
+      // Find the first invalid input, scroll to it and show the browser message.
+
+      if (!input.checkValidity()) {
+        input.parentElement.scrollIntoView();
+        setTimeout(() => input.reportValidity(), 600);
+        return false;
+      }
+    }
+
+    // if (!form.checkValidity()) {
+    //   form.parentElement.scrollIntoView();
+    //   setTimeout(() => form.reportValidity(), 600);
+    //   return false;
+    // }
+
     return true;
   }
 
@@ -329,9 +348,9 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
 
     clearFormErrors();
 
-    if (!checkFormValidity(detailsForm.current)) {
-      return;
-    }
+    // if (!checkFormValidity(detailsForm.current)) {
+    //   return;
+    // }
 
     const customerFormData = new FormData(detailsForm.current);
     const data = {
@@ -392,7 +411,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
       // Custom payment - show instructions or redirect to successURL.
 
       if (paymentMethod === "custom" && result.order) {
-        const method = Object.entries(paymentProviders).find((pm) => pm.id === paymentID);
+        const method = paymentProviders.find((pm) => pm.id === paymentID);
 
         if (!method) return;
 
@@ -447,7 +466,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
         if (e.data.errors.system) {
           onError({
             title: t("cart.errors.cannot_complete"),
-            description: getErrorText(e, "system"),
+            description: cartManager.getErrorText(e, "system"),
           });
         }
       }
@@ -545,6 +564,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
   const isDigital = !hasPhysicalProds;
   const offersShipping = hasPhysicalProds && cartManager.offersShipping();
   const offersPickup = hasPhysicalProds && cartManager.offersLocalPickup();
+  const offersDelivery = offersShipping || offersPickup;
   const isTabbable = offersShipping && offersPickup;
 
   const taxDetails = taxes?.details;
@@ -645,7 +665,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
             <div className="ref-delivery-unavailable">{t("cart.errors.delivery_unavailable")}</div>
           )}
 
-          {(offersShipping || offersPickup) && (
+          {offersDelivery && (
             <div className={"ref-delivery-card" + (isTabbable ? " tabbable" : "")}>
               {offersPickup && (
                 <div className={"ref-tab" + (isDeliveryMethodActive("pickup") ? " open" : "")}>
@@ -1023,7 +1043,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
         </div>
       </div>
 
-      <Summary />
+      <Summary readOnly={step === "instructions"} onError={onError} />
     </div>
   );
 }

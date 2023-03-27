@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import debounce from "lodash.debounce";
 
@@ -6,6 +6,12 @@ export default function QuantityWidget({ product, onChange }) {
   const [quantity, setQuantity] = useState(() => product.quantity);
 
   const updateQuantity = useCallback(debounce(onChange, 500), []);
+
+  useEffect(() => {
+    if (quantity !== product.quantity) {
+      setQuantity(product.quantity);
+    }
+  }, [product.quantity]);
 
   function getMinQuantity() {
     return 1;

@@ -1,6 +1,6 @@
-import useSyncExternalStoreExports from 'use-sync-external-store/shim/with-selector';
+import useSyncExternalStoreExports from "use-sync-external-store/shim/with-selector";
 
-import Cart from "./Cart.js";
+import Cart from "@reflowhq/cart";
 
 const { useSyncExternalStoreWithSelector } = useSyncExternalStoreExports;
 
@@ -25,16 +25,20 @@ function createStore({ config, localization = {} }) {
 
   state = {
     ...(cart.state || {}),
+    storeID: config.storeID,
     showLoading: () => cart.updateState({ isLoading: true }),
     hideLoading: () => cart.updateState({ isLoading: false }),
     setDeliveryMethod: cart.setDeliveryMethod.bind(cart),
     setSelectedLocation: cart.setSelectedLocation.bind(cart),
     setSelectedShippingMethod: cart.setSelectedShippingMethod.bind(cart),
     cartManager: {
-      updateProduct: cart.updateProduct.bind(cart),
+      updateProductQuantity: cart.updateProductQuantity.bind(cart),
       removeProduct: cart.removeProduct.bind(cart),
       addCoupon: cart.addCoupon.bind(cart),
       removeCoupon: cart.removeCoupon.bind(cart),
+      applyDiscountCode: cart.applyDiscountCode.bind(cart),
+      applyGiftCard: cart.applyGiftCard.bind(cart),
+      removeGiftCard: cart.removeGiftCard.bind(cart),
       updateAddress: cart.updateAddress.bind(cart),
       updateTaxExemption: cart.updateTaxExemption.bind(cart),
       invalidateTaxExemption: cart.invalidateTaxExemption.bind(cart),
@@ -50,9 +54,10 @@ function createStore({ config, localization = {} }) {
       hasZeroValue: cart.hasZeroValue.bind(cart),
       canFinish: cart.canFinish.bind(cart),
       formatCurrency: cart.formatCurrency.bind(cart),
-      getProductPersonalization: cart.getProductPersonalization.bind(cart),
+      getProductKey: cart.getProductKey.bind(cart),
       getErrorText: cart.getErrorText.bind(cart),
       getStateErrorMessage: cart.getStateErrorMessage.bind(cart),
+      getTaxPricingType: cart.getTaxPricingType.bind(cart),
       refresh: cart.refresh.bind(cart),
     },
     t: cart.translate.bind(cart),
@@ -66,11 +71,11 @@ function createStore({ config, localization = {} }) {
         listener();
       };
 
-      cart.on('change', updateState);
-      
+      cart.on("change", updateState);
+
       return () => {
-        cart.off('change', updateState);
-      }
+        cart.off("change", updateState);
+      };
     },
   };
 }
@@ -99,9 +104,15 @@ export function createReflowCart(props) {
 
   return (selector, equalityFn) => {
     return useCart(store, selector, equalityFn);
-  }
+  };
 }
 
 export function useCart(store, selector, equalityFn) {
-  return useSyncExternalStoreWithSelector(store.subscribe, store.getState, store.getServerState || store.getState, selector || store.getState, equalityFn);
+  return useSyncExternalStoreWithSelector(
+    store.subscribe,
+    store.getState,
+    store.getServerState || store.getState,
+    selector || store.getState,
+    equalityFn
+  );
 }
