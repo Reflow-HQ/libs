@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import CartSlide from "./steps/CartSlide";
@@ -15,12 +15,29 @@ const CartView = ({ config, localization = {}, onError }) => {
 function CartUI({ onError }) {
   const [step, setStep] = useState("cart");
 
-  const { products, isLoading, isUnavailable, t } = useShoppingCart((s) => ({
+  const { products, isLoading, isUnavailable, cartManager, t } = useShoppingCart((s) => ({
     products: s.products,
     isLoading: s.isLoading,
     isUnavailable: s.isUnavailable,
+    cartManager: s.cartManager,
     t: s.t,
   }));
+
+  const errorMessage = isUnavailable
+    ? t("cart.errors.unavailable")
+    : !cartManager.arePaymentProvidersAvailable()
+    ? t("cart.errors.no_payment_methods")
+    : cartManager.onlyPaypalNoDelivery()
+    ? t("cart.errors.only_paypal_no_delivery")
+    : !products.length
+    ? t("cart.errors.empty")
+    : "";
+
+  useEffect(() => {
+    if (!products.length && step !== "cart") {
+      setStep("cart");
+    }
+  }, [products]);
 
   function renderActiveSlide() {
     if (step === "cart") {
@@ -38,13 +55,7 @@ function CartUI({ onError }) {
   return (
     <div className="reflow-shopping-cart">
       <div className={"ref-loading-backdrop " + (isLoading ? "active" : "")}></div>
-      {isUnavailable ? (
-        <div className="ref-message">{t("cart.errors.unavailable")}</div>
-      ) : products.length ? (
-        renderActiveSlide()
-      ) : (
-        <div className="ref-message">{t("cart.errors.empty")}</div>
-      )}
+      {errorMessage ? <div className="ref-message">{errorMessage}</div> : renderActiveSlide()}
     </div>
   );
 }

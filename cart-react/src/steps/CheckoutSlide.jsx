@@ -8,6 +8,8 @@ import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
 import AddressWidget from "../widgets/AddressWidget";
 import AuthButton from "../components/AuthButton";
 import Summary from "../components/Summary";
+import PaymentButton from "../components/PaymentButton";
+import PayPalButton from "../components/PayPalButton";
 
 export default function CheckoutSlide({ successURL, cancelURL, onError, step, setStep }) {
   const storeID = useShoppingCart((s) => s.storeID);
@@ -79,6 +81,9 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
     hideLoading: s.hideLoading,
   }));
 
+  const isInVactionMode = vacationMode?.enabled;
+  const shouldShowPaypalButtons =
+    cartManager.isPaypalSupported() && !isInVactionMode && !cartManager.hasZeroValue();
   const debouncedUpdateAddress = useCallback(debounce(updateAddress, 500), []);
 
   const detailsForm = useRef();
@@ -339,7 +344,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
   }
 
   async function checkout(paymentMethod, paymentID) {
-    if (vacationMode?.enabled) {
+    if (isInVactionMode) {
       const message = vacationMode.message || t("store_unavailable");
 
       onError({ description: message });
@@ -481,43 +486,51 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
     return deliveryDate.toLocaleDateString(locale, format);
   }
 
+  function renderPaypalButtons() {
+    let fundingSources = ["PAYPAL"];
+
+    if (!cartManager.isStripeSupported()) {
+      // When both are supported only the Stripe card payment button is shown.
+      fundingSources.push("CARD");
+    }
+
+    return (
+      <div className="ref-paypal-payment-holder">
+        {fundingSources.map((fundingSource) => (
+          <PayPalButton
+            fundingSource={fundingSource}
+            step={step}
+            canSubmit={true}
+            onError={onError}
+          />
+        ))}
+      </div>
+    );
+  }
+
   function renderPaymentProviderButtons() {
     return paymentProviders.map((pm) =>
       pm.provider === "custom" ? (
-        <div
-          key={pm.id}
-          className="ref-button ref-payment-button"
-          onClick={() => checkout("custom", pm.id)}
-        >
-          {pm.name}
-        </div>
+        <PaymentButton key={pm.id} text={pm.name} onClick={() => checkout("custom", pm.id)} />
       ) : pm.provider === "pay-in-store" ? (
-        <div
+        <PaymentButton
           key={pm.provider}
-          className="ref-button ref-payment-button"
+          text={t("pay_on_pickup")}
           onClick={() => checkout("pay-in-store")}
-        >
-          {t("pay_on_pickup")}
-        </div>
+        />
       ) : pm.provider === "stripe" && pm.supported && pm.paymentOptions.length ? (
         pm.paymentOptions.map((paymentOption) =>
           paymentOption.id === "card" ? (
             <div key={paymentOption.id}>
-              <div className="ref-button ref-payment-button" onClick={() => checkout("stripe")}>
-                {t("credit_card")}
-              </div>
-              <div className="ref-button ref-payment-button" onClick={() => checkout("stripe")}>
-                Apple Pay / Google Pay
-              </div>
+              <PaymentButton text={t("credit_card")} onClick={() => checkout("stripe")} />
+              <PaymentButton text={"Apple Pay / Google Pay"} onClick={() => checkout("stripe")} />
             </div>
           ) : (
-            <div
+            <PaymentButton
               key={paymentOption.id}
-              className="ref-button ref-payment-button"
+              text={paymentOption.name}
               onClick={() => checkout("stripe")}
-            >
-              {paymentOption.name}
-            </div>
+            />
           )
         )
       ) : null
@@ -1007,7 +1020,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
             {(paymentProviders.some((pm) => pm.supported) || cartManager.hasZeroValue()) && (
               <div className="ref-heading ref-heading-payment">{t("payment")}</div>
             )}
-            <div className="ref-paypal-payment-holder"></div>
+            {shouldShowPaypalButtons && renderPaypalButtons()}
             <div className="ref-standard-payment-buttons">
               {cartManager.hasZeroValue() ? (
                 <div

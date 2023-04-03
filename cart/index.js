@@ -47,7 +47,6 @@ export default class Cart {
   translate(key, data) {
     if (!this.localization[key]) {
       throw new Error(`Reflow: Localization key "${key}" is not defined.`);
-      return;
     }
 
     return new IntlMessageFormat(this.localization[key], this.localization.locale).format(data);
@@ -197,7 +196,7 @@ export default class Cart {
   }
 
   isLoaded() {
-    return !!this.state;
+    return !!this.state?.isLoaded;
   }
 
   isEmpty() {
@@ -205,11 +204,13 @@ export default class Cart {
   }
 
   isUnavailable() {
-    return this.unavailable;
+    return this.isUnavailable;
   }
 
   calculateTotalQuantity() {
-    return this.state ? this.state.products.reduce((prev, curr) => prev + curr.quantity, 0) : 0;
+    return this.state?.products
+      ? this.state.products.reduce((prev, curr) => prev + curr.quantity, 0)
+      : 0;
   }
 
   getDefaultDeliveryMethod() {
@@ -401,6 +402,58 @@ export default class Cart {
       currency: currencyConfig.code,
       maximumFractionDigits: fractionDigits,
     }).format(money);
+  }
+
+  getPaymentProvider(provider) {
+    return this.getPaymentProvidersByType(provider)[0] || null;
+  }
+
+  getPaymentProvidersByType(provider) {
+    return this.state.paymentProviders?.filter((p) => p.provider === provider) || [];
+  }
+
+  arePaymentProvidersAvailable() {
+    return (
+      this.isStripeSupported() ||
+      this.isPaypalSupported() ||
+      this.hasCustomPayments() ||
+      this.hasPayInStorePayments()
+    );
+  }
+
+  hasCustomPayments() {
+    return !!this.getPaymentProvidersByType("custom").length;
+  }
+
+  hasPayInStorePayments() {
+    return this.state.locations.some((loc) => !!loc.pay_in_store);
+  }
+
+  isStripeSupported() {
+    return this.getPaymentProvider("stripe")?.supported;
+  }
+
+  // Paypal
+
+  isPaypalSupported() {
+    if (this.hasPhysicalProducts() && !this.offersShipping()) return false;
+    return !!this.getPaymentProvider("paypal")?.supported;
+  }
+
+  onlyPaypalNoDelivery() {
+    // PayPal shouldn't be used with local pickup because of buyer address protection.
+    // If the only payment method defined is PayPal and the only delivery method defined is Local Pickup we show an error
+
+    if (!this.hasPhysicalProducts()) return false; // Digital cart, doesn't apply
+
+    if (!this.isPaypalSupported()) return false; // PayPal not supported
+
+    if (this.offersShipping()) return false; // There are delivery zones available - everything is ok.
+
+    if (this.isStripeSupported() || this.hasCustomPayments() || this.hasPayInStorePayments())
+      return false; // Other payment options available
+
+    return true; // PayPal only and no delivery zones.
   }
 
   async create() {
@@ -839,6 +892,95 @@ export default class Cart {
     } catch (e) {
       console.error("Reflow:", e);
       throw e;
+    }
+  }
+
+  async paypalCreateOrder(formData) {
+    await this.refreshState();
+
+    if (!this.canFinish()) {
+      throw new Error(this.getStateErrors()[0]);
+    }
+
+    const body = new FormData();
+
+    for (const [key, value] of Object.entries(formData)) {
+      body.append(key, value);
+    }
+
+    let result = await this.api(
+      `/create-paypal-order/${this.key}/`,
+      { method: "POST", body },
+      false
+    );
+
+    if (result.error && result.error == "PAYEE_ACCOUNT_RESTRICTED") {
+      throw new Error(
+        "Transaction could not be processed. The PayPal account associated with this store is restricted.",
+        { cause: result.error }
+      );
+    }
+
+    if (result.error && result.error == "CUSTOMER_FORM_DATA") {
+      throw new Error("Missing or incorrect data. Please review the checkout form.", {
+        cause: result.error,
+      });
+      // this.showFormErrors(result.fields);
+    }
+
+    if (result.error && result.error == "VACATION_MODE") {
+      throw new Error("Transaction could not be processed. The store is currently unavailable.", {
+        cause: result.error,
+      });
+    }
+
+    return result.orderID;
+  }
+
+  async paypalOnApprove({ orderID }, actions) {
+    let body = new FormData();
+    body.append("orderID", orderID);
+
+    try {
+      let result = await this.api(
+        `/capture-paypal-order/${this.key}/`,
+        {
+          method: "POST",
+          body,
+        },
+        false
+      );
+
+      return result;
+    } catch (e) {
+      console.error("Reflow:", e);
+      throw e;
+    }
+  }
+
+  async updatePaypalShipping({ orderID, address, selectedShippingOption = 0 }) {
+    try {
+      let body = new FormData();
+      body.append("orderID", orderID);
+      body.append("address", JSON.stringify(address));
+      body.append("selectedShippingOption", selectedShippingOption);
+
+      let result = await this.api(
+        `/update-paypal-shipping/${this.key}/`,
+        {
+          method: "POST",
+          body,
+        },
+        false
+      );
+
+      return result;
+    } catch (e) {
+      // showSystemError(getErrorText(e), "Couldn't update PayPal shipping");
+
+      console.error("Reflow:", e);
+      throw e;
+      // return actions.reject();
     }
   }
 }

@@ -88,6 +88,9 @@ export default {
   "cart.max_product_qty": "Maximum of {max_quantity} per customer",
   "cart.errors.unavailable": "Unable to load shopping cart.",
   "cart.errors.empty": "Your shopping cart is empty.",
+  "cart.errors.no_payment_methods": "This store has no payment methods configured.",
+  "cart.errors.only_paypal_no_delivery":
+    "This store offers only PayPal payments but does not support product delivery. Checkout unavailable.",
   "cart.errors.cannot_complete": "Couldn't complete checkout.",
   "cart.errors.vat_number_invalid":
     "VAT number is invalid or can't be used in cross-border transactions.",

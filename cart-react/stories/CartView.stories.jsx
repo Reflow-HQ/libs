@@ -1,7 +1,7 @@
-import React from "react";
-
 import CartView from "../src/CartView.jsx";
 import "../src/cartview.css";
+
+import { createReflowCartStore, cartMap } from "../src/createReflowCart";
 
 // More on default export: https://storybook.js.org/docs/react/writing-stories/introduction#default-export
 export default {
@@ -16,7 +16,6 @@ export const Localization = Template.bind({});
 
 const config = {
   storeID: "199976733",
-  // storeID: "558773655",
   apiBase: "http://api.reflow.local/v1",
 };
 
@@ -40,6 +39,14 @@ const localization = {
   state: "Област",
   postcode: "Пощенски код",
 };
+
+// TODO: figure out a better way to do this
+delete localStorage[`reflowCartKey${config.storeID}`];
+
+createReflowCartStore({ config, localization });
+
+const cart = cartMap.get(config.storeID);
+cart.getState().cartManager.addProduct({ id: "379178066" });
 
 Localization.args = {
   config,

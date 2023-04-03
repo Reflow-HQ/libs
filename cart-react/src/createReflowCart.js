@@ -4,7 +4,7 @@ import Cart from "@reflowhq/cart";
 
 const { useSyncExternalStoreWithSelector } = useSyncExternalStoreExports;
 
-const cartMap = new Map();
+export const cartMap = new Map();
 
 function createStore({ config, localization = {} }) {
   const cart = new Cart({ ...config, localization });
@@ -32,6 +32,7 @@ function createStore({ config, localization = {} }) {
     setSelectedLocation: cart.setSelectedLocation.bind(cart),
     setSelectedShippingMethod: cart.setSelectedShippingMethod.bind(cart),
     cartManager: {
+      addProduct: cart.addProduct.bind(cart),
       updateProductQuantity: cart.updateProductQuantity.bind(cart),
       removeProduct: cart.removeProduct.bind(cart),
       addCoupon: cart.addCoupon.bind(cart),
@@ -44,6 +45,14 @@ function createStore({ config, localization = {} }) {
       invalidateTaxExemption: cart.invalidateTaxExemption.bind(cart),
       removeTaxExemptionFile: cart.removeTaxExemptionFile.bind(cart),
       checkout: cart.checkout.bind(cart),
+      getPaymentProvider: cart.getPaymentProvider.bind(cart),
+      arePaymentProvidersAvailable: cart.arePaymentProvidersAvailable.bind(cart),
+      onlyPaypalNoDelivery: cart.onlyPaypalNoDelivery.bind(cart),
+      isPaypalSupported: cart.isPaypalSupported.bind(cart),
+      paypalCreateOrder: cart.paypalCreateOrder.bind(cart),
+      paypalOnApprove: cart.paypalOnApprove.bind(cart),
+      updatePaypalShipping: cart.updatePaypalShipping.bind(cart),
+      isStripeSupported: cart.isStripeSupported.bind(cart),
       hasPhysicalProducts: cart.hasPhysicalProducts.bind(cart),
       getShippableCountries: cart.getShippableCountries.bind(cart),
       offersShipping: cart.offersShipping.bind(cart),

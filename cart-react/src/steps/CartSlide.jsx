@@ -2,8 +2,9 @@ import CartProduct from "../components/CartProduct";
 
 import { useShoppingCart } from "../CartContext";
 import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
+import PayPalButton from "../components/PayPalButton";
 
-const CartSlide = ({ onError, setStep }) => {
+const CartSlide = ({ onError, step, setStep }) => {
   const { storeID, errors, products, footerLinks, subtotal, taxes, cartManager, t } =
     useShoppingCart((s) => ({
       storeID: s.storeID,
@@ -92,7 +93,19 @@ const CartSlide = ({ onError, setStep }) => {
             </span>
           </label>
           <div className="ref-row ref-checkout-buttons">
-            <div className="ref-paypal-express-checkout-holder"></div>
+            {cartManager.isPaypalSupported() && (
+              <div className="ref-paypal-express-checkout-holder">
+                <PayPalButton
+                  fundingSource={"PAYPAL"}
+                  step={step}
+                  canSubmit={() => !!termsAccepted}
+                  onError={onError}
+                  style={{
+                    height: 42,
+                  }}
+                />
+              </div>
+            )}
             <button className="ref-button ref-standard-checkout-button">
               {t("cart.checkout")}
             </button>
