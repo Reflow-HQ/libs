@@ -1,8 +1,6 @@
 import React from "react";
 import Cart, { createReflowCart } from "@reflowhq/cart-react";
 import "@reflowhq/cart-react/dist/style.css";
-// import "./style.css";
-// import "./cartview.css";
 
 const config = {
   storeID: "199976733",
@@ -15,7 +13,7 @@ function App() {
   const cartManager = useCart((s) => s.cartManager);
 
   return (
-    <>
+    <div class="container">
       <Cart
         config={config}
         successURL={"https://example.com/success"}
@@ -38,7 +36,7 @@ function App() {
       >
         Add Digital Product
       </div>
-    </>
+    </div>
   );
 }
 
