@@ -1,3 +1,5 @@
+import React from "react";
+
 import { useShoppingCart } from "../CartContext";
 
 import shortenString from "../utilities/shortenString";

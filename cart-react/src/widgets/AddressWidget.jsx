@@ -1,4 +1,5 @@
 import { useShoppingCart } from "../CartContext";
+import React from "react";
 
 export default function AddressWidget({
   model = {},

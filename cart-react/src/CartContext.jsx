@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef } from "react";
+import React, { createContext, useContext, useEffect, useRef } from "react";
 import { createReflowCartStore, useCart } from "./createReflowCart";
 import useCartAuth from "@reflowhq/auth-react";
 

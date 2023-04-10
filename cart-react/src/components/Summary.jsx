@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import { useShoppingCart } from "../CartContext";
 
@@ -239,7 +239,7 @@ export default function Summary({ readOnly = false, onError }) {
                   <span>{giftCard.code}</span>
                   {!readOnly && (
                     <span class="ref-remove-gift-card" onClick={removeGiftCard}>
-                      ${t("remove")}
+                      {t("remove")}
                     </span>
                   )}
                 </div>

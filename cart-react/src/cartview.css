@@ -866,7 +866,8 @@
   font-size: 0.9rem;
 }
 
-.reflow-shopping-cart .ref-checkout .ref-applied-coupon .ref-remove-coupon {
+.reflow-shopping-cart .ref-checkout .ref-applied-coupon .ref-remove-coupon,
+.reflow-shopping-cart .ref-checkout .ref-applied-gift-card .ref-remove-gift-card {
   color: var(--ref-danger);
   border: 1px solid var(--ref-danger);
   font-size: 0.6rem;
@@ -880,7 +881,8 @@
   top: -1px;
 }
 
-.reflow-shopping-cart .ref-checkout .ref-applied-coupon .ref-applied-coupon-error {
+.reflow-shopping-cart .ref-checkout .ref-applied-coupon .ref-applied-coupon-error,
+.reflow-shopping-cart .ref-checkout .ref-applied-gift-card .ref-applied-gift-card-error {
   color: red;
   font-size: 0.9em;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import debounce from "lodash.debounce";
 
 import { useShoppingCart, useAuth } from "../CartContext";
@@ -133,25 +133,29 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
 
   // Returns the address only if all fields are correctly filled.
 
-  function getShippingAddress() {
+  function getShippingAddress(address) {
+    if (!address) {
+      address = shippingAddress;
+    }
+
     let ret = {};
 
     // Optional
 
-    if (shippingAddress.name) {
-      ret.name = shippingAddress.name;
+    if (address.name) {
+      ret.name = address.name;
     }
 
-    if (shippingAddress.address) {
-      ret.address = shippingAddress.address;
+    if (address.address) {
+      ret.address = address.address;
     }
 
     // Required
 
-    if (!shippingAddress.city) return;
-    ret.city = shippingAddress.city;
+    if (!address.city) return;
+    ret.city = address.city;
 
-    let code = shippingAddress.countryCode;
+    let code = address.countryCode;
     if (!code) return;
 
     let country = cartManager.getCountryByCode(code);
@@ -162,13 +166,13 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
     // Conditionally required
 
     if (country.has_postcode) {
-      if (!shippingAddress.postcode) return;
-      ret.postcode = shippingAddress.postcode;
+      if (!address.postcode) return;
+      ret.postcode = address.postcode;
     }
 
     if (country.has_regions) {
-      if (!shippingAddress.state) return;
-      ret.state = shippingAddress.state;
+      if (!address.state) return;
+      ret.state = address.state;
     }
 
     return ret;
@@ -210,12 +214,16 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
 
   // Returns the address for digital carts.
 
-  function getDigitalAddress() {
+  function getDigitalAddress(address) {
+    if (!address) {
+      address = digitalAddress;
+    }
+
     let ret = {};
 
     // Required
 
-    let code = digitalAddress.countryCode;
+    let code = address.countryCode;
     if (!code) return;
 
     let country = cartManager.getCountryByCode(code);
@@ -226,11 +234,11 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
     // State and zip required only for US
 
     if (code == "US") {
-      if (!digitalAddress.postcode) return;
-      ret.postcode = digitalAddress.postcode;
+      if (!address.postcode) return;
+      ret.postcode = address.postcode;
 
-      if (!digitalAddress.state) return;
-      ret.state = digitalAddress.state;
+      if (!address.state) return;
+      ret.state = address.state;
     }
 
     return ret;
@@ -353,9 +361,9 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
 
     clearFormErrors();
 
-    // if (!checkFormValidity(detailsForm.current)) {
-    //   return;
-    // }
+    if (!checkFormValidity(detailsForm.current)) {
+      return;
+    }
 
     const customerFormData = new FormData(detailsForm.current);
     const data = {
@@ -663,8 +671,12 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
                   isDigital={true}
                   model={digitalAddress}
                   onChange={(key, value) => {
-                    setDigitalAddress((prevModel) => updateAddressModel(prevModel, key, value));
-                    debouncedUpdateAddress("digital", getDigitalAddress());
+                    setDigitalAddress((prevModel) => {
+                      const address = updateAddressModel(prevModel, key, value);
+                      debouncedUpdateAddress("digital", getDigitalAddress(address));
+
+                      return address;
+                    });
                   }}
                 />
               </div>
@@ -681,7 +693,12 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
           {offersDelivery && (
             <div className={"ref-delivery-card" + (isTabbable ? " tabbable" : "")}>
               {offersPickup && (
-                <div className={"ref-tab" + (isDeliveryMethodActive("pickup") ? " open" : "")}>
+                <div
+                  className={
+                    "ref-tab ref-local-pickup-tab " +
+                    (isDeliveryMethodActive("pickup") ? " open" : "")
+                  }
+                >
                   <label className="ref-tab-toggle">
                     <input
                       type="radio"
@@ -693,7 +710,10 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
                     />
                     <div className="ref-heading-small">{t("pickup_at_store")}</div>
                   </label>
-                  <fieldset className="ref-tab-content">
+                  <fieldset
+                    className="ref-tab-content"
+                    disabled={!isDeliveryMethodActive("pickup")}
+                  >
                     <div className="ref-heading-small">{t("cart.select_store")}</div>
                     <div className="ref-locations ref-error-parent">
                       {locations.map((location, index) => (
@@ -786,7 +806,12 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
               )}
 
               {offersShipping && (
-                <div className={"ref-tab" + (isDeliveryMethodActive("shipping") ? " open" : "")}>
+                <div
+                  className={
+                    "ref-tab ref-shipping-tab " +
+                    (isDeliveryMethodActive("shipping") ? " open" : "")
+                  }
+                >
                   <label className="ref-tab-toggle">
                     <input
                       type="radio"
@@ -798,7 +823,10 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
                     />
                     <div className="ref-heading-small">{t("cart.deliver_to_address")}</div>
                   </label>
-                  <fieldset className="ref-tab-content">
+                  <fieldset
+                    className="ref-tab-content"
+                    disabled={!isDeliveryMethodActive("shipping")}
+                  >
                     <div className="ref-heading-small">{t("shipping_address")}</div>
                     <div className="ref-shipping-address-holder">
                       <AddressWidget
@@ -806,10 +834,12 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
                         prefix="shipping"
                         model={getShippingAddressInput()}
                         onChange={(key, value) => {
-                          setShippingAddress((prevModel) =>
-                            updateAddressModel(prevModel, key, value)
-                          );
-                          debouncedUpdateAddress("shipping", getShippingAddress());
+                          setShippingAddress((prevModel) => {
+                            const address = updateAddressModel(prevModel, key, value);
+                            debouncedUpdateAddress("shipping", getShippingAddress(address));
+
+                            return address;
+                          });
                         }}
                       />
                     </div>
@@ -1023,13 +1053,10 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
             {shouldShowPaypalButtons && renderPaypalButtons()}
             <div className="ref-standard-payment-buttons">
               {cartManager.hasZeroValue() ? (
-                <div
-                  key={pm.id}
-                  className="ref-button ref-payment-button"
+                <PaymentButton
+                  text={t("cart.complete_order")}
                   onClick={() => checkout("zero-value-cart")}
-                >
-                  {t("cart.complete_order")}
-                </div>
+                />
               ) : (
                 renderPaymentProviderButtons()
               )}

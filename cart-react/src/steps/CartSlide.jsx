@@ -1,3 +1,5 @@
+import React from "react";
+
 import CartProduct from "../components/CartProduct";
 
 import { useShoppingCart } from "../CartContext";

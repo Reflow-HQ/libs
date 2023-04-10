@@ -3,6 +3,7 @@
   "workspaces": [
     "auth",
     "auth-react",
-    "cart"
+    "cart",
+    "cart-react"
   ]
 }

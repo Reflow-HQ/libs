@@ -214,17 +214,13 @@ export default class Cart {
   }
 
   getDefaultDeliveryMethod() {
-    return this.hasPhysicalProducts()
-      ? this.offersLocalPickup()
-        ? "pickup"
-        : "shipping"
-      : "digital";
-  }
-
-  getDeliveryMethod() {
-    return this.hasPhysicalProducts() && this.state.deliveryMethod === "digital"
-      ? this.getDefaultDeliveryMethod()
-      : "digital";
+    return this.hasProducts()
+      ? this.hasPhysicalProducts()
+        ? this.offersLocalPickup()
+          ? "pickup"
+          : "shipping"
+        : "digital"
+      : "pickup";
   }
 
   setDeliveryMethod(deliveryMethod) {
@@ -260,6 +256,10 @@ export default class Cart {
           b.order - a.order
         );
       });
+  }
+
+  hasProducts() {
+    return !!this.state?.products?.length;
   }
 
   hasPhysicalProducts() {

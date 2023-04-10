@@ -1,3 +1,5 @@
+import React from "react";
+
 import QuantityWidget from "../widgets/QuantityWidget";
 
 import { useShoppingCart } from "../CartContext";
