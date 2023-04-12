@@ -134,7 +134,7 @@ export default function CartProduct({ product }) {
       </div>
       <div className="ref-total-col">
         <div className="ref-product-total">
-          <div className={(product.outOfStock ? "out-of-stock " : "") + "ref-product-total-sum"}>
+          <div className={(!product.inStock ? "out-of-stock " : "") + "ref-product-total-sum"}>
             {product.inStock ? getTotalPrice() : t("out_of_stock")}
           </div>
         </div>
