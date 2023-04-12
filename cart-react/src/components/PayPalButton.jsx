@@ -1,16 +1,15 @@
 import ReactDOM from "react-dom";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useShoppingCart, useAuth } from "../CartContext";
 
 export default function PayPalButton({ fundingSource, style = {}, step, canSubmit, onError }) {
   const auth = useAuth();
-  const { cartManager, currency } = useShoppingCart((s) => ({
-    cartManager: s.cartManager,
-    currency: s.currency,
-  }));
+  const cartManager = useShoppingCart((s) => s.cartManager);
+  const currency = useShoppingCart((s) => s.currency);
 
   const [sdkLoaded, setSDKLoaded] = useState(false);
   const [paypalError, setPaypalError] = useState("");
+
   useEffect(() => {
     const paypalProvider = cartManager.getPaymentProvider("paypal");
 

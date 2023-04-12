@@ -45,6 +45,9 @@ function createStore({ config, localization = {} }) {
       invalidateTaxExemption: cart.invalidateTaxExemption.bind(cart),
       removeTaxExemptionFile: cart.removeTaxExemptionFile.bind(cart),
       checkout: cart.checkout.bind(cart),
+      getShippingAddress: cart.getShippingAddress.bind(cart),
+      getDigitalAddress: cart.getDigitalAddress.bind(cart),
+      isShippingFilled: cart.isShippingFilled.bind(cart),
       getPaymentProvider: cart.getPaymentProvider.bind(cart),
       arePaymentProvidersAvailable: cart.arePaymentProvidersAvailable.bind(cart),
       onlyPaypalNoDelivery: cart.onlyPaypalNoDelivery.bind(cart),
@@ -69,6 +72,7 @@ function createStore({ config, localization = {} }) {
       getTaxPricingType: cart.getTaxPricingType.bind(cart),
       refresh: cart.refresh.bind(cart),
     },
+    localFormData: cart.localFormData,
     t: cart.translate.bind(cart),
   };
 

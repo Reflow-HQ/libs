@@ -7,19 +7,16 @@ import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
 import PayPalButton from "../components/PayPalButton";
 
 const CartSlide = ({ onError, step, setStep }) => {
-  const { storeID, errors, products, footerLinks, subtotal, taxes, cartManager, t } =
-    useShoppingCart((s) => ({
-      storeID: s.storeID,
-      errors: s.errors,
-      products: s.products,
-      subtotal: s.subtotal,
-      taxes: s.taxes,
-      footerLinks: s.footerLinks,
-      cartManager: s.cartManager,
-      t: s.t,
-    }));
+  const cartManager = useShoppingCart((s) => s.cartManager);
+  const t = useShoppingCart((s) => s.t);
 
-  const formDataKey = `reflowFormData${storeID}`;
+  const products = useShoppingCart((s) => s.products);
+  const footerLinks = useShoppingCart((s) => s.footerLinks);
+  const subtotal = useShoppingCart((s) => s.subtotal);
+  const taxes = useShoppingCart((s) => s.taxes);
+  const errors = useShoppingCart((s) => s.errors);
+
+  const formDataKey = useShoppingCart((s) => s.localFormData.formDataKey);
   const useFormData = useLocalStorageFormData(formDataKey);
 
   const [termsAccepted, setTermsAccepted] = useFormData("termsAccepted", false);

@@ -5,10 +5,8 @@ import { useShoppingCart } from "../CartContext";
 import shortenString from "../utilities/shortenString";
 
 export default function SummaryProduct({ product }) {
-  const { cartManager, t } = useShoppingCart((s) => ({
-    cartManager: s.cartManager,
-    t: s.t,
-  }));
+  const cartManager = useShoppingCart((s) => s.cartManager);
+  const t = useShoppingCart((s) => s.t);
 
   let quantityErrorMessage = "";
 

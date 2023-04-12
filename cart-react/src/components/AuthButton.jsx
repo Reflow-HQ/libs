@@ -3,9 +3,7 @@ import { useShoppingCart, useAuth } from "../CartContext";
 
 export default function AuthButton({ showPhoto = true, showName = true, userPageURL = "#" }) {
   const auth = useAuth();
-  const { t } = useShoppingCart((s) => ({
-    t: s.t,
-  }));
+  const t = useShoppingCart((s) => s.t);
 
   return (
     <div className="reflow-auth-button">

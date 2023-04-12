@@ -46,7 +46,12 @@ delete localStorage[`reflowCartKey${config.storeID}`];
 createReflowCartStore({ config, localization });
 
 const cart = cartMap.get(config.storeID);
-cart.getState().cartManager.addProduct({ id: "379178066" });
+cart
+  .getState()
+  .cartManager.addProduct({ id: "379178066" })
+  .then(() => {
+    cart.getState().cartManager.addProduct({ id: "558773655" });
+  });
 
 Localization.args = {
   config,

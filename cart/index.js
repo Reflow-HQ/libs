@@ -39,6 +39,8 @@ export default class Cart {
       selectedShippingMethod: -1,
     };
 
+    this.localFormData = new LocalStorageFormData({ storeID });
+
     this.scheduleRefresh = debounce(this.refresh.bind(this), 250);
 
     this.bind();
@@ -170,10 +172,7 @@ export default class Cart {
 
     this.state.quantity = this.calculateTotalQuantity();
 
-    if (
-      !this.state.deliveryMethod ||
-      (this.state.deliveryMethod === "digital" && this.hasPhysicalProducts())
-    ) {
+    if (!this.isDeliveryMethodValid(this.state.deliveryMethod)) {
       this.state.deliveryMethod = this.getDefaultDeliveryMethod();
     }
 
@@ -213,18 +212,31 @@ export default class Cart {
       : 0;
   }
 
+  isDeliveryMethodValid(deliveryMethod) {
+    if (!deliveryMethod) return false;
+
+    if (!this.hasProducts()) return true;
+
+    if (deliveryMethod === "digital") return !this.hasPhysicalProducts();
+    if (deliveryMethod === "shipping" && !this.offersShipping()) return false;
+    if (deliveryMethod === "pickup" && !this.offersLocalPickup()) return false;
+
+    return true;
+  }
+
   getDefaultDeliveryMethod() {
-    return this.hasProducts()
-      ? this.hasPhysicalProducts()
-        ? this.offersLocalPickup()
-          ? "pickup"
-          : "shipping"
-        : "digital"
-      : "pickup";
+    if (this.hasProducts()) {
+      if (!this.hasPhysicalProducts()) return "digital";
+
+      if (this.offersLocalPickup()) return "pickup";
+      if (this.offersShipping()) return "shipping";
+    }
+
+    return "pickup";
   }
 
   setDeliveryMethod(deliveryMethod) {
-    this.updateState({ deliveryMethod });
+    this.updateState({ deliveryMethod, selectedLocation: -1, selectedShippingMethod: -1 });
 
     if (deliveryMethod === "shipping" && this.state.shippingAddress) {
       this.invalidateTaxExemption({ address: this.state.shippingAddress });
@@ -245,6 +257,89 @@ export default class Cart {
   setSelectedShippingMethod(selectedShippingMethod) {
     this.updateState({ selectedShippingMethod });
     this.scheduleRefresh();
+  }
+
+  getShippingAddress(address) {
+    // Returns the address only if all fields are correctly filled.
+
+    if (!address) {
+      address = this.localFormData.get("shippingAddress") || {};
+    }
+
+    let ret = {};
+
+    // Optional
+
+    if (address.name) {
+      ret.name = address.name;
+    }
+
+    if (address.address) {
+      ret.address = address.address;
+    }
+
+    // Required
+
+    if (!address.city) return;
+    ret.city = address.city;
+
+    let code = address.countryCode;
+    if (!code) return;
+
+    let country = this.getCountryByCode(code);
+    if (!country) return;
+
+    ret.country = code;
+
+    // Conditionally required
+
+    if (country.has_postcode) {
+      if (!address.postcode) return;
+      ret.postcode = address.postcode;
+    }
+
+    if (country.has_regions) {
+      if (!address.state) return;
+      ret.state = address.state;
+    }
+
+    return ret;
+  }
+
+  isShippingFilled() {
+    return !!this.getShippingAddress();
+  }
+
+  getDigitalAddress(address) {
+    // Returns the address for digital carts.
+
+    if (!address) {
+      address = this.localFormData.get("digitalAddress") || {};
+    }
+
+    let ret = {};
+
+    // Required
+
+    let code = address.countryCode;
+    if (!code) return;
+
+    let country = this.getCountryByCode(code);
+    if (!country) return;
+
+    ret.country = code;
+
+    // State and zip required only for US
+
+    if (code == "US") {
+      if (!address.postcode) return;
+      ret.postcode = address.postcode;
+
+      if (!address.state) return;
+      ret.state = address.state;
+    }
+
+    return ret;
   }
 
   transformPaymentProviders(paymentProviders) {
@@ -490,6 +585,7 @@ export default class Cart {
         // The key was either unset or invalid, create a new one
         this.key = await this.create();
         newState = await this.fetch(this.key, additionalParams);
+        this.localFormData.clear();
       } else {
         // This is a server error, just log it for now
         console.error("Reflow:", e);
@@ -982,5 +1078,37 @@ export default class Cart {
       throw e;
       // return actions.reject();
     }
+  }
+}
+
+class LocalStorageFormData {
+  // Handles localStorage saving and retrieving form data for the Cart component.
+
+  constructor({ storeID }) {
+    this.formDataKey = `reflowFormData${storeID}`;
+  }
+
+  getAll() {
+    return JSON.parse(localStorage.getItem(this.formDataKey) || "{}");
+  }
+
+  get(key) {
+    return this.getAll()[key];
+  }
+
+  set(key, value) {
+    let data = this.getAll();
+
+    data[key] = value || "";
+
+    localStorage.setItem(this.formDataKey, JSON.stringify(data));
+  }
+
+  isSet(key) {
+    return this.get(key) !== undefined;
+  }
+
+  clear() {
+    localStorage.setItem(this.formDataKey, "{}");
   }
 }

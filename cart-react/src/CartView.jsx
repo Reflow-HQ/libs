@@ -15,14 +15,13 @@ const CartView = ({ config, localization = {}, successURL, cancelURL, onError })
 function CartUI({ successURL, cancelURL, onError }) {
   const [step, setStep] = useState("cart");
 
-  const { products, isLoading, isLoaded, isUnavailable, cartManager, t } = useShoppingCart((s) => ({
-    products: s.products,
-    isLoading: s.isLoading,
-    isLoaded: s.isLoaded,
-    isUnavailable: s.isUnavailable,
-    cartManager: s.cartManager,
-    t: s.t,
-  }));
+  const cartManager = useShoppingCart((s) => s.cartManager);
+  const t = useShoppingCart((s) => s.t);
+
+  const products = useShoppingCart((s) => s.products);
+  const isLoading = useShoppingCart((s) => s.isLoading);
+  const isLoaded = useShoppingCart((s) => s.isLoaded);
+  const isUnavailable = useShoppingCart((s) => s.isUnavailable);
 
   const errorMessage = isUnavailable
     ? t("cart.errors.unavailable")

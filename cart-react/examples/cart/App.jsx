@@ -13,7 +13,7 @@ function App() {
   const cartManager = useCart((s) => s.cartManager);
 
   return (
-    <div class="container">
+    <div className="container my-5">
       <Cart
         config={config}
         successURL={"https://example.com/success"}
@@ -22,19 +22,21 @@ function App() {
           console.log(error.title, error.description);
         }}
       />
-      <div
-        id="add-physical-product"
-        className="btn btn-primary"
-        onClick={() => cartManager.addProduct({ id: "379178066" })}
-      >
-        Add Physical Product
-      </div>
-      <div
-        id="add-digital-product"
-        className="btn btn-primary"
-        onClick={() => cartManager.addProduct({ id: "558773655" })}
-      >
-        Add Digital Product
+      <div className="mt-5">
+        <div
+          id="add-physical-product"
+          className="btn btn-primary me-2"
+          onClick={() => cartManager.addProduct({ id: "379178066" })}
+        >
+          Add Physical Product
+        </div>
+        <div
+          id="add-digital-product"
+          className="btn btn-primary"
+          onClick={() => cartManager.addProduct({ id: "558773655" })}
+        >
+          Add Digital Product
+        </div>
       </div>
     </div>
   );

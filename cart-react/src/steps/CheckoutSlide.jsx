@@ -12,8 +12,7 @@ import PaymentButton from "../components/PaymentButton";
 import PayPalButton from "../components/PayPalButton";
 
 export default function CheckoutSlide({ successURL, cancelURL, onError, step, setStep }) {
-  const storeID = useShoppingCart((s) => s.storeID);
-  const formDataKey = `reflowFormData${storeID}`;
+  const formDataKey = useShoppingCart((s) => s.localFormData.formDataKey);
   const useFormData = useLocalStorageFormData(formDataKey);
 
   const [email, setEmail] = useFormData("email");
@@ -35,51 +34,37 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
 
   const auth = useAuth();
 
-  const {
-    errors,
-    locations,
-    shippingMethods,
-    shippableCountries,
-    footerLinks,
-    taxes,
-    taxExemption,
-    vacationMode,
-    paymentProviders,
-    signInProviders,
-    deliveryMethod,
-    selectedLocation,
-    selectedShippingMethod,
-    setDeliveryMethod,
-    setSelectedLocation,
-    setSelectedShippingMethod,
-    cartManager,
-    showLoading,
-    hideLoading,
-    t,
-    locale,
-  } = useShoppingCart((s) => ({
-    cartManager: s.cartManager,
-    t: s.t,
-    locale: s.locale,
-    errors: s.errors,
-    locations: s.locations,
-    shippingMethods: s.shippingMethods,
-    shippableCountries: s.shippableCountries,
-    footerLinks: s.footerLinks,
-    taxes: s.taxes,
-    taxExemption: s.taxExemption,
-    vacationMode: s.vacationMode,
-    paymentProviders: s.paymentProviders,
-    signInProviders: s.signInProviders,
-    deliveryMethod: s.deliveryMethod,
-    selectedLocation: s.selectedLocation,
-    selectedShippingMethod: s.selectedShippingMethod,
-    setDeliveryMethod: s.setDeliveryMethod,
-    setSelectedLocation: s.setSelectedLocation,
-    setSelectedShippingMethod: s.setSelectedShippingMethod,
-    showLoading: s.showLoading,
-    hideLoading: s.hideLoading,
-  }));
+  const cartManager = useShoppingCart((s) => s.cartManager);
+  const showLoading = useShoppingCart((s) => s.showLoading);
+  const hideLoading = useShoppingCart((s) => s.hideLoading);
+  const t = useShoppingCart((s) => s.t);
+
+  const locale = useShoppingCart((s) => s.locale);
+  const errors = useShoppingCart((s) => s.errors);
+  const locations = useShoppingCart((s) => s.locations);
+  const shippingMethods = useShoppingCart((s) => s.shippingMethods);
+  const shippableCountries = useShoppingCart((s) => s.shippableCountries);
+  const footerLinks = useShoppingCart((s) => s.footerLinks);
+  const taxes = useShoppingCart((s) => s.taxes);
+  const taxExemption = useShoppingCart((s) => s.taxExemption);
+  const vacationMode = useShoppingCart((s) => s.vacationMode);
+  const paymentProviders = useShoppingCart((s) => s.paymentProviders);
+  const signInProviders = useShoppingCart((s) => s.signInProviders);
+
+  const [deliveryMethod, setDeliveryMethod] = useShoppingCart((s) => [
+    s.deliveryMethod,
+    s.setDeliveryMethod,
+  ]);
+
+  const [selectedLocation, setSelectedLocation] = useShoppingCart((s) => [
+    s.selectedLocation,
+    s.setSelectedLocation,
+  ]);
+
+  const [selectedShippingMethod, setSelectedShippingMethod] = useShoppingCart((s) => [
+    s.selectedShippingMethod,
+    s.setSelectedShippingMethod,
+  ]);
 
   const isInVactionMode = vacationMode?.enabled;
   const shouldShowPaypalButtons =
@@ -131,57 +116,6 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
     return addressText;
   }
 
-  // Returns the address only if all fields are correctly filled.
-
-  function getShippingAddress(address) {
-    if (!address) {
-      address = shippingAddress;
-    }
-
-    let ret = {};
-
-    // Optional
-
-    if (address.name) {
-      ret.name = address.name;
-    }
-
-    if (address.address) {
-      ret.address = address.address;
-    }
-
-    // Required
-
-    if (!address.city) return;
-    ret.city = address.city;
-
-    let code = address.countryCode;
-    if (!code) return;
-
-    let country = cartManager.getCountryByCode(code);
-    if (!country) return;
-
-    ret.country = code;
-
-    // Conditionally required
-
-    if (country.has_postcode) {
-      if (!address.postcode) return;
-      ret.postcode = address.postcode;
-    }
-
-    if (country.has_regions) {
-      if (!address.state) return;
-      ret.state = address.state;
-    }
-
-    return ret;
-  }
-
-  function isShippingFilled() {
-    return !!getShippingAddress();
-  }
-
   function getShippingAddressInput() {
     if (!auth.isSignedIn()) {
       return shippingAddress;
@@ -212,38 +146,6 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
     };
   }
 
-  // Returns the address for digital carts.
-
-  function getDigitalAddress(address) {
-    if (!address) {
-      address = digitalAddress;
-    }
-
-    let ret = {};
-
-    // Required
-
-    let code = address.countryCode;
-    if (!code) return;
-
-    let country = cartManager.getCountryByCode(code);
-    if (!country) return;
-
-    ret.country = code;
-
-    // State and zip required only for US
-
-    if (code == "US") {
-      if (!address.postcode) return;
-      ret.postcode = address.postcode;
-
-      if (!address.state) return;
-      ret.state = address.state;
-    }
-
-    return ret;
-  }
-
   function onTaxExemptionChange(exemptionType, exemptionValue) {
     // Updates the selected address and tax exemption fields
     // after which fetches the contents of the Cart with refreshed line items.
@@ -252,7 +154,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
 
     switch (deliveryMethod) {
       case "shipping": {
-        address = getShippingAddress();
+        address = cartManager.getShippingAddress();
         break;
       }
 
@@ -267,7 +169,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
       }
 
       case "digital": {
-        address = getDigitalAddress();
+        address = cartManager.getDigitalAddress();
         break;
       }
 
@@ -276,7 +178,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
     }
 
     if (!address) {
-      // TODO: Check form validity
+      checkFormValidity(detailsForm.current);
       return;
     }
 
@@ -298,12 +200,6 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
         return false;
       }
     }
-
-    // if (!form.checkValidity()) {
-    //   form.parentElement.scrollIntoView();
-    //   setTimeout(() => form.reportValidity(), 600);
-    //   return false;
-    // }
 
     return true;
   }
@@ -374,7 +270,6 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
       "payment-id": paymentID,
     };
 
-    // TODO: add auth
     if (auth.isSignedIn()) {
       data["auth-account-id"] = auth.profile.id;
     }
@@ -506,6 +401,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
       <div className="ref-paypal-payment-holder">
         {fundingSources.map((fundingSource) => (
           <PayPalButton
+            key={fundingSource}
             fundingSource={fundingSource}
             step={step}
             canSubmit={true}
@@ -559,7 +455,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
   }
 
   function canShipToAddress() {
-    return isShippingFilled() && cartManager.canShip();
+    return cartManager.isShippingFilled() && cartManager.canShip();
   }
 
   function canShowShippingMethods() {
@@ -673,7 +569,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
                   onChange={(key, value) => {
                     setDigitalAddress((prevModel) => {
                       const address = updateAddressModel(prevModel, key, value);
-                      debouncedUpdateAddress("digital", getDigitalAddress(address));
+                      debouncedUpdateAddress("digital", cartManager.getDigitalAddress(address));
 
                       return address;
                     });
@@ -836,7 +732,10 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
                         onChange={(key, value) => {
                           setShippingAddress((prevModel) => {
                             const address = updateAddressModel(prevModel, key, value);
-                            debouncedUpdateAddress("shipping", getShippingAddress(address));
+                            debouncedUpdateAddress(
+                              "shipping",
+                              cartManager.getShippingAddress(address)
+                            );
 
                             return address;
                           });

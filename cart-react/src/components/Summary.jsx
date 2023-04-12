@@ -11,35 +11,20 @@ export default function Summary({ readOnly = false, onError }) {
 
   const [formErrors, setFormErrors] = useState({});
 
-  const {
-    products,
-    coupon,
-    giftCard,
-    discount,
-    total,
-    subtotal,
-    currency,
-    taxes,
-    locations,
-    deliveryMethod,
-    shippingMethods,
-    cartManager,
-    t,
-  } = useShoppingCart((s) => ({
-    products: s.products,
-    coupon: s.coupon,
-    giftCard: s.giftCard,
-    discount: s.discount,
-    total: s.total,
-    subtotal: s.subtotal,
-    currency: s.currency,
-    taxes: s.taxes,
-    locations: s.locations,
-    deliveryMethod: s.deliveryMethod,
-    shippingMethods: s.shippingMethods,
-    cartManager: s.cartManager,
-    t: s.t,
-  }));
+  const cartManager = useShoppingCart((s) => s.cartManager);
+  const t = useShoppingCart((s) => s.t);
+
+  const products = useShoppingCart((s) => s.products);
+  const coupon = useShoppingCart((s) => s.coupon);
+  const giftCard = useShoppingCart((s) => s.giftCard);
+  const discount = useShoppingCart((s) => s.discount);
+  const total = useShoppingCart((s) => s.total);
+  const subtotal = useShoppingCart((s) => s.subtotal);
+  const currency = useShoppingCart((s) => s.currency);
+  const taxes = useShoppingCart((s) => s.taxes);
+  const locations = useShoppingCart((s) => s.locations);
+  const deliveryMethod = useShoppingCart((s) => s.deliveryMethod);
+  const shippingMethods = useShoppingCart((s) => s.shippingMethods);
 
   const [shippingLabel, setShippingLabel] = useState(t("shipping"));
   const [shippingPrice, setShippingPrice] = useState(t("cart.shipping_not_selected"));
