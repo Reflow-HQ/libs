@@ -4,7 +4,7 @@ import { useShoppingCart } from "../CartContext";
 
 import shortenString from "../utilities/shortenString";
 
-export default function SummaryProduct({ product }) {
+export default function SummaryProduct({ product, updateCart }) {
   const cartManager = useShoppingCart((s) => s.cartManager);
   const t = useShoppingCart((s) => s.t);
 
@@ -22,6 +22,14 @@ export default function SummaryProduct({ product }) {
     return `${p.name}${p.inputText ? ': "' + p.inputText + '"' : ""}${
       p.selected ? ': "' + p.selected + '"' : ""
     }${p.filename ? ': "' + p.filename + '" ' : ""}`;
+  }
+
+  function removeProduct() {
+    cartManager.removeProduct({
+      id: product.id,
+      variantID: product.variant?.id,
+      personalization: product.personalization,
+    });
   }
 
   return (
@@ -47,7 +55,9 @@ export default function SummaryProduct({ product }) {
           {quantityErrorMessage && (
             <>
               <div className="ref-product-qty-message">{quantityErrorMessage}</div>
-              <div className="ref-product-update-cart">{t("cart.update")}</div>
+              <div className="ref-product-update-cart" onClick={updateCart}>
+                {t("cart.update")}
+              </div>
             </>
           )}
         </div>
@@ -56,7 +66,11 @@ export default function SummaryProduct({ product }) {
         <div className={`ref-product-total${product.inStock ? "" : " out-of-stock"}`}>
           {product.inStock ? cartManager.formatCurrency(product.price) : t("out_of_stock")}
         </div>
-        {!product.inStock && <div className="ref-product-remove">{t("remove")}</div>}
+        {!product.inStock && (
+          <div className="ref-product-remove" onClick={removeProduct}>
+            {t("remove")}
+          </div>
+        )}
       </div>
     </div>
   );

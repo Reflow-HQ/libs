@@ -173,7 +173,9 @@ export default class Cart {
     this.state.quantity = this.calculateTotalQuantity();
 
     if (!this.isDeliveryMethodValid(this.state.deliveryMethod)) {
-      this.state.deliveryMethod = this.getDefaultDeliveryMethod();
+      this.state.deliveryMethod = this.isDeliveryMethodValid(oldState.deliveryMethod)
+        ? oldState.deliveryMethod
+        : this.getDefaultDeliveryMethod();
     }
 
     if (newState.locations) {

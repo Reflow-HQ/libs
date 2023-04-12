@@ -5,7 +5,7 @@ import { useShoppingCart } from "../CartContext";
 import SummaryProduct from "../components/SummaryProduct";
 import shortenString from "../utilities/shortenString";
 
-export default function Summary({ readOnly = false, onError }) {
+export default function Summary({ readOnly = false, onError, updateCart }) {
   const [discountCode, setDiscountCode] = useState("");
   const [isSummaryOpen, setSummaryOpen] = useState(false);
 
@@ -130,6 +130,7 @@ export default function Summary({ readOnly = false, onError }) {
             <SummaryProduct
               key={cartManager.getProductKey(product)}
               product={product}
+              updateCart={updateCart}
             ></SummaryProduct>
           ))}
         </div>

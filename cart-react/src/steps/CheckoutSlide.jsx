@@ -982,7 +982,11 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
         </div>
       </div>
 
-      <Summary readOnly={step === "instructions"} onError={onError} />
+      <Summary
+        readOnly={step === "instructions"}
+        onError={onError}
+        updateCart={() => setStep("cart")}
+      />
     </div>
   );
 }
