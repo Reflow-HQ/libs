@@ -21,7 +21,7 @@ function App() {
   }
 
   function onEdit(newData) {
-    auth.updateProfile({
+    auth.updateUser({
       name: newData.name,
       email: newData.email,
       meta: newData.meta,
@@ -52,11 +52,11 @@ function App() {
         {auth.isSignedIn() ? (
           <Card style={{ width: "24rem" }}>
             <Card.Body>
-              <img src={auth.profile.photo} className="img-fluid" />
-              <Card.Title className="mt-3">{auth.profile.name}</Card.Title>
+              <img src={auth.user.photo} className="img-fluid" />
+              <Card.Title className="mt-3">{auth.user.name}</Card.Title>
               <Card.Text>Profile data:</Card.Text>
-              <pre>{JSON.stringify(auth.profile, null, "  ")}</pre>
-              <Edit profile={auth.profile} onChange={onEdit} />
+              <pre>{JSON.stringify(auth.user, null, "  ")}</pre>
+              <Edit user={auth.user} onChange={onEdit} />
             </Card.Body>
           </Card>
         ) : (

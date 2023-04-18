@@ -3,11 +3,11 @@ import React, { useState, useRef } from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 
-export default function Edit({ profile, onChange }) {
-  const [newData, setData] = useState({ ...profile });
+export default function Edit({ user, onChange }) {
+  const [newData, setData] = useState({ ...user });
   const [isModalVisible, setVisible] = useState(false);
 
-  const [enteredEmail, setEnteredEmail] = useState(profile.email || "");
+  const [enteredEmail, setEnteredEmail] = useState(user.email || "");
   const [emailError, setEmailError] = useState(false);
 
   const emailRef = useRef(null);
@@ -43,8 +43,8 @@ export default function Edit({ profile, onChange }) {
 
   function cancel() {
     setVisible(false);
-    setData({ ...profile });
-    setEnteredEmail(profile.email);
+    setData({ ...user });
+    setEnteredEmail(user.email);
     setEmailError(false);
   }
 
@@ -54,7 +54,7 @@ export default function Edit({ profile, onChange }) {
 
       <Modal show={isModalVisible} onHide={cancel}>
         <Modal.Header closeButton>
-          <Modal.Title>Edit Profile</Modal.Title>
+          <Modal.Title>Edit User</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <form>

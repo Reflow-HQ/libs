@@ -15,18 +15,18 @@
       let auth = new Auth({ storeID: 267418190 });
 
       if (auth.isSignedIn()) {
-        showProfile(auth.profile);
+        showUser(auth.user);
       }
 
-      auth.on("signin", ({ profile, isNew }) => {
-        showProfile(auth.profile);
+      auth.on("signin", ({ user, isNew }) => {
+        showUser(auth.user);
       });
 
       auth.on("signout", () => {
         location.reload();
       });
 
-      auth.on("change", () => {
+      auth.on("modify", () => {
         location.reload();
       });
 
@@ -40,10 +40,10 @@
         }
 
         if (e.target.matches("#addmeta")) {
-          // Get the latest profile data from the server
+          // Get the latest user data from the server
           await auth.refresh();
 
-          let meta = auth.profile.meta;
+          let meta = auth.user.meta;
 
           if (!meta.example) {
             meta.example = [];
@@ -55,29 +55,29 @@
             value: "Some Value " + Math.round(Math.random() * 10000),
           });
 
-          auth.updateProfile({ meta });
+          auth.updateUser({ meta });
         }
 
         if (e.target.matches("#clearmeta")) {
-          auth.updateProfile({ meta: {} });
+          auth.updateUser({ meta: {} });
         }
 
         if (e.target.matches("#changename")) {
           let newName = window.prompt("Enter New Name");
           if (newName?.trim().length) {
-            auth.updateProfile({ name: newName.trim() });
+            auth.updateUser({ name: newName.trim() });
           }
         }
       });
 
-      function showProfile(profile) {
-        console.log("Showing profile", profile);
+      function showUser(user) {
+        console.log("Showing user", user);
 
         let con = document.querySelector(".container");
 
         con.innerHTML = `
             <h1 class="mb-5">You are logged in <button class="btn btn-danger" id="signout">Sign Out</button></h1>
-            <img src="${profile.photo}" />
+            <img src="${user.photo}" />
             <h2 class="mt-5">
                 <span></span>
                 <button class="btn btn-primary me-2" id="changename">Change Name</button>
@@ -91,15 +91,15 @@
             <button class="btn btn-danger" id="clearmeta">Clear Meta</button>
         `;
 
-        con.querySelector("h2 span").textContent = profile.name;
-        con.querySelector("p").textContent = profile.email || "Email was not provided";
+        con.querySelector("h2 span").textContent = user.name;
+        con.querySelector("p").textContent = user.email || "Email was not provided";
 
         let metaview = con.querySelector("#metaview");
 
-        if (profile.meta?.example) {
+        if (user.meta?.example) {
           let pre = document.createElement("pre");
           pre.className = "mb-0";
-          pre.append(JSON.stringify(profile.meta.example));
+          pre.append(JSON.stringify(user.meta.example));
           metaview.append(pre);
         } else {
           metaview.textContent = "No metadata set";
@@ -125,7 +125,7 @@
         <span
           ><strong>Note</strong> to test this example, serve the <code>auth</code> folder on
           localhost:8080 using a local web server, then
-          <a href="http://localhost:8080/examples/profile-edit/index.html">open this page</a> (If
+          <a href="http://localhost:8080/examples/user-edit/index.html">open this page</a> (If
           the link doesn't work you haven't started the webserver correctly) and click the button
           below.
         </span>

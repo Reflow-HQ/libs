@@ -5,6 +5,7 @@
   "exports": "./index.js",
   "type": "module",
   "directories": {
+    "example": "examples",
     "test": "tests"
   },
   "keywords": [
@@ -45,5 +46,6 @@
   "homepage": "https://github.com/reflow-hq/libs#readme",
   "dependencies": {
     "@reflowhq/auth": "^0.0.1"
-  }
+  },
+  "main": "index.js"
 }

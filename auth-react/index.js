@@ -32,10 +32,13 @@ function useAuth(config = {}) {
     };
 
     authInstance.on("change", authCb);
+    config.onSignin && authInstance.on("signin", config.onSignin);
 
     return () => {
       authInstance.unbind();
+
       authInstance.off("change", authCb);
+      config.onSignin && authInstance.off("signin", config.onSignin);
 
       if (!authInstance.isBound() && authMap.has(config.storeID)) {
         // No other hook is using this instance
@@ -53,14 +56,15 @@ function makeAuthObject(auth) {
   // Wrap the auth in a new object which exposes
   // only the methods necessary for the hook.
   return {
-    get profile() {
-      return auth.profile;
+    get user() {
+      return auth.user;
     },
-    updateProfile: auth.updateProfile.bind(auth),
+    updateUser: auth.updateUser.bind(auth),
     isSignedIn: auth.isSignedIn.bind(auth),
     isNew: auth.isNew.bind(auth),
     signIn: auth.signIn.bind(auth),
     signOut: auth.signOut.bind(auth),
     refresh: auth.refresh.bind(auth),
+    getToken: auth.getToken.bind(auth),
   };
 }

@@ -1,4 +1,4 @@
-# Showing a Profile with React
+# Showing a User with React
 
 This example demonstrates how to use Reflow Auth in a React application. To try it out
 
