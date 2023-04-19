@@ -33,6 +33,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
   const [formErrors, setFormErrors] = useState({});
 
   const auth = useAuth();
+  const user = auth?.user || null;
 
   const cartManager = useShoppingCart((s) => s.cartManager);
   const showLoading = useShoppingCart((s) => s.showLoading);
@@ -117,21 +118,20 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
   }
 
   function getShippingAddressInput() {
-    if (!auth.isSignedIn()) {
+    if (!auth || !auth.isSignedIn()) {
       return shippingAddress;
     }
 
-    const profile = auth.profile;
     const newShippingAddress = {};
 
-    if (profile.name) {
+    if (user.name) {
       if (!shippingAddress.name) {
-        newShippingAddress.name = profile.name;
+        newShippingAddress.name = user.name;
       }
     }
 
-    if (profile.meta.address) {
-      const address = profile.meta.address;
+    if (user.meta.address) {
+      const address = user.meta.address;
 
       for (const prop of ["address", "city", "country", "postcode", "state"]) {
         if (address[prop] && !shippingAddress[prop]) {
@@ -270,8 +270,8 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
       "payment-id": paymentID,
     };
 
-    if (auth.isSignedIn()) {
-      data["auth-account-id"] = auth.profile.id;
+    if (auth && auth.isSignedIn()) {
+      data["auth-account-id"] = auth.user.id;
     }
 
     showLoading();
@@ -514,7 +514,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
               name="email"
               id="ref-field-email"
               className="ref-form-control"
-              value={email || auth.profile?.email || ""}
+              value={email || user?.email || ""}
               required
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -529,7 +529,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
               name="phone"
               id="ref-field-phone"
               className="ref-form-control"
-              value={phone || auth.profile?.meta.phone || ""}
+              value={phone || user?.meta.phone || ""}
               pattern="[0-9 \\+\\-]{5,30}"
               placeholder="+1234567890"
               required
@@ -546,7 +546,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
                 type="text"
                 name="customer-name"
                 className="ref-form-control"
-                value={name || auth.profile?.name || ""}
+                value={name || user?.name || ""}
                 minLength="5"
                 required
                 onChange={(e) => setName(e.target.value)}
@@ -743,7 +743,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
                       />
                     </div>
 
-                    {auth.isSignedIn() && (
+                    {!!auth && auth.isSignedIn() && (
                       <div className="ref-auth-save-address">
                         <label>
                           <input

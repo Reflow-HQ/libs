@@ -5,6 +5,8 @@ export default function AuthButton({ showPhoto = true, showName = true, userPage
   const auth = useAuth();
   const t = useShoppingCart((s) => s.t);
 
+  if (!auth) return null;
+
   return (
     <div className="reflow-auth-button">
       {!auth.isSignedIn() && (
@@ -21,9 +23,9 @@ export default function AuthButton({ showPhoto = true, showName = true, userPage
       {auth.isSignedIn() && (
         <div className="ref-auth-button-signed">
           <a className="ref-profile-info" href={userPageURL}>
-            {showPhoto && <img className="ref-profile-photo" src={auth.profile.photo} />}
+            {showPhoto && <img className="ref-profile-photo" src={auth.user.photo} />}
 
-            {showName && <span className="ref-profile-name">{auth.profile.name}</span>}
+            {showName && <span className="ref-profile-name">{auth.user.name}</span>}
           </a>
           <div className="ref-button ref-sign-out" onClick={() => auth.signOut()}>
             {t("auth.sign_out")}

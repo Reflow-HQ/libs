@@ -54,8 +54,8 @@ export default function PayPalButton({ fundingSource, style = {}, step, canSubmi
     try {
       const data = { "checkout-step": step };
 
-      if (auth.isSignedIn()) {
-        data["auth-account-id"] = auth.profile.id;
+      if (auth && auth.isSignedIn()) {
+        data["auth-account-id"] = auth.user.id;
       }
 
       let result = await cartManager.paypalCreateOrder(data);
