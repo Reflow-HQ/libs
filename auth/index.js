@@ -107,12 +107,12 @@ class Auth {
     }
   }
 
-  get profile() {
-    return this.get("profile");
+  get user() {
+    return this.get("user");
   }
 
-  profileSameAs(prof) {
-    return JSON.stringify(this.profile) === JSON.stringify(prof);
+  userSameAs(user) {
+    return JSON.stringify(this.user) === JSON.stringify(user);
   }
 
   setIsNew() {
@@ -135,7 +135,7 @@ class Auth {
       return;
     }
 
-    // Listen to the broadcast channel for cross-tab communication
+    // Use BroadcastChannel for cross-tab communication
 
     if ("BroadcastChannel" in window) {
       this._broadcastChannel = new BroadcastChannel("reflow-auth");
@@ -151,7 +151,7 @@ class Auth {
           if (e.data.isNew) this.setIsNew();
 
           this.trigger("signin", {
-            profile: e.data.profile,
+            user: this.user,
           });
 
           this.trigger("change");
@@ -181,12 +181,10 @@ class Auth {
 
     window.addEventListener("message", this._messageListener);
 
-    this._refreshInterval = setInterval(() => {
-      if (this.isSignedIn() && this.get("refreshAt") < Date.now()) {
-        // Fetch the profile from server and update the local storage object.
-        this.refresh();
-      }
-    }, 1000 * 60); // Check every minute
+    if (this.isSignedIn() && Date.now() - this.get("lastRefresh", 0) > 5 * 60 * 1000) {
+      // The last refresh was more than 5 minutes ago. Fetch the latest state from Reflow
+      setTimeout(this.refresh.bind(this), 20);
+    }
   }
 
   unbind() {
@@ -197,7 +195,6 @@ class Auth {
       return;
     }
 
-    clearInterval(this._refreshInterval);
     clearInterval(this._checkWindowClosedInterval);
     clearInterval(this._loginCheckInterval);
 
@@ -213,15 +210,6 @@ class Auth {
     return this._boundCounter > 0;
   }
 
-  scheduleRefresh() {
-    // Saves a timestamp 5 minutes into the future in local storage.
-    // When the time is reached, the profile is fetched from the server.
-
-    this.set({
-      refreshAt: Date.now() + 60 * 5 * 1000,
-    });
-  }
-
   broadcast(event, passthrough) {
     if (this._broadcastChannel) {
       this._broadcastChannel.postMessage({
@@ -231,43 +219,79 @@ class Auth {
     }
   }
 
+  async getToken() {
+    if (!this.hasToken()) {
+      return null;
+    }
+
+    if ((this.parseToken("exp") - 59) * 1000 < Date.now()) {
+      // The token is less than a minute from expiring
+      await this.refresh();
+    }
+
+    return this.get("token");
+  }
+
+  hasToken() {
+    return !!this.get("token");
+  }
+
+  parseToken(key) {
+    if (!this.hasToken()) {
+      return null;
+    }
+
+    const parsed = JSON.parse(atob(this.get("token").split(".")[1]));
+
+    if (key != null) {
+      return parsed[key];
+    }
+
+    return parsed;
+  }
+
   async refresh() {
-    // Requests the profile from the server without caching
+    // Requests the user from the server without caching
 
     try {
-      let result = await this.api("/auth/profile", {
+      let result = await this.api("/auth/state", {
         headers: {
           Authorization: `Bearer ${this.get("key")}`,
         },
       });
 
-      this.scheduleRefresh();
+      this.set({
+        token: result.token,
+        lastRefresh: Date.now(),
+      });
 
-      if (!this.profileSameAs(result)) {
-        this.set({ profile: result });
+      if (!this.userSameAs(result.user)) {
+        this.set({
+          user: result.user,
+        });
         this.trigger("modify");
         this.trigger("change");
         this.broadcast("modify");
       }
     } catch (e) {
-      console.error("Reflow: Unable to fetch profile");
+      console.error("Reflow: Unable to fetch user");
       if (e.data) console.error(e.data);
 
       if (e.status == 403) {
-        // Profile could not be fetched.
+        // User could not be fetched.
         // Delete the local session and signout components.
 
         this.clear();
-        this.trigger("signout", { error: "profile_not_found" });
+        this.trigger("signout", { error: "user_not_found" });
         this.trigger("change");
-        this.broadcast("signout", { error: "profile_not_found" });
+        this.broadcast("signout", { error: "user_not_found" });
       }
 
       throw e;
     }
   }
 
-  async updateProfile(data) {
+  async updateUser(data) {
     try {
       let body = new FormData();
 
@@ -282,7 +306,7 @@ class Auth {
         body.set(key, val);
       }
 
-      let result = await this.api("/auth/profile", {
+      let result = await this.api("/auth/user", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.get("key")}`,
@@ -290,10 +314,13 @@ class Auth {
         body,
       });
 
-      this.scheduleRefresh();
+      this.set({
+        token: result.token,
+        lastRefresh: Date.now(),
+      });
 
-      if (!this.profileSameAs(result.profile)) {
-        this.set({ profile: result.profile });
+      if (!this.userSameAs(result.user)) {
+        this.set({ user: result.user });
         this.trigger("modify");
         this.trigger("change");
         this.broadcast("modify");
@@ -301,14 +328,14 @@ class Auth {
 
       return result;
     } catch (e) {
-      console.error("Reflow: Unable to update profile.");
+      console.error("Reflow: Unable to update user.");
       if (e.data) console.error(e.data);
 
       if (e.status == 403) {
         this.clear();
-        this.trigger("signout", { error: "profile_not_found" });
+        this.trigger("signout", { error: "user_not_found" });
         this.trigger("change");
-        this.broadcast("signout", { error: "profile_not_found" });
+        this.broadcast("signout", { error: "user_not_found" });
       }
 
       throw e;
@@ -398,8 +425,6 @@ class Auth {
           return;
         }
 
-        this.scheduleRefresh();
-
         if (status.valid) {
           this.clearIsNew();
 
@@ -410,21 +435,20 @@ class Auth {
           this.set({
             key: status.session,
             expiresAt: Date.now() + status.lifetime * 1000,
-            profile: status.profile,
+            user: status.user,
+            token: status.token,
+            lastRefresh: Date.now(),
           });
 
           this.trigger("signin", {
-            profile: status.profile,
+            user: status.user,
           });
 
           this.trigger("change");
 
           this.broadcast("signin", {
-            profile: status.profile,
             isNew: status.isNew,
           });
-
-          this.scheduleRefresh();
         }
       }
 

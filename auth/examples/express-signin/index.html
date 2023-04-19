@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>Auth Example</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootswatch@5.2.3/dist/zephyr/bootstrap.min.css"
+    />
+
+    <script type="module">
+      import Auth from "/script.js";
+
+      let auth = new Auth({ storeID: 267418190 });
+
+      document.querySelector("#signin").addEventListener("click", (e) => auth.signIn());
+      document.querySelector("#signout").addEventListener("click", (e) => auth.signOut());
+      document.querySelector("#save").addEventListener("click", (e) => save());
+
+      const textarea = document.querySelector("#message");
+      const signedInContainer = document.querySelector("#signed-in-container");
+      const signedOutContainer = document.querySelector("#signed-out-container");
+
+      auth.on("change", render);
+
+      render();
+
+      async function render() {
+        signedInContainer.hidden = true;
+        signedOutContainer.hidden = true;
+
+        if (auth.isSignedIn()) {
+          const token = await auth.getToken();
+          const response = await fetch("/message?token=" + token);
+          const json = await response.json();
+          signedInContainer.hidden = false;
+          textarea.value = json.message;
+        } else {
+          signedOutContainer.hidden = false;
+        }
+      }
+
+      async function save() {
+        const params = new URLSearchParams({
+          token: await auth.getToken(),
+          message: textarea.value,
+        });
+
+        await fetch("/message?" + params.toString(), {
+          method: "POST",
+        });
+      }
+    </script>
+  </head>
+
+  <body>
+    <div class="container pt-5">
+      <h1 class="mb-4">Server signin example with Reflow Auth</h1>
+      <p>
+        This page demonstrate how to pass the token to the backend in order to authenticate server
+        routes with the Reflow library.
+      </p>
+      <hr />
+      <div id="signed-in-container" hidden>
+        <h2>Your Secret Message</h2>
+        <textarea
+          rows="6"
+          cols="60"
+          id="message"
+          placeholder="Enter a secret message and press save"
+        ></textarea>
+        <br />
+        <button id="save" class="btn btn-primary">Save</button>
+        <button id="signout" class="btn btn-danger">Sign Out</button>
+      </div>
+      <div id="signed-out-container" hidden>
+        <div class="alert alert-warning" role="alert">
+          <span
+            ><strong>Note</strong> to test this example, follow the steps in the README.md file in
+            this directory, and click the button below.
+          </span>
+        </div>
+        <button id="signin" class="btn btn-primary">Sign In</button>
+      </div>
+    </div>
+  </body>
+</html>

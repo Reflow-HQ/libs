@@ -21,30 +21,32 @@ describe("Auth", () => {
     const { result } = renderHook(() => useAuth({ storeID: 1234 }));
 
     expect(Object.keys(result.current)).toStrictEqual([
-      "profile",
-      "updateProfile",
+      "user",
+      "updateUser",
       "isSignedIn",
       "isNew",
       "signIn",
       "signOut",
       "refresh",
+      "getToken",
     ]);
 
-    expect(result.current.profile).toBe(null);
-    expect(typeof result.current.updateProfile).toBe("function");
+    expect(result.current.user).toBe(null);
+    expect(typeof result.current.updateUser).toBe("function");
     expect(typeof result.current.isSignedIn).toBe("function");
     expect(typeof result.current.isNew).toBe("function");
     expect(typeof result.current.signIn).toBe("function");
     expect(typeof result.current.signOut).toBe("function");
     expect(typeof result.current.refresh).toBe("function");
+    expect(typeof result.current.getToken).toBe("function");
   });
 
-  it("should read profile info from localStorage", async () => {
+  it("should read user info from localStorage", async () => {
     _authMap.clear();
     let data = {
       key: "key123",
       expiresAt: Date.now() + 99999 * 1000,
-      profile: {
+      user: {
         name: "J Doe",
         email: "aa@example.com",
       },
@@ -54,7 +56,7 @@ describe("Auth", () => {
 
     const { result, unmount } = renderHook(() => useAuth({ storeID: 123456 }));
 
-    expect(result.current.profile).toStrictEqual({ name: "J Doe", email: "aa@example.com" });
+    expect(result.current.user).toStrictEqual({ name: "J Doe", email: "aa@example.com" });
     expect(result.current.isSignedIn()).toBe(true);
     expect(_authMap.size).toBe(1);
 
@@ -72,20 +74,22 @@ describe("Auth", () => {
 
     auth.bind = jest.fn();
     auth.unbind = jest.fn();
+    auth.onSignin = jest.fn();
 
     const { result, rerender, unmount } = renderHook(() => useAuth(auth));
 
     expect(result.current.isSignedIn()).toBe(false);
-    expect(result.current.profile).toBe(null);
+    expect(result.current.user).toBe(null);
 
     expect(auth.bind).toHaveBeenCalledTimes(1);
     expect(auth.unbind).toHaveBeenCalledTimes(0);
     expect(auth._listeners.change.length).toBe(1);
+    expect(auth._listeners.signin.length).toBe(1);
 
     auth.set({
       key: "key123",
       expiresAt: Date.now() + 99999 * 1000,
-      profile: {
+      user: {
         name: "J Doe",
         email: "aa@example.com",
       },
@@ -99,6 +103,7 @@ describe("Auth", () => {
     expect(auth.bind).toHaveBeenCalledTimes(1);
     expect(auth.unbind).toHaveBeenCalledTimes(0);
     expect(auth._listeners.change.length).toBe(1);
+    expect(auth._listeners.signin.length).toBe(1);
 
     await act(async () => {
       await result.current.signOut();
@@ -111,6 +116,31 @@ describe("Auth", () => {
     expect(auth.bind).toHaveBeenCalledTimes(1);
     expect(auth.unbind).toHaveBeenCalledTimes(1);
     expect(auth._listeners.change).toBe(undefined);
+    expect(auth._listeners.signin).toBe(undefined);
+  });
+
+  it("should reuse auth instances", async () => {
+    const { result, unmount: unmount } = renderHook(() => useAuth({ storeID: 777123 }));
+    expect(result.current.isSignedIn()).toBe(false);
+    expect(_authMap.size).toBe(1);
+
+    const { unmount: unmount2 } = renderHook(() => useAuth({ storeID: 777123 }));
+    expect(_authMap.size).toBe(1);
+
+    const { unmount: unmount3 } = renderHook(() => useAuth({ storeID: 12345678 }));
+    expect(_authMap.size).toBe(2);
+
+    unmount();
+
+    expect(_authMap.size).toBe(2);
+
+    unmount2();
+
+    expect(_authMap.size).toBe(1);
+
+    unmount3();
+
+    expect(_authMap.size).toBe(0);
   });
 
   it("should reuse auth instances", async () => {
