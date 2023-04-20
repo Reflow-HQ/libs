@@ -18,8 +18,8 @@ function App() {
         config={config}
         successURL={"https://example.com/success"}
         cancelURL={"https://example.com/cancel"}
-        onError={(error) => {
-          console.log(error.title, error.description);
+        onMessage={(error) => {
+          console.log(error.type, error.title, error.description);
         }}
       />
       <div className="mt-5">

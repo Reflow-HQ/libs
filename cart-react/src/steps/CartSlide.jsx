@@ -6,7 +6,7 @@ import { useShoppingCart } from "../CartContext";
 import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
 import PayPalButton from "../components/PayPalButton";
 
-const CartSlide = ({ onError, step, setStep }) => {
+const CartSlide = ({ onMessage, step, setStep }) => {
   const cartManager = useShoppingCart((s) => s.cartManager);
   const t = useShoppingCart((s) => s.t);
 
@@ -36,7 +36,7 @@ const CartSlide = ({ onError, step, setStep }) => {
   function onSubmit(e) {
     e.preventDefault();
 
-    // Check for state errors and send them through an onError callback
+    // Check for state errors and send them through an onMessage callback
     // so the user can handle them however they see fit
 
     for (const err of errors) {
@@ -48,7 +48,7 @@ const CartSlide = ({ onError, step, setStep }) => {
           "product-max-qty-exceeded",
         ].includes(err.type)
       ) {
-        onError({ title: cartManager.getStateErrorMessage(err) });
+        onMessage({ type: "error", title: cartManager.getStateErrorMessage(err) });
         return;
       }
 
@@ -98,7 +98,7 @@ const CartSlide = ({ onError, step, setStep }) => {
                   fundingSource={"PAYPAL"}
                   step={step}
                   canSubmit={() => !!termsAccepted}
-                  onError={onError}
+                  onMessage={onMessage}
                   style={{
                     height: 42,
                   }}
@@ -141,7 +141,6 @@ const CartSlide = ({ onError, step, setStep }) => {
         <div className="ref-totals">
           <div className="ref-subtotal">{`${t("subtotal")}: ` + getSubtotal()}</div>
           {renderTermsOfAgreement()}
-          {/* TODO: add PayPal button */}
         </div>
       </div>
     </div>

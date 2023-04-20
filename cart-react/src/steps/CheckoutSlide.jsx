@@ -11,7 +11,7 @@ import Summary from "../components/Summary";
 import PaymentButton from "../components/PaymentButton";
 import PayPalButton from "../components/PayPalButton";
 
-export default function CheckoutSlide({ successURL, cancelURL, onError, step, setStep }) {
+export default function CheckoutSlide({ successURL, cancelURL, onMessage, step, setStep }) {
   const formDataKey = useShoppingCart((s) => s.localFormData.formDataKey);
   const useFormData = useLocalStorageFormData(formDataKey);
 
@@ -251,7 +251,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
     if (isInVactionMode) {
       const message = vacationMode.message || t("store_unavailable");
 
-      onError({ description: message });
+      onMessage({ type: "error", description: message });
       return;
     }
 
@@ -282,8 +282,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
       await cartManager.refresh();
 
       if (!cartManager.canFinish()) {
-        // TODO: handle error
-        onError({ description: cartManager.getStateErrors()[0] });
+        onMessage({ type: "error", description: cartManager.getStateErrors()[0] });
         return;
       }
 
@@ -372,7 +371,8 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
         setFormErrors(e.data.errors);
 
         if (e.data.errors.system) {
-          onError({
+          onMessage({
+            type: "error",
             title: t("cart.errors.cannot_complete"),
             description: cartManager.getErrorText(e, "system"),
           });
@@ -405,7 +405,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
             fundingSource={fundingSource}
             step={step}
             canSubmit={true}
-            onError={onError}
+            onMessage={onMessage}
           />
         ))}
       </div>
@@ -984,7 +984,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onError, step, se
 
       <Summary
         readOnly={step === "instructions"}
-        onError={onError}
+        onMessage={onMessage}
         updateCart={() => setStep("cart")}
       />
     </div>

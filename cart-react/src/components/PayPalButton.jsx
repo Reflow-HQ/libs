@@ -2,7 +2,7 @@ import ReactDOM from "react-dom";
 import React, { useState, useEffect } from "react";
 import { useShoppingCart, useAuth } from "../CartContext";
 
-export default function PayPalButton({ fundingSource, style = {}, step, canSubmit, onError }) {
+export default function PayPalButton({ fundingSource, style = {}, step, canSubmit, onMessage }) {
   const auth = useAuth();
   const cartManager = useShoppingCart((s) => s.cartManager);
   const currency = useShoppingCart((s) => s.currency);
@@ -104,7 +104,8 @@ export default function PayPalButton({ fundingSource, style = {}, step, canSubmi
 
       return actions.resolve();
     } catch (e) {
-      onError({
+      onMessage({
+        type: "error",
         title: "Couldn't update PayPal shipping",
         description: cartManager.getErrorText(e),
       });
@@ -130,7 +131,7 @@ export default function PayPalButton({ fundingSource, style = {}, step, canSubmi
       setPaypalError("");
     }
 
-    onError({ description: errorText });
+    onMessage({ type: "error", description: errorText });
   }
 
   function renderButton() {

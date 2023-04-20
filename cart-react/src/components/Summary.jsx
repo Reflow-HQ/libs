@@ -5,7 +5,7 @@ import { useShoppingCart } from "../CartContext";
 import SummaryProduct from "../components/SummaryProduct";
 import shortenString from "../utilities/shortenString";
 
-export default function Summary({ readOnly = false, onError, updateCart }) {
+export default function Summary({ readOnly = false, onMessage, updateCart }) {
   const [discountCode, setDiscountCode] = useState("");
   const [isSummaryOpen, setSummaryOpen] = useState(false);
 
@@ -26,8 +26,8 @@ export default function Summary({ readOnly = false, onError, updateCart }) {
   const deliveryMethod = useShoppingCart((s) => s.deliveryMethod);
   const shippingMethods = useShoppingCart((s) => s.shippingMethods);
 
-  const [shippingLabel, setShippingLabel] = useState(t("shipping"));
-  const [shippingPrice, setShippingPrice] = useState(t("cart.shipping_not_selected"));
+  const [shippingLabel, setShippingLabel] = useState(getShippingLabel());
+  const [shippingPrice, setShippingPrice] = useState(getShippingPriceLabel());
 
   const shouldShowDiscountForm = !readOnly && (!coupon || !giftCard);
 
@@ -38,32 +38,49 @@ export default function Summary({ readOnly = false, onError, updateCart }) {
       return;
     }
 
-    let s1 = t("shipping");
-    let s2 = t("cart.shipping_not_selected");
+    setShippingLabel(getShippingLabel());
+    setShippingPrice(getShippingPriceLabel());
+  }, [shippingMethods, deliveryMethod]);
+
+  function getShippingLabel() {
+    let label = t("shipping");
 
     if (deliveryMethod === "shipping") {
       for (let s of shippingMethods) {
         if (s.chosen) {
-          s1 = `${t("shipping")} (${s.name})`;
-          s2 = cartManager.formatCurrency(s.price);
+          return `${t("shipping")} (${s.name})`;
         }
       }
     }
 
     if (deliveryMethod === "pickup") {
-      s1 = t("pickup_at_store");
-      s2 = cartManager.formatCurrency(0);
+      label = t("pickup_at_store");
 
       for (let l of locations) {
         if (l.chosen) {
-          s1 = t("cart.pickup_at_store", { store: l.name });
+          return t("cart.pickup_at_store", { store: l.name });
         }
       }
     }
 
-    setShippingLabel(s1);
-    setShippingPrice(s2);
-  }, [shippingMethods, deliveryMethod]);
+    return label;
+  }
+
+  function getShippingPriceLabel() {
+    if (deliveryMethod === "shipping") {
+      for (let s of shippingMethods) {
+        if (s.chosen) {
+          return cartManager.formatCurrency(s.price);
+        }
+      }
+    }
+
+    if (deliveryMethod === "pickup") {
+      return cartManager.formatCurrency(0);
+    }
+
+    return t("cart.shipping_not_selected");
+  }
 
   function submitDicountForm(e) {
     e.preventDefault();
@@ -74,7 +91,10 @@ export default function Summary({ readOnly = false, onError, updateCart }) {
     return cartManager
       .applyDiscountCode({ code })
       .then((result) => {
-        // TODO: onMessage title: t('cart.' + result.type +  '_added')
+        onMessage({
+          type: "success",
+          title: t("cart." + result.type + "_added"),
+        });
         resetCoupon();
       })
       .catch((e) => {
@@ -84,7 +104,8 @@ export default function Summary({ readOnly = false, onError, updateCart }) {
 
   function removeCoupon() {
     return cartManager.removeCoupon().catch(() => {
-      onError({
+      onMessage({
+        type: "error",
         title: t("error"),
       });
     });
@@ -92,7 +113,8 @@ export default function Summary({ readOnly = false, onError, updateCart }) {
 
   function removeGiftCard() {
     return cartManager.removeGiftCard().catch(() => {
-      onError({
+      onMessage({
+        type: "error",
         title: t("error"),
       });
     });
@@ -211,8 +233,10 @@ export default function Summary({ readOnly = false, onError, updateCart }) {
             <div className="ref-taxes">
               <div className="ref-row">
                 <span>
-                  {`${taxRate.name} (${taxRate.rate}%)` +
-                    (taxDetails.exemption ? " – " + taxDetails.exemption : "")}
+                  {taxRate
+                    ? `${taxRate.name} (${taxRate.rate}%)` +
+                      (taxDetails.exemption ? " – " + taxDetails.exemption : "")
+                    : ""}
                 </span>
                 <span>{cartManager.formatCurrency(taxes.amount)}</span>
               </div>
@@ -262,7 +286,7 @@ export default function Summary({ readOnly = false, onError, updateCart }) {
       <div className={`ref-summary-toggle ref-field-collapsible${isSummaryOpen ? " open" : ""}`}>
         <span className="ref-field-toggle" onClick={() => setSummaryOpen(!isSummaryOpen)}>
           <span className="ref-field-toggle-title">{t("cart.show_summary")}</span>
-          <span className="ref-summary-total"></span>
+          <span className="ref-summary-total">{cartManager.formatCurrency(total)}</span>
         </span>
       </div>
     </>

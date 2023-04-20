@@ -56,7 +56,7 @@ cart
 Localization.args = {
   config,
   localization,
-  onError: (error) => {
+  onMessage: (error) => {
     let message = "";
 
     if (error.title) {

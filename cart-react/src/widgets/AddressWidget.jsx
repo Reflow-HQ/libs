@@ -14,7 +14,6 @@ export default function AddressWidget({
     fields = ["name", "city", "address", "country"];
   }
 
-  // TODO: make this a ref and update only when countryCode changes?
   const country = countries.find((c) => c.country_code === model.countryCode);
   const showRegionZip = isDigital ? country?.country_code === "US" : true;
   const showPostcode = showRegionZip && country?.has_postcode;
