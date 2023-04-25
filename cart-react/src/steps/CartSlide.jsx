@@ -5,8 +5,9 @@ import CartProduct from "../components/CartProduct";
 import { useShoppingCart } from "../CartContext";
 import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
 import PayPalButton from "../components/PayPalButton";
+import FooterLinks from "../components/FooterLinks";
 
-const CartSlide = ({ onMessage, step, setStep }) => {
+const CartSlide = ({ successURL, onMessage, step, setStep }) => {
   const cartManager = useShoppingCart((s) => s.cartManager);
   const t = useShoppingCart((s) => s.t);
 
@@ -98,6 +99,7 @@ const CartSlide = ({ onMessage, step, setStep }) => {
                   fundingSource={"PAYPAL"}
                   step={step}
                   canSubmit={() => !!termsAccepted}
+                  successURL={successURL}
                   onMessage={onMessage}
                   style={{
                     height: 42,
@@ -131,13 +133,7 @@ const CartSlide = ({ onMessage, step, setStep }) => {
         ))}
       </div>
       <div className="ref-footer">
-        <div className="ref-links">
-          {footerLinks.map((link) => (
-            <a key={link.id} href={link.url} target="_blank">
-              {t("cart." + link.id)}
-            </a>
-          ))}
-        </div>
+        <FooterLinks />
         <div className="ref-totals">
           <div className="ref-subtotal">{`${t("subtotal")}: ` + getSubtotal()}</div>
           {renderTermsOfAgreement()}

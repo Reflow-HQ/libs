@@ -1,5 +1,6 @@
 import React from "react";
 import Cart, { createReflowCart } from "@reflowhq/cart-react";
+import useAuth from "@reflowhq/auth-react";
 import "@reflowhq/cart-react/dist/style.css";
 
 const config = {
@@ -10,16 +11,18 @@ const config = {
 const useCart = createReflowCart({ config });
 
 function App() {
+  const auth = useAuth(config);
   const cartManager = useCart((s) => s.cartManager);
 
   return (
     <div className="container my-5">
       <Cart
         config={config}
+        auth={auth}
         successURL={"https://example.com/success"}
         cancelURL={"https://example.com/cancel"}
-        onMessage={(error) => {
-          console.log(error.type, error.title, error.description);
+        onMessage={(message) => {
+          console.log(message.type, message.title, message.description);
         }}
       />
       <div className="mt-5">

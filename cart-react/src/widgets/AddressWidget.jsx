@@ -19,9 +19,7 @@ export default function AddressWidget({
   const showPostcode = showRegionZip && country?.has_postcode;
   const showState = showRegionZip && country?.has_regions;
 
-  const { t } = useShoppingCart((s) => ({
-    t: s.t,
-  }));
+  const t = useShoppingCart((s) => s.t);
 
   function shouldShowField(field) {
     return fields.includes(field);

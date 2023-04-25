@@ -144,8 +144,14 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
   const couponLabel = coupon?.name || coupon?.code.toUpperCase() || "";
 
   return (
-    <>
-      <div className={`ref-checkout-summary${isSummaryOpen ? " open" : ""}`}>
+    <div className="ref-summary">
+      <div className={`ref-summary-toggle ref-field-collapsible${isSummaryOpen ? " open" : ""}`}>
+        <span className="ref-field-toggle" onClick={() => setSummaryOpen(!isSummaryOpen)}>
+          <span className="ref-field-toggle-title">{t("cart.show_summary")}</span>
+          <span className="ref-summary-total">{cartManager.formatCurrency(total)}</span>
+        </span>
+      </div>
+      <div className={`ref-summary-content${isSummaryOpen ? " open" : ""}`}>
         <div className="ref-heading">{t("cart.order_summary")}</div>
         <div className="ref-products">
           {products.map((product) => (
@@ -153,6 +159,9 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
               key={cartManager.getProductKey(product)}
               product={product}
               updateCart={updateCart}
+              showPriceBreakdown={true}
+              showPersonalization={true}
+              showRemoveButton={!product.inStock}
             ></SummaryProduct>
           ))}
         </div>
@@ -243,12 +252,12 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
             </div>
           )}
           {giftCard && (
-            <div class="ref-applied-gift-card">
-              <div class="ref-row">
-                <div class="ref-row">
+            <div className="ref-applied-gift-card">
+              <div className="ref-row">
+                <div className="ref-row">
                   <span>{giftCard.code}</span>
                   {!readOnly && (
-                    <span class="ref-remove-gift-card" onClick={removeGiftCard}>
+                    <span className="ref-remove-gift-card" onClick={removeGiftCard}>
                       {t("remove")}
                     </span>
                   )}
@@ -259,14 +268,14 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
                     : "-" + cartManager.formatCurrency(giftCard.discountAmount)}
                 </span>
               </div>
-              <div class="ref-row">
+              <div className="ref-row">
                 {"(" +
                   t("cart.gift_card_balance", {
                     amount: cartManager.formatCurrency(giftCard.balance),
                   }) +
                   ")"}
               </div>
-              <div class="ref-applied-gift-card-error">
+              <div className="ref-applied-gift-card-error">
                 {cartManager.getErrorText({ data: { errorCode: giftCard.errorCode } }) || ""}
               </div>
             </div>
@@ -283,12 +292,6 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
           </div>
         </div>
       </div>
-      <div className={`ref-summary-toggle ref-field-collapsible${isSummaryOpen ? " open" : ""}`}>
-        <span className="ref-field-toggle" onClick={() => setSummaryOpen(!isSummaryOpen)}>
-          <span className="ref-field-toggle-title">{t("cart.show_summary")}</span>
-          <span className="ref-summary-total">{cartManager.formatCurrency(total)}</span>
-        </span>
-      </div>
-    </>
+    </div>
   );
 }

@@ -3,8 +3,9 @@ import React from "react";
 import QuantityWidget from "../widgets/QuantityWidget";
 
 import { useShoppingCart } from "../CartContext";
+import RemoveProductButton from "./RemoveProductButton";
 
-import shortenString from "../utilities/shortenString";
+import SummaryProduct from "./SummaryProduct";
 
 export default function CartProduct({ product }) {
   const cartManager = useShoppingCart((s) => s.cartManager);
@@ -33,25 +34,6 @@ export default function CartProduct({ product }) {
     return cartManager.formatCurrency(price);
   }
 
-  function updateProductQuantity(quantity) {
-    cartManager.updateProductQuantity(
-      {
-        id: product.id,
-        variantID: product.variant?.id,
-        personalization: product.personalization,
-      },
-      quantity
-    );
-  }
-
-  function removeProduct() {
-    cartManager.removeProduct({
-      id: product.id,
-      variantID: product.variant?.id,
-      personalization: product.personalization,
-    });
-  }
-
   if (product.inStock) {
     if (product.quantity > product.availableQuantity) {
       quantityErrorMessage = t("cart.left_in_stock", { in_stock: product.availableQuantity });
@@ -60,63 +42,19 @@ export default function CartProduct({ product }) {
     }
   }
 
-  function getPersonalizationLabel(p) {
-    return `${p.name}${p.inputText ? ': "' + p.inputText + '" ' : ""}${
-      p.selected ? ': "' + p.selected + '" ' : ""
-    }${p.filename ? ': "' + p.filename + '" ' : ""} ${
-      p.price ? "+" + cartManager.formatCurrency(p.price) : "- " + t("price_free")
-    }`;
-  }
-
   return (
-    <div className="ref-product">
+    <div className="ref-line-item">
       <div className="ref-product-col">
-        <div className="ref-product-wrapper">
-          <img className="ref-product-photo" src={product.image.sm} alt={product.name} />
-          <div className="ref-product-data">
-            <div className="ref-product-info">
-              <div>
-                <div className="ref-product-name">{product.name}</div>
-                <div className="ref-product-category">{category}</div>
-                {product.variant && (
-                  <div className="ref-product-variant">
-                    {product.variant.option_name + ": " + product.variant.name}
-                  </div>
-                )}
-                {!!product?.personalization.length && (
-                  <div className="ref-product-personalization-holder">
-                    {product.personalization.map((p) => (
-                      <div
-                        key={getPersonalizationLabel(p)}
-                        className="ref-product-personalization"
-                        title={getPersonalizationLabel(p)}
-                      >
-                        {shortenString(getPersonalizationLabel(p), 55)}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="ref-product-price ref-mobile-product-price">{getUnitPrice()}</div>
-            </div>
-            <div className="ref-product-controls ref-mobile-product-controls">
-              <div className="ref-product-quantity">
-                <div className="ref-quantity-container">
-                  <QuantityWidget product={product} onChange={updateProductQuantity} />
-                </div>
-                <div className="ref-product-qty-message">{quantityErrorMessage}</div>
-              </div>
-              <div className="ref-product-remove" onClick={removeProduct}>
-                <svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 48 48">
-                  <path
-                    fill="currentColor"
-                    d="M13.05 42q-1.2 0-2.1-.9-.9-.9-.9-2.1V10.5H8v-3h9.4V6h13.2v1.5H40v3h-2.05V39q0 1.2-.9 2.1-.9.9-2.1.9Zm21.9-31.5h-21.9V39h21.9Zm-16.6 24.2h3V14.75h-3Zm8.3 0h3V14.75h-3Zm-13.6-24.2V39Z"
-                  ></path>
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SummaryProduct
+          product={product}
+          showCategory={true}
+          showVariantBreakdown={true}
+          showPersonalization={true}
+          showPersonalizationPrice={true}
+          showQuantityWidget={true}
+          showRemoveButton={true}
+          showPriceBreakdown={false}
+        />
       </div>
       <div className="ref-price-col">
         <div className="ref-product-price">{getUnitPrice()}</div>
@@ -124,17 +62,15 @@ export default function CartProduct({ product }) {
       <div className="ref-quantity-col">
         <div className="ref-product-quantity">
           <div className="ref-quantity-container">
-            <QuantityWidget product={product} onChange={updateProductQuantity} />
+            <QuantityWidget product={product} />
           </div>
           <div className="ref-product-qty-message">{quantityErrorMessage}</div>
-          <div className="ref-product-remove" onClick={removeProduct}>
-            {t("remove")}
-          </div>
+          <RemoveProductButton product={product}>{t("remove")}</RemoveProductButton>
         </div>
       </div>
       <div className="ref-total-col">
         <div className="ref-product-total">
-          <div className={(!product.inStock ? "out-of-stock " : "") + "ref-product-total-sum"}>
+          <div className={(!product.inStock ? "out-of-stock " : "") + "ref-product-total"}>
             {product.inStock ? getTotalPrice() : t("out_of_stock")}
           </div>
         </div>

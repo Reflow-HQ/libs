@@ -5,6 +5,7 @@ import Cart from "@reflowhq/cart";
 const { useSyncExternalStoreWithSelector } = useSyncExternalStoreExports;
 
 export const cartMap = new Map();
+const listeners = new Set();
 
 function createStore({ config, localization = {} }) {
   const cart = new Cart({ ...config, localization });
@@ -20,7 +21,7 @@ function createStore({ config, localization = {} }) {
 
     state = Object.assign({}, prevState, newState);
 
-    // cart._subscribers.forEach((cb) => cb(state, prevState));
+    listeners.forEach((listener) => listener());
   };
 
   state = {
@@ -31,6 +32,7 @@ function createStore({ config, localization = {} }) {
     setDeliveryMethod: cart.setDeliveryMethod.bind(cart),
     setSelectedLocation: cart.setSelectedLocation.bind(cart),
     setSelectedShippingMethod: cart.setSelectedShippingMethod.bind(cart),
+    setTaxExemptionRemoved: (taxExemptionRemoved) => setState({ taxExemptionRemoved }),
     cartManager: {
       addProduct: cart.addProduct.bind(cart),
       updateProductQuantity: cart.updateProductQuantity.bind(cart),
@@ -81,13 +83,20 @@ function createStore({ config, localization = {} }) {
     subscribe: (listener) => {
       const updateState = (newState) => {
         setState(newState);
-        listener();
       };
 
+      const onTaxExemptionRemoved = () => {
+        setState({ taxExemptionRemoved: true });
+      };
+
+      listeners.add(listener);
       cart.on("change", updateState);
+      cart.on("tax-exemption-removed", onTaxExemptionRemoved);
 
       return () => {
+        listeners.delete(listener);
         cart.off("change", updateState);
+        cart.off("tax-exemption-removed", onTaxExemptionRemoved);
       };
     },
   };
@@ -96,9 +105,6 @@ function createStore({ config, localization = {} }) {
 export function createReflowCartStore({ config, ...props }) {
   let store;
 
-  // if (config instanceof Cart) {
-  //   store = config;
-  // } else
   if (config.storeID) {
     if (!cartMap.has(config.storeID)) {
       cartMap.set(config.storeID, createStore({ config, ...props }));

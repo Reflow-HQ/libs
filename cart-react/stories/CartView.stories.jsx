@@ -50,7 +50,19 @@ cart
   .getState()
   .cartManager.addProduct({ id: "379178066" })
   .then(() => {
-    cart.getState().cartManager.addProduct({ id: "558773655" });
+    cart
+      .getState()
+      .cartManager.addProduct({ id: "558773655" })
+      .then(() => {
+        cart.getState().cartManager.addProduct({
+          id: "199976733",
+          variantID: "199976733_m",
+          personalization: [
+            { id: "199976733_engraving", inputText: "text" },
+            { id: "199976733_gift_wrap" },
+          ],
+        });
+      });
   });
 
 Localization.args = {

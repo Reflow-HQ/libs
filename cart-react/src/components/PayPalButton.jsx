@@ -2,57 +2,44 @@ import ReactDOM from "react-dom";
 import React, { useState, useEffect } from "react";
 import { useShoppingCart, useAuth } from "../CartContext";
 
-export default function PayPalButton({ fundingSource, style = {}, step, canSubmit, onMessage }) {
+import useExternalScript from "../hooks/useExternalScript";
+import formatURL from "../utilities/formatURL";
+
+export default function PayPalButton({
+  fundingSource,
+  style = {},
+  checkoutStep,
+  canSubmit,
+  onMessage,
+}) {
   const auth = useAuth();
   const cartManager = useShoppingCart((s) => s.cartManager);
   const currency = useShoppingCart((s) => s.currency);
 
-  const [sdkLoaded, setSDKLoaded] = useState(false);
+  const paypalProvider = cartManager.getPaymentProvider("paypal");
+
+  if (!paypalProvider) return null;
+
+  const externalScript =
+    "https://www.paypal.com/sdk/js?client-id=" +
+    paypalProvider.clientID +
+    "&disable-funding=credit,bancontact,blik,eps,giropay,ideal,mercadopago,mybank,p24,sepa,sofort,venmo" +
+    "&merchant-id=" +
+    paypalProvider.merchantID +
+    "&currency=" +
+    currency +
+    "&integration-date=2023-03-30";
+
+  const state = useExternalScript(externalScript);
+  const sdkLoaded = state === "ready";
+
   const [paypalError, setPaypalError] = useState("");
-
-  useEffect(() => {
-    const paypalProvider = cartManager.getPaymentProvider("paypal");
-
-    if (!paypalProvider) return;
-
-    const id = "reflow-paypal-sdk";
-    let script = document.querySelector(`#${id}`);
-
-    if (script) {
-      setSDKLoaded(true);
-      return;
-    }
-
-    // Create a script element
-    script = document.createElement("script");
-    script.id = id;
-
-    script.onload = () => setSDKLoaded(true);
-    script.onerror = (e) => console.error(e);
-
-    document.body.append(script);
-
-    script.src =
-      "https://www.paypal.com/sdk/js?client-id=" +
-      paypalProvider.clientID +
-      "&disable-funding=credit,bancontact,blik,eps,giropay,ideal,mercadopago,mybank,p24,sepa,sofort,venmo" +
-      "&merchant-id=" +
-      paypalProvider.merchantID +
-      "&currency=" +
-      currency +
-      "&integration-date=2023-03-30";
-
-    //return a function to clean up the script element when the component unmounts
-    // return () => {
-    //   document.body.removeChild(script);
-    // };
-  }, []);
 
   async function createOrder() {
     if (!canSubmit()) return;
 
     try {
-      const data = { "checkout-step": step };
+      const data = { "checkout-step": checkoutStep };
 
       if (auth && auth.isSignedIn()) {
         data["auth-account-id"] = auth.user.id;
@@ -69,10 +56,10 @@ export default function PayPalButton({ fundingSource, style = {}, step, canSubmi
     try {
       const result = await cartManager.paypalOnApprove(data, actions);
 
-      // window.location = this.getSuccessURL({
-      //   order_id: result.orderID,
-      //   secure_hash: result.secureHash,
-      // });
+      window.location = formatURL(successURL, {
+        order_id: result.orderID,
+        secure_hash: result.secureHash,
+      });
     } catch (e) {
       if (!e.data) {
         throw e;
@@ -149,6 +136,8 @@ export default function PayPalButton({ fundingSource, style = {}, step, canSubmi
       />
     );
   }
+
+  if (!paypalProvider) return null;
 
   return <>{sdkLoaded ? renderButton() : null}</>;
 }

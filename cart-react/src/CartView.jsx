@@ -4,15 +4,15 @@ import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import CartSlide from "./steps/CartSlide";
 import CheckoutSlide from "./steps/CheckoutSlide";
 
-const CartView = ({ config, localization = {}, successURL, cancelURL, onMessage }) => {
+const CartView = ({ config, localization = {}, auth, successURL, cancelURL, onMessage }) => {
   return (
-    <ShoppingCartProvider config={config} localization={localization}>
+    <ShoppingCartProvider config={config} localization={localization} auth={auth}>
       <CartUI successURL={successURL} cancelURL={cancelURL} onMessage={onMessage} />
     </ShoppingCartProvider>
   );
 };
 
-function CartUI({ successURL, cancelURL, onMessage }) {
+export function CartUI({ successURL, cancelURL, onMessage }) {
   const [step, setStep] = useState("cart");
 
   const cartManager = useShoppingCart((s) => s.cartManager);

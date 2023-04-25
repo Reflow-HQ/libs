@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useRef } from "react";
 import { createReflowCartStore, useCart } from "./createReflowCart";
-import useCartAuth from "@reflowhq/auth-react";
 
 const ShoppingCartContext = createContext({});
 
 export function useAuth() {
-  const { auth } = useContext(ShoppingCartContext);
+  const { auth, hasAuth } = useContext(ShoppingCartContext);
+
+  if (!hasAuth) return null;
 
   if (!auth) throw new Error("Missing ShoppingCartContext.Provider in the tree");
 
@@ -22,7 +23,11 @@ export function useShoppingCart(selector, equalityFn) {
 
 export function ShoppingCartProvider({ children, ...props }) {
   const storeRef = useRef();
-  const authRef = useRef(useCartAuth(props.config));
+  const authRef = useRef(props.auth);
+
+  const hasAuth = !!props.auth;
+
+  console.log("render");
 
   if (!storeRef.current) {
     storeRef.current = createReflowCartStore(props);
@@ -34,7 +39,9 @@ export function ShoppingCartProvider({ children, ...props }) {
   }, []);
 
   return (
-    <ShoppingCartContext.Provider value={{ store: storeRef.current, auth: authRef.current }}>
+    <ShoppingCartContext.Provider
+      value={{ store: storeRef.current, auth: authRef.current, hasAuth }}
+    >
       {children}
     </ShoppingCartContext.Provider>
   );
