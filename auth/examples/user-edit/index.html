@@ -43,11 +43,7 @@
           // Get the latest user data from the server
           await auth.refresh();
 
-<<<<<<< HEAD:auth/examples/profile-edit/index.html
-          let meta = auth.profile.meta;
-=======
           let meta = auth.user.meta;
->>>>>>> master:auth/examples/user-edit/index.html
 
           if (!meta.example) {
             meta.example = [];
@@ -74,13 +70,8 @@
         }
       });
 
-<<<<<<< HEAD:auth/examples/profile-edit/index.html
-      function showProfile(profile) {
-        console.log("Showing profile", profile);
-=======
       function showUser(user) {
         console.log("Showing user", user);
->>>>>>> master:auth/examples/user-edit/index.html
 
         let con = document.querySelector(".container");
 
@@ -105,17 +96,10 @@
 
         let metaview = con.querySelector("#metaview");
 
-<<<<<<< HEAD:auth/examples/profile-edit/index.html
-        if (profile.meta?.example) {
-          let pre = document.createElement("pre");
-          pre.className = "mb-0";
-          pre.append(JSON.stringify(profile.meta.example));
-=======
         if (user.meta?.example) {
           let pre = document.createElement("pre");
           pre.className = "mb-0";
           pre.append(JSON.stringify(user.meta.example));
->>>>>>> master:auth/examples/user-edit/index.html
           metaview.append(pre);
         } else {
           metaview.textContent = "No metadata set";
@@ -141,13 +125,8 @@
         <span
           ><strong>Note</strong> to test this example, serve the <code>auth</code> folder on
           localhost:8080 using a local web server, then
-<<<<<<< HEAD:auth/examples/profile-edit/index.html
-          <a href="http://localhost:8080/examples/profile-edit/index.html">open this page</a> (If
-=======
-          <a href="http://localhost:8080/examples/user-edit/index.html">open this page</a> (If
->>>>>>> master:auth/examples/user-edit/index.html
-          the link doesn't work you haven't started the webserver correctly) and click the button
-          below.
+          <a href="http://localhost:8080/examples/user-edit/index.html">open this page</a> (If the
+          link doesn't work you haven't started the webserver correctly) and click the button below.
         </span>
       </div>
       <button id="signin" class="btn btn-primary">Sign In</button>
