@@ -5,10 +5,10 @@ import Cart from "@reflowhq/cart";
 const { useSyncExternalStoreWithSelector } = useSyncExternalStoreExports;
 
 export const cartMap = new Map();
-const listeners = new Set();
 
 function createStore({ config, localization = {} }) {
   const cart = new Cart({ ...config, localization });
+  const listeners = new Set();
 
   let state;
 
