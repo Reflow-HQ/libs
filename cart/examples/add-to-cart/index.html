@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>Add to Cart Example</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootswatch@5.2.3/dist/zephyr/bootstrap.min.css"
+    />
+
+    <style>
+      .product-photo {
+        object-fit: cover;
+        width: 100px;
+        height: 100px;
+        border-radius: 5px;
+        margin-right: 1em;
+      }
+
+      .product-name {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5em;
+      }
+
+      .quantity-widget {
+        display: flex;
+      }
+
+      .quantity-input {
+        max-width: 30px;
+      }
+
+      .product-remove {
+        cursor: pointer;
+      }
+    </style>
+
+    <script type="module">
+      import Cart from "../../dist/index.js";
+
+      const cart = new Cart({ storeID: 199976733, apiBase: "http://api.reflow.local/v1" });
+
+      document.addEventListener("DOMContentLoaded", initCart);
+
+      document.addEventListener("click", async (e) => {
+        if (e.target.matches(".add-product")) {
+          const productID = e.target.dataset.productId;
+
+          if (productID) {
+            await cart.addProduct({ id: productID });
+            alert("Product added to cart");
+          }
+
+          return;
+        }
+
+        if (e.target.matches(".quantity-widget .btn")) {
+          const productElem = e.target.closest(".product");
+
+          if (!productElem) return;
+
+          const productID = productElem.dataset.productId;
+          const product = cart.state.products.find((p) => p.id == productID);
+
+          if (e.target.matches(".btn-increase")) {
+            increaseQuantity(product);
+          } else {
+            decreaseQuantity(product);
+          }
+
+          return;
+        }
+
+        if (e.target.matches(".product-remove")) {
+          const productElem = e.target.closest(".product");
+
+          if (!productElem) return;
+
+          const productID = productElem.dataset.productId;
+          const product = cart.state.products.find((p) => p.id == productID);
+
+          removeProduct(product);
+        }
+      });
+
+      document.addEventListener("change", async (e) => {
+        if (e.target.matches(".quantity-input")) {
+          const productElem = e.target.closest(".product");
+
+          if (!productElem) return;
+
+          const productID = productElem.dataset.productId;
+          const product = cart.state.products.find((p) => p.id == productID);
+
+          updateProductQuantity(product, e.target.value);
+
+          return;
+        }
+      });
+
+      cart.on("change", renderCartProducts);
+
+      function initCart() {
+        cart.refresh();
+      }
+
+      function getMinQuantity(product) {
+        return 1;
+      }
+
+      function getMaxQuantity(product) {
+        return Math.min(product.availableQuantity, product.maxQty);
+      }
+
+      function canIncreaseQuantity(product) {
+        return product.quantity < getMaxQuantity(product);
+      }
+
+      function canDecreaseQuantity(product) {
+        return product.quantity > getMinQuantity(product);
+      }
+
+      function increaseQuantity(product) {
+        const newQuantity = product.quantity + 1;
+
+        if (newQuantity <= getMaxQuantity(product)) {
+          updateProductQuantity(product, newQuantity);
+        }
+      }
+
+      function decreaseQuantity(product) {
+        const newQuantity = product.quantity - 1;
+
+        if (newQuantity >= getMinQuantity(product)) {
+          updateProductQuantity(product, newQuantity);
+        }
+      }
+
+      function updateProductQuantity(product, newQuantity) {
+        if (isNaN(newQuantity)) return;
+
+        if (newQuantity !== product.quantity) {
+          cart.updateProductQuantity(
+            {
+              id: product.id,
+              variantID: product.variant?.id,
+              personalization: product.personalization,
+            },
+            newQuantity
+          );
+        }
+      }
+
+      function removeProduct(product) {
+        cart.removeProduct({
+          id: product.id,
+          variantID: product.variant?.id,
+          personalization: product.personalization,
+        });
+      }
+
+      function renderCartProducts() {
+        const productList = document.querySelector("#product-list");
+        while (productList.firstChild) {
+          productList.removeChild(productList.firstChild);
+        }
+
+        for (const product of cart.state.products) {
+          const productElem = document.createElement("div");
+          productElem.classList.add("product", "d-flex", "mb-2");
+          productElem.setAttribute("data-product-id", product.id);
+
+          if (product.variant) {
+            productElem.setAttribute("data-product-variant", product.variant.id);
+          }
+
+          const photo = document.createElement("img");
+          photo.classList.add("product-photo");
+          photo.src = product.image.sm;
+
+          const info = document.createElement("div");
+          info.classList.add("product-info");
+
+          const name = document.createElement("div");
+          name.classList.add("product-name");
+          name.textContent = product.name;
+
+          const quantity = document.createElement("div");
+          quantity.classList.add("quantity-widget", "input-group", "input-group-sm", "mb-2");
+          // const quantityLabel = document.createElement("span");
+          // quantityLabel.textContent = "Quantity: ";
+
+          const increaseQuantity = document.createElement("button");
+          increaseQuantity.classList.add("btn", "btn-light", "btn-increase");
+          increaseQuantity.type = "button";
+          increaseQuantity.disabled = !canIncreaseQuantity(product);
+          increaseQuantity.textContent = "+";
+
+          const decreaseQuantity = document.createElement("button");
+          decreaseQuantity.classList.add("btn", "btn-light", "btn-decrease");
+          decreaseQuantity.type = "button";
+          decreaseQuantity.disabled = !canDecreaseQuantity(product);
+          decreaseQuantity.textContent = "-";
+
+          const quantityInput = document.createElement("input");
+          quantityInput.classList.add("quantity-input", "form-control");
+          quantityInput.value = product.quantity;
+
+          quantity.append(decreaseQuantity, quantityInput, increaseQuantity);
+
+          const removeBtn = document.createElement("a");
+          removeBtn.classList.add("product-remove", "link-danger");
+          removeBtn.textContent = "Remove";
+
+          info.append(name);
+          info.append(quantity);
+          info.append(removeBtn);
+
+          productElem.append(photo);
+          productElem.append(info);
+
+          productList.append(productElem);
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <div class="container pt-5">
+      <div id="cart" class="my-4">
+        <h4>Cart</h4>
+        <div id="product-list"></div>
+      </div>
+      <div class="btn btn-primary me-2 add-product" data-product-id="379178066">
+        Add Physical Product
+      </div>
+      <div class="btn btn-primary me-2 add-product" data-product-id="558773655">
+        Add Digital Product
+      </div>
+    </div>
+  </body>
+</html>

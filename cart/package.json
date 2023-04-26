@@ -2,7 +2,7 @@
   "name": "@reflowhq/cart",
   "version": "0.0.1",
   "description": "Shopping Cart management library for Reflow",
-  "exports": "./index.js",
+  "exports": "./dist/index.js",
   "type": "module",
   "directories": {
     "test": "tests"
@@ -19,7 +19,8 @@
   },
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "publish": "echo Todo"
+    "publish": "echo Todo",
+    "build": "esbuild index.js --outfile=./dist/index.js --format=esm --bundle --minify --log-level=warning --target=es2020,chrome80,firefox80,safari13"
   },
   "devDependencies": {
     "jest": "^29.4.3",
