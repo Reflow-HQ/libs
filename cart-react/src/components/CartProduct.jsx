@@ -8,8 +8,8 @@ import RemoveProductButton from "./RemoveProductButton";
 import SummaryProduct from "./SummaryProduct";
 
 export default function CartProduct({ product }) {
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const cartManager = useShoppingCart().cartManager;
+  const t = useShoppingCart().t;
 
   const category = product.categories[0]?.name || t("product");
   let quantityErrorMessage = "";

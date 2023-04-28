@@ -13,7 +13,7 @@ import PaymentButton from "../components/PaymentButton";
 import PayPalButton from "../components/PayPalButton";
 
 export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheckoutSuccess }) {
-  const formDataKey = useShoppingCart((s) => s.localFormData.formDataKey);
+  const formDataKey = useShoppingCart().localFormData.formDataKey;
   const useFormData = useLocalStorageFormData(formDataKey);
 
   const [email, setEmail] = useFormData("email");
@@ -35,36 +35,30 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
   const auth = useAuth();
   const user = auth?.user || null;
 
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const showLoading = useShoppingCart((s) => s.showLoading);
-  const hideLoading = useShoppingCart((s) => s.hideLoading);
-  const t = useShoppingCart((s) => s.t);
+  const cartManager = useShoppingCart().cartManager;
+  const showLoading = useShoppingCart().showLoading;
+  const hideLoading = useShoppingCart().hideLoading;
+  const t = useShoppingCart().t;
 
-  const locale = useShoppingCart((s) => s.locale);
-  const errors = useShoppingCart((s) => s.errors);
-  const locations = useShoppingCart((s) => s.locations);
-  const shippingMethods = useShoppingCart((s) => s.shippingMethods);
-  const shippableCountries = useShoppingCart((s) => s.shippableCountries);
-  const taxes = useShoppingCart((s) => s.taxes);
-  const taxExemption = useShoppingCart((s) => s.taxExemption);
-  const vacationMode = useShoppingCart((s) => s.vacationMode);
-  const paymentProviders = useShoppingCart((s) => s.paymentProviders);
-  const signInProviders = useShoppingCart((s) => s.signInProviders);
+  const locale = useShoppingCart().locale;
+  const errors = useShoppingCart().errors;
+  const locations = useShoppingCart().locations;
+  const shippingMethods = useShoppingCart().shippingMethods;
+  const shippableCountries = useShoppingCart().shippableCountries;
+  const taxes = useShoppingCart().taxes;
+  const taxExemption = useShoppingCart().taxExemption;
+  const vacationMode = useShoppingCart().vacationMode;
+  const paymentProviders = useShoppingCart().paymentProviders;
+  const signInProviders = useShoppingCart().signInProviders;
 
-  const [deliveryMethod, setDeliveryMethod] = useShoppingCart((s) => [
-    s.deliveryMethod,
-    s.setDeliveryMethod,
-  ]);
+  const deliveryMethod = useShoppingCart().deliveryMethod;
+  const setDeliveryMethod = useShoppingCart().setDeliveryMethod;
 
-  const [selectedLocation, setSelectedLocation] = useShoppingCart((s) => [
-    s.selectedLocation,
-    s.setSelectedLocation,
-  ]);
+  const selectedLocation = useShoppingCart().selectedLocation;
+  const setSelectedLocation = useShoppingCart().setSelectedLocation;
 
-  const [selectedShippingMethod, setSelectedShippingMethod] = useShoppingCart((s) => [
-    s.selectedShippingMethod,
-    s.setSelectedShippingMethod,
-  ]);
+  const selectedShippingMethod = useShoppingCart().selectedShippingMethod;
+  const setSelectedShippingMethod = useShoppingCart().setSelectedShippingMethod;
 
   const isInVactionMode = vacationMode?.enabled;
   const shouldShowPaypalButtons =

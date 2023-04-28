@@ -4,9 +4,9 @@ import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import CartSlide from "./steps/CartSlide";
 import CheckoutSlide from "./steps/CheckoutSlide";
 
-const CartView = ({ config, localization = {}, auth, successURL, cancelURL, onMessage }) => {
+const CartView = ({ cart, localization = {}, auth, successURL, cancelURL, onMessage }) => {
   return (
-    <ShoppingCartProvider config={config} localization={localization} auth={auth}>
+    <ShoppingCartProvider cart={cart} localization={localization} auth={auth}>
       <CartUI successURL={successURL} cancelURL={cancelURL} onMessage={onMessage} />
     </ShoppingCartProvider>
   );
@@ -15,13 +15,13 @@ const CartView = ({ config, localization = {}, auth, successURL, cancelURL, onMe
 export function CartUI({ successURL, cancelURL, onMessage }) {
   const [step, setStep] = useState("cart");
 
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const cartManager = useShoppingCart().cartManager;
+  const t = useShoppingCart().t;
 
-  const products = useShoppingCart((s) => s.products);
-  const isLoading = useShoppingCart((s) => s.isLoading);
-  const isLoaded = useShoppingCart((s) => s.isLoaded);
-  const isUnavailable = useShoppingCart((s) => s.isUnavailable);
+  const products = useShoppingCart().products;
+  const isLoading = useShoppingCart().isLoading;
+  const isLoaded = useShoppingCart().isLoaded;
+  const isUnavailable = useShoppingCart().isUnavailable;
 
   const errorMessage = isUnavailable
     ? t("cart.errors.unavailable")

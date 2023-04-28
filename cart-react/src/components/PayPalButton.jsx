@@ -13,8 +13,8 @@ export default function PayPalButton({
   onMessage,
 }) {
   const auth = useAuth();
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const currency = useShoppingCart((s) => s.currency);
+  const cartManager = useShoppingCart().cartManager;
+  const currency = useShoppingCart().currency;
 
   const paypalProvider = cartManager.getPaymentProvider("paypal");
 

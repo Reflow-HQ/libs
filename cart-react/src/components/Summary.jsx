@@ -11,20 +11,20 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
 
   const [formErrors, setFormErrors] = useState({});
 
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const cartManager = useShoppingCart().cartManager;
+  const t = useShoppingCart().t;
 
-  const products = useShoppingCart((s) => s.products);
-  const coupon = useShoppingCart((s) => s.coupon);
-  const giftCard = useShoppingCart((s) => s.giftCard);
-  const discount = useShoppingCart((s) => s.discount);
-  const total = useShoppingCart((s) => s.total);
-  const subtotal = useShoppingCart((s) => s.subtotal);
-  const currency = useShoppingCart((s) => s.currency);
-  const taxes = useShoppingCart((s) => s.taxes);
-  const locations = useShoppingCart((s) => s.locations);
-  const deliveryMethod = useShoppingCart((s) => s.deliveryMethod);
-  const shippingMethods = useShoppingCart((s) => s.shippingMethods);
+  const products = useShoppingCart().products;
+  const coupon = useShoppingCart().coupon;
+  const giftCard = useShoppingCart().giftCard;
+  const discount = useShoppingCart().discount;
+  const total = useShoppingCart().total;
+  const subtotal = useShoppingCart().subtotal;
+  const currency = useShoppingCart().currency;
+  const taxes = useShoppingCart().taxes;
+  const locations = useShoppingCart().locations;
+  const deliveryMethod = useShoppingCart().deliveryMethod;
+  const shippingMethods = useShoppingCart().shippingMethods;
 
   const [shippingLabel, setShippingLabel] = useState(getShippingLabel());
   const [shippingPrice, setShippingPrice] = useState(getShippingPriceLabel());

@@ -1,13 +1,10 @@
-import useSyncExternalStoreExports from "use-sync-external-store/shim/with-selector";
-
+import { useState, useEffect } from "react";
 import Cart from "@reflowhq/cart";
-
-const { useSyncExternalStoreWithSelector } = useSyncExternalStoreExports;
 
 export const cartMap = new Map();
 
-function createStore({ config, localization = {} }) {
-  const cart = new Cart({ ...config, localization });
+function createStore(config) {
+  const cart = new Cart(config);
   const listeners = new Set();
 
   let state;
@@ -102,12 +99,12 @@ function createStore({ config, localization = {} }) {
   };
 }
 
-export function createReflowCartStore({ config, ...props }) {
+export function useCart(config) {
   let store;
 
   if (config.storeID) {
     if (!cartMap.has(config.storeID)) {
-      cartMap.set(config.storeID, createStore({ config, ...props }));
+      cartMap.set(config.storeID, createStore(config));
     }
 
     store = cartMap.get(config.storeID);
@@ -115,23 +112,18 @@ export function createReflowCartStore({ config, ...props }) {
     throw new Error("storeID config option is required");
   }
 
-  return store;
-}
+  const [cartObj, setCartObj] = useState(store.getState());
 
-export function createReflowCart(props) {
-  const store = createReflowCartStore(props);
+  useEffect(() => {
+    // Subscribe for cart change events and cleanup
+    // when the component is unmounted
 
-  return (selector, equalityFn) => {
-    return useCart(store, selector, equalityFn);
-  };
-}
+    return store.subscribe(() => {
+      setCartObj(store.getState());
+    });
 
-export function useCart(store, selector, equalityFn) {
-  return useSyncExternalStoreWithSelector(
-    store.subscribe,
-    store.getState,
-    store.getServerState || store.getState,
-    selector || store.getState,
-    equalityFn
-  );
+    // Todo: on unmount delete the store from the map if there are no more listeners left
+  }, []);
+
+  return cartObj;
 }

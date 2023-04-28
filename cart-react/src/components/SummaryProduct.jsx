@@ -17,8 +17,8 @@ export default function SummaryProduct({
   showRemoveButton = false,
   showPriceBreakdown = false,
 }) {
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const cartManager = useShoppingCart().cartManager;
+  const t = useShoppingCart().t;
 
   const category = product.categories[0]?.name || t("product");
   const priceBreakdown = `${cartManager.formatCurrency(product.unitPrice)} x ${product.quantity}`;

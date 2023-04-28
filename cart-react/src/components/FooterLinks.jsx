@@ -3,8 +3,8 @@ import React from "react";
 import { useShoppingCart } from "../CartContext";
 
 export default function FooterLinks() {
-  const footerLinks = useShoppingCart((s) => s.footerLinks);
-  const t = useShoppingCart((s) => s.t);
+  const footerLinks = useShoppingCart().footerLinks;
+  const t = useShoppingCart().t;
 
   return (
     <div className="ref-links">

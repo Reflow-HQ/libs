@@ -10,15 +10,13 @@ import FooterLinks from "../components/FooterLinks";
 import CheckoutForm from "../components/CheckoutForm";
 
 export default function CheckoutSlide({ successURL, cancelURL, onMessage, step, setStep }) {
-  const paymentProviders = useShoppingCart((s) => s.paymentProviders);
-  const locations = useShoppingCart((s) => s.locations);
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const paymentProviders = useShoppingCart().paymentProviders;
+  const locations = useShoppingCart().locations;
+  const cartManager = useShoppingCart().cartManager;
+  const t = useShoppingCart().t;
 
-  const [taxExemptionRemoved, setTaxExemptionRemoved] = useShoppingCart((s) => [
-    s.taxExemptionRemoved,
-    s.setTaxExemptionRemoved,
-  ]);
+  const taxExemptionRemoved = useShoppingCart().taxExemptionRemoved;
+  const setTaxExemptionRemoved = useShoppingCart().setTaxExemptionRemoved;
 
   const [instructions, setInstructions] = useState({});
 

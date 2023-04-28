@@ -8,16 +8,16 @@ import PayPalButton from "../components/PayPalButton";
 import FooterLinks from "../components/FooterLinks";
 
 const CartSlide = ({ successURL, onMessage, step, setStep }) => {
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const cartManager = useShoppingCart().cartManager;
+  const t = useShoppingCart().t;
 
-  const products = useShoppingCart((s) => s.products);
-  const footerLinks = useShoppingCart((s) => s.footerLinks);
-  const subtotal = useShoppingCart((s) => s.subtotal);
-  const taxes = useShoppingCart((s) => s.taxes);
-  const errors = useShoppingCart((s) => s.errors);
+  const products = useShoppingCart().products;
+  const footerLinks = useShoppingCart().footerLinks;
+  const subtotal = useShoppingCart().subtotal;
+  const taxes = useShoppingCart().taxes;
+  const errors = useShoppingCart().errors;
 
-  const formDataKey = useShoppingCart((s) => s.localFormData.formDataKey);
+  const formDataKey = useShoppingCart().localFormData.formDataKey;
   const useFormData = useLocalStorageFormData(formDataKey);
 
   const [termsAccepted, setTermsAccepted] = useFormData("termsAccepted", false);
