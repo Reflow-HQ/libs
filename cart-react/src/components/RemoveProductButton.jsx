@@ -3,10 +3,10 @@ import React from "react";
 import { useShoppingCart } from "../CartContext";
 
 export default function RemoveProductButton({ product, children }) {
-  const cartManager = useShoppingCart().cartManager;
+  const cart = useShoppingCart();
 
   function removeProduct() {
-    cartManager.removeProduct({
+    cart.removeProduct({
       id: product.id,
       variantID: product.variant?.id,
       personalization: product.personalization,

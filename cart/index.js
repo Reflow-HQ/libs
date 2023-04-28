@@ -844,54 +844,6 @@ export default class Cart {
     }
   }
 
-  async addCoupon({ code }) {
-    try {
-      let body = new FormData();
-      body.append("code", code);
-
-      let result = await this.api(
-        `/add-coupon/${this.key}/`,
-        {
-          method: "POST",
-          body,
-        },
-        false
-      );
-
-      this.trigger("coupon-added");
-      this.broadcast("coupon-added");
-
-      this.scheduleRefresh();
-
-      return result;
-    } catch (e) {
-      console.error("Reflow:", e);
-      throw e;
-    }
-  }
-
-  async removeCoupon() {
-    try {
-      let result = await this.api(
-        `/remove-coupon/${this.key}/`,
-        {
-          method: "POST",
-        },
-        false
-      );
-
-      this.trigger("coupon-removed");
-      this.broadcast("coupon-removed");
-
-      this.scheduleRefresh();
-
-      return result;
-    } catch (e) {
-      console.error("Reflow:", e);
-      throw e;
-    }
-  }
-
   async applyDiscountCode({ code }) {
     try {
       let body = new FormData();
@@ -906,8 +858,8 @@ export default class Cart {
         false
       );
 
-      this.trigger("discount-code-added");
-      this.broadcast("discount-code-added");
+      this.trigger("discount-code-added", { type: result.type });
+      this.broadcast("discount-code-added", { type: result.type });
 
       this.scheduleRefresh();
 
@@ -918,13 +870,13 @@ export default class Cart {
     }
   }
 
-  async applyGiftCard({ code }) {
+  async removeDiscountCode({ code }) {
     try {
       let body = new FormData();
       body.append("code", code);
 
       let result = await this.api(
-        `/apply-gift-card/${this.key}/`,
+        `/remove-discount-code/${this.key}/`,
         {
           method: "POST",
           body,
@@ -932,30 +884,8 @@ export default class Cart {
         false
       );
 
-      this.trigger("gift-card-added");
-      this.broadcast("gift-card-added");
-
-      this.scheduleRefresh();
-
-      return result;
-    } catch (e) {
-      console.error("Reflow:", e);
-      throw e;
-    }
-  }
-
-  async removeGiftCard() {
-    try {
-      let result = await this.api(
-        `/remove-gift-card/${this.key}/`,
-        {
-          method: "POST",
-        },
-        false
-      );
-
-      this.trigger("gift-card-removed");
-      this.broadcast("gift-card-removed");
+      this.trigger("discount-code-removed", { type: result.type });
+      this.broadcast("discount-code-removed", { type: result.type });
 
       this.scheduleRefresh();
 

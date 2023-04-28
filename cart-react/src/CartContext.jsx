@@ -22,6 +22,11 @@ export function ShoppingCartProvider({ children, ...props }) {
 
   console.log("render");
 
+  useEffect(() => {
+    // Fetch the cart contents on mount
+    props.cart.refresh();
+  }, []);
+
   return (
     <ShoppingCartContext.Provider value={{ cart: props.cart, auth: props.auth, hasAuth }}>
       {children}

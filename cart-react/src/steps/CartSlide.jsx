@@ -8,16 +8,11 @@ import PayPalButton from "../components/PayPalButton";
 import FooterLinks from "../components/FooterLinks";
 
 const CartSlide = ({ successURL, onMessage, step, setStep }) => {
-  const cartManager = useShoppingCart().cartManager;
-  const t = useShoppingCart().t;
+  const cart = useShoppingCart();
 
-  const products = useShoppingCart().products;
-  const footerLinks = useShoppingCart().footerLinks;
-  const subtotal = useShoppingCart().subtotal;
-  const taxes = useShoppingCart().taxes;
-  const errors = useShoppingCart().errors;
+  const { t, products, footerLinks, subtotal, taxes, errors, localFormData } = cart;
 
-  const formDataKey = useShoppingCart().localFormData.formDataKey;
+  const formDataKey = localFormData.formDataKey;
   const useFormData = useLocalStorageFormData(formDataKey);
 
   const [termsAccepted, setTermsAccepted] = useFormData("termsAccepted", false);
@@ -27,11 +22,11 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
   function getSubtotal() {
     let price = subtotal;
 
-    if (cartManager.getTaxPricingType() === "inclusive") {
+    if (cart.getTaxPricingType() === "inclusive") {
       price += taxAmount;
     }
 
-    return cartManager.formatCurrency(price);
+    return cart.formatCurrency(price);
   }
 
   function onSubmit(e) {
@@ -49,7 +44,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
           "product-max-qty-exceeded",
         ].includes(err.type)
       ) {
-        onMessage({ type: "error", title: cartManager.getStateErrorMessage(err) });
+        onMessage({ type: "error", title: cart.getStateErrorMessage(err) });
         return;
       }
 
@@ -93,7 +88,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
             </span>
           </label>
           <div className="ref-row ref-checkout-buttons">
-            {cartManager.isPaypalSupported() && (
+            {cart.isPaypalSupported() && (
               <div className="ref-paypal-express-checkout-holder">
                 <PayPalButton
                   fundingSource={"PAYPAL"}
@@ -129,7 +124,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
       </div>
       <div className="ref-cart-table">
         {products.map((product) => (
-          <CartProduct key={cartManager.getProductKey(product)} product={product} />
+          <CartProduct key={cart.getProductKey(product)} product={product} />
         ))}
       </div>
       <div className="ref-footer">

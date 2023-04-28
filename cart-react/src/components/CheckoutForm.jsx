@@ -13,7 +13,9 @@ import PaymentButton from "../components/PaymentButton";
 import PayPalButton from "../components/PayPalButton";
 
 export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheckoutSuccess }) {
-  const formDataKey = useShoppingCart().localFormData.formDataKey;
+  const cart = useShoppingCart();
+
+  const formDataKey = cart.localFormData.formDataKey;
   const useFormData = useLocalStorageFormData(formDataKey);
 
   const [email, setEmail] = useFormData("email");
@@ -35,34 +37,33 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
   const auth = useAuth();
   const user = auth?.user || null;
 
-  const cartManager = useShoppingCart().cartManager;
   const showLoading = useShoppingCart().showLoading;
   const hideLoading = useShoppingCart().hideLoading;
   const t = useShoppingCart().t;
 
-  const locale = useShoppingCart().locale;
-  const errors = useShoppingCart().errors;
-  const locations = useShoppingCart().locations;
-  const shippingMethods = useShoppingCart().shippingMethods;
-  const shippableCountries = useShoppingCart().shippableCountries;
-  const taxes = useShoppingCart().taxes;
-  const taxExemption = useShoppingCart().taxExemption;
-  const vacationMode = useShoppingCart().vacationMode;
-  const paymentProviders = useShoppingCart().paymentProviders;
-  const signInProviders = useShoppingCart().signInProviders;
+  const {
+    locale,
+    errors,
+    locations,
+    shippingMethods,
+    shippableCountries,
+    taxes,
+    taxExemption,
+    vacationMode,
+    paymentProviders,
+    signInProviders,
+  } = cart;
 
-  const deliveryMethod = useShoppingCart().deliveryMethod;
-  const setDeliveryMethod = useShoppingCart().setDeliveryMethod;
-
-  const selectedLocation = useShoppingCart().selectedLocation;
-  const setSelectedLocation = useShoppingCart().setSelectedLocation;
-
-  const selectedShippingMethod = useShoppingCart().selectedShippingMethod;
-  const setSelectedShippingMethod = useShoppingCart().setSelectedShippingMethod;
+  const [deliveryMethod, setDeliveryMethod] = [cart.deliveryMethod, cart.setDeliveryMethod];
+  const [selectedLocation, setSelectedLocation] = [cart.selectedLocation, cart.setSelectedLocation];
+  const [selectedShippingMethod, setSelectedShippingMethod] = [
+    cart.selectedShippingMethod,
+    cart.setSelectedShippingMethod,
+  ];
 
   const isInVactionMode = vacationMode?.enabled;
   const shouldShowPaypalButtons =
-    cartManager.isPaypalSupported() && !isInVactionMode && !cartManager.hasZeroValue();
+    cart.isPaypalSupported() && !isInVactionMode && !cart.hasZeroValue();
   const debouncedUpdateAddress = useCallback(debounce(updateAddress, 500), []);
 
   const detailsForm = useRef();
@@ -147,7 +148,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
 
     switch (deliveryMethod) {
       case "shipping": {
-        address = cartManager.getShippingAddress();
+        address = cart.getShippingAddress();
         break;
       }
 
@@ -162,7 +163,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
       }
 
       case "digital": {
-        address = cartManager.getDigitalAddress();
+        address = cart.getDigitalAddress();
         break;
       }
 
@@ -175,7 +176,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
       return;
     }
 
-    cartManager.updateTaxExemption({
+    cart.updateTaxExemption({
       address,
       deliveryMethod,
       exemptionType,
@@ -233,14 +234,14 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
     try {
       // Before trying to complete the payment,
       // refresh the state to fetch any store changes and show them in the interface.
-      await cartManager.refresh();
+      await cart.refresh();
 
-      if (!cartManager.canFinish()) {
-        onMessage({ type: "error", description: cartManager.getStateErrors()[0] });
+      if (!cart.canFinish()) {
+        onMessage({ type: "error", description: cart.getStateErrors()[0] });
         return;
       }
 
-      const result = await cartManager.checkout(data);
+      const result = await cart.checkout(data);
 
       if (!result.success) return;
 
@@ -253,7 +254,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
           onMessage({
             type: "error",
             title: t("cart.errors.cannot_complete"),
-            description: cartManager.getErrorText(e, "system"),
+            description: cart.getErrorText(e, "system"),
           });
         }
       }
@@ -271,7 +272,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
   function renderPaypalButtons() {
     let fundingSources = ["PAYPAL"];
 
-    if (!cartManager.isStripeSupported()) {
+    if (!cart.isStripeSupported()) {
       // When both are supported only the Stripe card payment button is shown.
       fundingSources.push("CARD");
     }
@@ -324,7 +325,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
   function updateAddress(deliveryMethod, address) {
     if (!address) return;
 
-    cartManager.updateAddress({
+    cart.updateAddress({
       address,
       deliveryMethod,
     });
@@ -335,7 +336,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
   }
 
   function canShipToAddress() {
-    return cartManager.isShippingFilled() && cartManager.canShip();
+    return cart.isShippingFilled() && cart.canShip();
   }
 
   function canShowShippingMethods() {
@@ -357,10 +358,10 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
     }
   }, [shippingMethods, errors]);
 
-  const hasPhysicalProds = cartManager.hasPhysicalProducts();
+  const hasPhysicalProds = cart.hasPhysicalProducts();
   const isDigital = !hasPhysicalProds;
-  const offersShipping = hasPhysicalProds && cartManager.offersShipping();
-  const offersPickup = hasPhysicalProds && cartManager.offersLocalPickup();
+  const offersShipping = hasPhysicalProds && cart.offersShipping();
+  const offersPickup = hasPhysicalProds && cart.offersLocalPickup();
   const offersDelivery = offersShipping || offersPickup;
   const isTabbable = offersShipping && offersPickup;
 
@@ -436,7 +437,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
               onChange={(key, value) => {
                 setDigitalAddress((prevModel) => {
                   const address = updateAddressModel(prevModel, key, value);
-                  debouncedUpdateAddress("digital", cartManager.getDigitalAddress(address));
+                  debouncedUpdateAddress("digital", cart.getDigitalAddress(address));
 
                   return address;
                 });
@@ -449,7 +450,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
 
       <div className="ref-heading ref-heading-delivery">{t("delivery")}</div>
 
-      {hasPhysicalProds && !cartManager.canDeliver() && (
+      {hasPhysicalProds && !cart.canDeliver() && (
         <div className="ref-delivery-unavailable">{t("cart.errors.delivery_unavailable")}</div>
       )}
 
@@ -591,7 +592,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
                     onChange={(key, value) => {
                       setShippingAddress((prevModel) => {
                         const address = updateAddressModel(prevModel, key, value);
-                        debouncedUpdateAddress("shipping", cartManager.getShippingAddress(address));
+                        debouncedUpdateAddress("shipping", cart.getShippingAddress(address));
 
                         return address;
                       });
@@ -678,7 +679,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
                             {method.note && <small>{method.note}</small>}
                           </div>
                           <div className="ref-method-price">
-                            {cartManager.formatCurrency(method.price)}
+                            {cart.formatCurrency(method.price)}
                           </div>
                         </label>
                       ))}
@@ -711,10 +712,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
                       <a href={taxExemption.download} className="ref-tax-file-dl">
                         {t("cart.tax_exemption_file")}
                       </a>
-                      <span
-                        className="ref-remove-tax-file"
-                        onClick={cartManager.removeTaxExemptionFile}
-                      >
+                      <span className="ref-remove-tax-file" onClick={cart.removeTaxExemptionFile}>
                         {t("remove")}
                       </span>
                     </div>
@@ -798,12 +796,12 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
       <hr />
 
       <div>
-        {(paymentProviders.some((pm) => pm.supported) || cartManager.hasZeroValue()) && (
+        {(paymentProviders.some((pm) => pm.supported) || cart.hasZeroValue()) && (
           <div className="ref-heading ref-heading-payment">{t("payment")}</div>
         )}
         {shouldShowPaypalButtons && renderPaypalButtons()}
         <div className="ref-standard-payment-buttons">
-          {cartManager.hasZeroValue() ? (
+          {cart.hasZeroValue() ? (
             <PaymentButton
               text={t("cart.complete_order")}
               onClick={() => checkout("zero-value-cart")}

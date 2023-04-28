@@ -8,30 +8,29 @@ import RemoveProductButton from "./RemoveProductButton";
 import SummaryProduct from "./SummaryProduct";
 
 export default function CartProduct({ product }) {
-  const cartManager = useShoppingCart().cartManager;
-  const t = useShoppingCart().t;
+  const cart = useShoppingCart();
+  const t = cart.t;
 
-  const category = product.categories[0]?.name || t("product");
   let quantityErrorMessage = "";
 
   function getUnitPrice() {
     let price = product.unitPrice;
 
-    if (cartManager.getTaxPricingType() === "inclusive") {
+    if (cart.getTaxPricingType() === "inclusive") {
       price += product.tax / product.quantity;
     }
 
-    return cartManager.formatCurrency(price);
+    return cart.formatCurrency(price);
   }
 
   function getTotalPrice() {
     let price = product.price;
 
-    if (cartManager.getTaxPricingType() === "inclusive") {
+    if (cart.getTaxPricingType() === "inclusive") {
       price += product.tax;
     }
 
-    return cartManager.formatCurrency(price);
+    return cart.formatCurrency(price);
   }
 
   if (product.inStock) {

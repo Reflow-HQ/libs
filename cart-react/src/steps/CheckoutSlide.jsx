@@ -10,13 +10,8 @@ import FooterLinks from "../components/FooterLinks";
 import CheckoutForm from "../components/CheckoutForm";
 
 export default function CheckoutSlide({ successURL, cancelURL, onMessage, step, setStep }) {
-  const paymentProviders = useShoppingCart().paymentProviders;
-  const locations = useShoppingCart().locations;
-  const cartManager = useShoppingCart().cartManager;
-  const t = useShoppingCart().t;
-
-  const taxExemptionRemoved = useShoppingCart().taxExemptionRemoved;
-  const setTaxExemptionRemoved = useShoppingCart().setTaxExemptionRemoved;
+  const cart = useShoppingCart();
+  const { paymentProviders, locations, t, taxExemptionRemoved, setTaxExemptionRemoved } = cart;
 
   const [instructions, setInstructions] = useState({});
 
@@ -51,7 +46,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onMessage, step, 
     // No order is created, instead the cart refreshes and new payment methods are shown.
 
     if (paymentMethod === "zero-value-cart" && !result.order) {
-      await cartManager.refresh();
+      await cart.refresh();
     }
 
     // Stripe payment - redirect to the Stripe checkout page where the customer will finish payment.
@@ -82,7 +77,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onMessage, step, 
         title: method.name,
         description: method.instructions
           .replaceAll("{orderid}", result.order.id)
-          .replaceAll("{amount}", cartManager.formatCurrency(result.order.amount)),
+          .replaceAll("{amount}", cart.formatCurrency(result.order.amount)),
       }));
 
       setStep("instructions");
@@ -107,7 +102,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onMessage, step, 
         title: t("pickup_at_store"),
         description: location.instructions
           .replaceAll("{orderid}", result.order.id)
-          .replaceAll("{amount}", cartManager.formatCurrency(result.order.amount)),
+          .replaceAll("{amount}", cart.formatCurrency(result.order.amount)),
       }));
 
       setStep("instructions");

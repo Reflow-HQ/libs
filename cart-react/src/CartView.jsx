@@ -15,20 +15,16 @@ const CartView = ({ cart, localization = {}, auth, successURL, cancelURL, onMess
 export function CartUI({ successURL, cancelURL, onMessage }) {
   const [step, setStep] = useState("cart");
 
-  const cartManager = useShoppingCart().cartManager;
-  const t = useShoppingCart().t;
+  const cart = useShoppingCart();
 
-  const products = useShoppingCart().products;
-  const isLoading = useShoppingCart().isLoading;
-  const isLoaded = useShoppingCart().isLoaded;
-  const isUnavailable = useShoppingCart().isUnavailable;
+  const { products, isLoading, isLoaded, isUnavailable } = cart;
 
   const errorMessage = isUnavailable
     ? t("cart.errors.unavailable")
     : isLoaded
-    ? !cartManager.arePaymentProvidersAvailable()
+    ? !cart.arePaymentProvidersAvailable()
       ? t("cart.errors.no_payment_methods")
-      : cartManager.onlyPaypalNoDelivery()
+      : cart.onlyPaypalNoDelivery()
       ? t("cart.errors.only_paypal_no_delivery")
       : !products.length
       ? t("cart.errors.empty")

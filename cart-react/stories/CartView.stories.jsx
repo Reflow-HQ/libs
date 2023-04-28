@@ -1,7 +1,7 @@
 import CartView from "../src/CartView.jsx";
 import "../src/cartview.css";
 
-import { createReflowCartStore, cartMap } from "../src/createReflowCart";
+import { createReflowCartStore, cartMap } from "../src/useCart";
 
 // More on default export: https://storybook.js.org/docs/react/writing-stories/introduction#default-export
 export default {

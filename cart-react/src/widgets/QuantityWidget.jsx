@@ -5,7 +5,7 @@ import { useShoppingCart } from "../CartContext";
 import debounce from "lodash.debounce";
 
 export default function QuantityWidget({ product }) {
-  const cartManager = useShoppingCart().cartManager;
+  const cart = useShoppingCart();
 
   const [quantity, setQuantity] = useState(() => product.quantity);
 
@@ -55,7 +55,7 @@ export default function QuantityWidget({ product }) {
   }
 
   function updateProductQuantity(quantity) {
-    cartManager.updateProductQuantity(
+    cart.updateProductQuantity(
       {
         id: product.id,
         variantID: product.variant?.id,
