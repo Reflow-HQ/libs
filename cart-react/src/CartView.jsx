@@ -17,7 +17,7 @@ export function CartUI({ successURL, cancelURL, onMessage }) {
 
   const cart = useShoppingCart();
 
-  const { products, isLoading, isLoaded, isUnavailable } = cart;
+  const { products, isLoading, isLoaded, isUnavailable, t } = cart;
 
   const errorMessage = isUnavailable
     ? t("cart.errors.unavailable")

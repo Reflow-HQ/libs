@@ -27,14 +27,14 @@ function App() {
         <div
           id="add-physical-product"
           className="btn btn-primary me-2"
-          onClick={() => cart.cartManager.addProduct({ id: "379178066" })}
+          onClick={() => cart.addProduct({ id: "379178066" })}
         >
           Add Physical Product
         </div>
         <div
           id="add-digital-product"
           className="btn btn-primary"
-          onClick={() => cart.cartManager.addProduct({ id: "558773655" })}
+          onClick={() => cart.addProduct({ id: "558773655" })}
         >
           Add Digital Product
         </div>
