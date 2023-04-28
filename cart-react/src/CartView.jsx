@@ -4,9 +4,9 @@ import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import CartSlide from "./steps/CartSlide";
 import CheckoutSlide from "./steps/CheckoutSlide";
 
-const CartView = ({ config, localization = {}, auth, successURL, cancelURL, onMessage }) => {
+const CartView = ({ cart, localization = {}, auth, successURL, cancelURL, onMessage }) => {
   return (
-    <ShoppingCartProvider config={config} localization={localization} auth={auth}>
+    <ShoppingCartProvider cart={cart} localization={localization} auth={auth}>
       <CartUI successURL={successURL} cancelURL={cancelURL} onMessage={onMessage} />
     </ShoppingCartProvider>
   );
@@ -15,20 +15,16 @@ const CartView = ({ config, localization = {}, auth, successURL, cancelURL, onMe
 export function CartUI({ successURL, cancelURL, onMessage }) {
   const [step, setStep] = useState("cart");
 
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const cart = useShoppingCart();
 
-  const products = useShoppingCart((s) => s.products);
-  const isLoading = useShoppingCart((s) => s.isLoading);
-  const isLoaded = useShoppingCart((s) => s.isLoaded);
-  const isUnavailable = useShoppingCart((s) => s.isUnavailable);
+  const { products, isLoading, isLoaded, isUnavailable } = cart;
 
   const errorMessage = isUnavailable
     ? t("cart.errors.unavailable")
     : isLoaded
-    ? !cartManager.arePaymentProvidersAvailable()
+    ? !cart.arePaymentProvidersAvailable()
       ? t("cart.errors.no_payment_methods")
-      : cartManager.onlyPaypalNoDelivery()
+      : cart.onlyPaypalNoDelivery()
       ? t("cart.errors.only_paypal_no_delivery")
       : !products.length
       ? t("cart.errors.empty")

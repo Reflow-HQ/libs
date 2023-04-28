@@ -3,10 +3,10 @@ import React from "react";
 import { useShoppingCart } from "../CartContext";
 
 export default function RemoveProductButton({ product, children }) {
-  const cartManager = useShoppingCart((s) => s.cartManager);
+  const cart = useShoppingCart();
 
   function removeProduct() {
-    cartManager.removeLineItem(product.lineItemID);
+    cart.removeLineItem(product.lineItemID);
   }
 
   return (

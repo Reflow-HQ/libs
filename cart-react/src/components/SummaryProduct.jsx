@@ -17,11 +17,11 @@ export default function SummaryProduct({
   showRemoveButton = false,
   showPriceBreakdown = false,
 }) {
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const cart = useShoppingCart();
+  const t = cart.t;
 
   const category = product.categories[0]?.name || t("product");
-  const priceBreakdown = `${cartManager.formatCurrency(product.unitPrice)} x ${product.quantity}`;
+  const priceBreakdown = `${cart.formatCurrency(product.unitPrice)} x ${product.quantity}`;
 
   const showVariant = showVariantBreakdown && !!product.variant;
   const productName = `${product.name}${
@@ -47,7 +47,7 @@ export default function SummaryProduct({
     }${p.filename ? ': "' + p.filename + '" ' : ""}${
       showPersonalizationPrice
         ? p.price
-          ? " +" + cartManager.formatCurrency(p.price)
+          ? " +" + cart.formatCurrency(p.price)
           : " - " + t("price_free")
         : ""
     }`;
@@ -83,7 +83,7 @@ export default function SummaryProduct({
           </div>
           <div className="ref-product-price">
             <div className={`ref-product-total${product.inStock ? "" : " out-of-stock"}`}>
-              {product.inStock ? cartManager.formatCurrency(product.price) : t("out_of_stock")}
+              {product.inStock ? cart.formatCurrency(product.price) : t("out_of_stock")}
             </div>
           </div>
         </div>

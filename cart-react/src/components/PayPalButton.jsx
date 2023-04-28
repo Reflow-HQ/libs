@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useShoppingCart, useAuth } from "../CartContext";
 
 import useExternalScript from "../hooks/useExternalScript";
@@ -13,10 +13,9 @@ export default function PayPalButton({
   onMessage,
 }) {
   const auth = useAuth();
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const currency = useShoppingCart((s) => s.currency);
+  const cart = useShoppingCart();
 
-  const paypalProvider = cartManager.getPaymentProvider("paypal");
+  const paypalProvider = cart.getPaymentProvider("paypal");
 
   if (!paypalProvider) return null;
 
@@ -27,7 +26,7 @@ export default function PayPalButton({
     "&merchant-id=" +
     paypalProvider.merchantID +
     "&currency=" +
-    currency +
+    cart.currency +
     "&integration-date=2023-03-30";
 
   const state = useExternalScript(externalScript);
@@ -45,7 +44,7 @@ export default function PayPalButton({
         data["auth-account-id"] = auth.user.id;
       }
 
-      let result = await cartManager.paypalCreateOrder(data);
+      let result = await cart.paypalCreateOrder(data);
       return result;
     } catch (e) {
       console.log(e);
@@ -54,7 +53,7 @@ export default function PayPalButton({
 
   async function onApprove(data, actions) {
     try {
-      const result = await cartManager.paypalOnApprove(data, actions);
+      const result = await cart.paypalOnApprove(data, actions);
 
       window.location = formatURL(successURL, {
         order_id: result.orderID,
@@ -83,7 +82,7 @@ export default function PayPalButton({
         selectedShippingOption = data.selected_shipping_option.id;
       }
 
-      await cartManager.updatePaypalShipping({
+      await cart.updatePaypalShipping({
         orderID: data.orderID,
         address: data.shipping_address,
         selectedShippingOption,
@@ -94,7 +93,7 @@ export default function PayPalButton({
       onMessage({
         type: "error",
         title: "Couldn't update PayPal shipping",
-        description: cartManager.getErrorText(e),
+        description: cart.getErrorText(e),
       });
 
       return actions.reject();
@@ -104,7 +103,7 @@ export default function PayPalButton({
   function onCancel() {
     // Refresh the cart in case we've made changes to the shipping
     // address in paypal
-    cartManager.refresh();
+    cart.refresh();
   }
 
   function onError() {

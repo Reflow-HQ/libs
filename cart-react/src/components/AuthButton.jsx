@@ -3,7 +3,7 @@ import { useShoppingCart, useAuth } from "../CartContext";
 
 export default function AuthButton({ showPhoto = true, showName = true, userPageURL = "#" }) {
   const auth = useAuth();
-  const t = useShoppingCart((s) => s.t);
+  const t = useShoppingCart().t;
 
   if (!auth) return null;
 

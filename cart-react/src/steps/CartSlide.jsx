@@ -8,16 +8,11 @@ import PayPalButton from "../components/PayPalButton";
 import FooterLinks from "../components/FooterLinks";
 
 const CartSlide = ({ successURL, onMessage, step, setStep }) => {
-  const cartManager = useShoppingCart((s) => s.cartManager);
-  const t = useShoppingCart((s) => s.t);
+  const cart = useShoppingCart();
 
-  const products = useShoppingCart((s) => s.products);
-  const footerLinks = useShoppingCart((s) => s.footerLinks);
-  const subtotal = useShoppingCart((s) => s.subtotal);
-  const taxes = useShoppingCart((s) => s.taxes);
-  const errors = useShoppingCart((s) => s.errors);
+  const { t, products, footerLinks, subtotal, taxes, errors, localFormData } = cart;
 
-  const formDataKey = useShoppingCart((s) => s.localFormData.formDataKey);
+  const formDataKey = localFormData.formDataKey;
   const useFormData = useLocalStorageFormData(formDataKey);
 
   const [termsAccepted, setTermsAccepted] = useFormData("termsAccepted", false);
@@ -27,11 +22,11 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
   function getSubtotal() {
     let price = subtotal;
 
-    if (cartManager.getTaxPricingType() === "inclusive") {
+    if (cart.getTaxPricingType() === "inclusive") {
       price += taxAmount;
     }
 
-    return cartManager.formatCurrency(price);
+    return cart.formatCurrency(price);
   }
 
   function onSubmit(e) {
@@ -49,7 +44,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
           "product-max-qty-exceeded",
         ].includes(err.type)
       ) {
-        onMessage({ type: "error", title: cartManager.getStateErrorMessage(err) });
+        onMessage({ type: "error", title: cart.getStateErrorMessage(err) });
         return;
       }
 
@@ -93,7 +88,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
             </span>
           </label>
           <div className="ref-row ref-checkout-buttons">
-            {cartManager.isPaypalSupported() && (
+            {cart.isPaypalSupported() && (
               <div className="ref-paypal-express-checkout-holder">
                 <PayPalButton
                   fundingSource={"PAYPAL"}
