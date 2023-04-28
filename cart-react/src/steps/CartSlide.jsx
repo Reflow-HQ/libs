@@ -129,7 +129,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
       </div>
       <div className="ref-cart-table">
         {products.map((product) => (
-          <CartProduct key={cartManager.getProductKey(product)} product={product} />
+          <CartProduct key={product.lineItemID} product={product} />
         ))}
       </div>
       <div className="ref-footer">

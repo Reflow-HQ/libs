@@ -55,14 +55,7 @@ export default function QuantityWidget({ product }) {
   }
 
   function updateProductQuantity(quantity) {
-    cartManager.updateProductQuantity(
-      {
-        id: product.id,
-        variantID: product.variant?.id,
-        personalization: product.personalization,
-      },
-      quantity
-    );
+    cartManager.updateLineItemQuantity(product.lineItemID, quantity);
   }
 
   return (

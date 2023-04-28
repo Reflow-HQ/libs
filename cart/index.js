@@ -445,23 +445,6 @@ export default class Cart {
     return errors.map(this.getStateErrorMessage.bind(this)).filter((message) => !!message);
   }
 
-  getProductKey(product) {
-    let key = product.id + (product.variant?.id || "");
-
-    key += product.personalization.map((p) => {
-      let personalization = p.id;
-
-      if (p.inputText) personalization += p.inputText;
-      if (p.selected) personalization += p.selected;
-      if (p.filename) personalization += p.filename;
-      if (p.filehash) personalization += p.filehash;
-
-      return personalization;
-    });
-
-    return key;
-  }
-
   formatProductPersonalization(personalization = []) {
     return personalization.map((p) => {
       let personalization = { id: p.id };
@@ -668,26 +651,31 @@ export default class Cart {
     }
   }
 
-  async updateProductQuantity({ id, variantID, personalization = [] }, quantity = 1) {
+  async updateLineItemQuantity(lineItemID, quantity = 1) {
     try {
       let body = new FormData();
 
-      let formattedPersonalization = this.formatProductPersonalization(personalization);
+      let product = this.state.products.find((p) => p.lineItemID === lineItemID);
+
+      let formattedPersonalization = this.formatProductPersonalization(product.personalization);
 
       if (formattedPersonalization.length) {
         body.append("personalization", JSON.stringify(formattedPersonalization));
       }
 
       let result = await this.api(
-        `/update-cart-product/${this.key}/${id}/` + quantity + "/" + (variantID || ""),
+        `/update-cart-product/${this.key}/${product.id}/` +
+          quantity +
+          "/" +
+          (product.variant?.id || ""),
         { method: "POST", body },
         false
       );
 
       this.updateState({ quantity: result.cartQuantity });
 
-      this.trigger("product-updated", { productID: id });
-      this.broadcast("product-updated", { productID: id });
+      this.trigger("product-updated", { productID: product.id });
+      this.broadcast("product-updated", { productID: product.id });
 
       this.scheduleRefresh();
 
@@ -698,26 +686,28 @@ export default class Cart {
     }
   }
 
-  async removeProduct({ id, variantID, personalization = [] }) {
+  async removeLineItem(lineItemID) {
     try {
       let body = new FormData();
 
-      let formattedPersonalization = this.formatProductPersonalization(personalization);
+      let product = this.state.products.find((p) => p.lineItemID === lineItemID);
+
+      let formattedPersonalization = this.formatProductPersonalization(product.personalization);
 
       if (formattedPersonalization.length) {
         body.append("personalization", JSON.stringify(formattedPersonalization));
       }
 
       let result = await this.api(
-        `/remove-cart-product/${this.key}/${id}/` + (variantID || ""),
+        `/remove-cart-product/${this.key}/${product.id}/` + (product.variant?.id || ""),
         { method: "POST", body },
         false
       );
 
       this.updateState({ quantity: result.cartQuantity });
 
-      this.trigger("product-removed", { productID: id });
-      this.broadcast("product-removed", { productID: id });
+      this.trigger("product-removed", { productID: product.id });
+      this.broadcast("product-removed", { productID: product.id });
 
       this.scheduleRefresh();
 

@@ -6,11 +6,7 @@ export default function RemoveProductButton({ product, children }) {
   const cartManager = useShoppingCart((s) => s.cartManager);
 
   function removeProduct() {
-    cartManager.removeProduct({
-      id: product.id,
-      variantID: product.variant?.id,
-      personalization: product.personalization,
-    });
+    cartManager.removeLineItem(product.lineItemID);
   }
 
   return (

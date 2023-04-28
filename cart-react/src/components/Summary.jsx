@@ -156,7 +156,7 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
         <div className="ref-products">
           {products.map((product) => (
             <SummaryProduct
-              key={cartManager.getProductKey(product)}
+              key={product.lineItemID}
               product={product}
               updateCart={updateCart}
               showPriceBreakdown={true}

@@ -25,6 +25,8 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
   const [billingAddress, setBillingAddress] = useFormData("billingAddress", {});
   const [digitalAddress, setDigitalAddress] = useFormData("digitalAddress", {});
 
+  const [saveAddress, setSaveAddress] = useState(true);
+
   const [showBilling, setShowBilling] = useState(() => isBillingFilled());
 
   const [isNoteFieldOpen, setNoteFieldOpen] = useState(true);
@@ -597,7 +599,13 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
                     onChange={(key, value) => {
                       setShippingAddress((prevModel) => {
                         const address = updateAddressModel(prevModel, key, value);
-                        debouncedUpdateAddress("shipping", cartManager.getShippingAddress(address));
+                        debouncedUpdateAddress(
+                          "shipping",
+                          cartManager.getShippingAddress({
+                            ...getShippingAddressInput(),
+                            ...address,
+                          })
+                        );
 
                         return address;
                       });
@@ -611,8 +619,8 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
                       <input
                         type="checkbox"
                         name="auth-save-address"
-                        checked
-                        onChange={(e) => e.target.value}
+                        checked={saveAddress}
+                        onChange={(e) => setSaveAddress(e.target.checked)}
                       />
                       <span>{t("cart.save_address")}</span>
                     </label>

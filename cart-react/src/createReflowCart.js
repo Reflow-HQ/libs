@@ -35,8 +35,8 @@ function createStore({ config, localization = {} }) {
     setTaxExemptionRemoved: (taxExemptionRemoved) => setState({ taxExemptionRemoved }),
     cartManager: {
       addProduct: cart.addProduct.bind(cart),
-      updateProductQuantity: cart.updateProductQuantity.bind(cart),
-      removeProduct: cart.removeProduct.bind(cart),
+      updateLineItemQuantity: cart.updateLineItemQuantity.bind(cart),
+      removeLineItem: cart.removeLineItem.bind(cart),
       addCoupon: cart.addCoupon.bind(cart),
       removeCoupon: cart.removeCoupon.bind(cart),
       applyDiscountCode: cart.applyDiscountCode.bind(cart),
@@ -68,7 +68,6 @@ function createStore({ config, localization = {} }) {
       hasZeroValue: cart.hasZeroValue.bind(cart),
       canFinish: cart.canFinish.bind(cart),
       formatCurrency: cart.formatCurrency.bind(cart),
-      getProductKey: cart.getProductKey.bind(cart),
       getErrorText: cart.getErrorText.bind(cart),
       getStateErrorMessage: cart.getStateErrorMessage.bind(cart),
       getTaxPricingType: cart.getTaxPricingType.bind(cart),
