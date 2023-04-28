@@ -2,7 +2,7 @@
   "name": "@reflowhq/cart",
   "version": "0.0.1",
   "description": "Shopping Cart management library for Reflow",
-  "exports": "./dist/index.js",
+  "exports": "./index.js",
   "type": "module",
   "directories": {
     "test": "tests"
