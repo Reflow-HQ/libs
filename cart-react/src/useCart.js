@@ -40,6 +40,7 @@ function createStore(config) {
     getDigitalAddress: cart.getDigitalAddress.bind(cart),
     isShippingFilled: cart.isShippingFilled.bind(cart),
 
+    hasProducts: cart.hasProducts.bind(cart),
     hasPhysicalProducts: cart.hasPhysicalProducts.bind(cart),
 
     getCountryByCode: cart.getCountryByCode.bind(cart),

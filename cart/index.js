@@ -355,8 +355,12 @@ export default class Cart {
       });
   }
 
+  getProducts() {
+    return !!this.state?.products || [];
+  }
+
   hasProducts() {
-    return !!this.state?.products?.length;
+    return !!this.getProducts().length;
   }
 
   hasPhysicalProducts() {

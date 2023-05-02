@@ -54,6 +54,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
     vacationMode,
     paymentProviders,
     signInProviders,
+    collectPhone,
   } = cart;
 
   const [deliveryMethod, setDeliveryMethod] = [cart.deliveryMethod, cart.setDeliveryMethod];
@@ -394,21 +395,23 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
         />
         {formErrors["email"] && <div className="ref-validation-error">{formErrors["email"]}</div>}
       </label>
-      <label className="ref-phone-input">
-        <span>{t("phone")}</span>
-        <input
-          type="tel"
-          name="phone"
-          id="ref-field-phone"
-          className="ref-form-control"
-          value={phone || user?.meta.phone || ""}
-          pattern="[0-9 \\+\\-]{5,30}"
-          placeholder="+1234567890"
-          required
-          onChange={(e) => setPhone(e.target.value)}
-        />
-        {formErrors["phone"] && <div className="ref-validation-error">{formErrors["phone"]}</div>}
-      </label>
+      {!!collectPhone && (
+        <label className="ref-phone-input">
+          <span>{t("phone")}</span>
+          <input
+            type="tel"
+            name="phone"
+            id="ref-field-phone"
+            className="ref-form-control"
+            value={phone || user?.meta.phone || ""}
+            pattern="[0-9 \\+\\-]{5,30}"
+            placeholder="+1234567890"
+            required
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          {formErrors["phone"] && <div className="ref-validation-error">{formErrors["phone"]}</div>}
+        </label>
+      )}
       {(isDeliveryMethodActive("pickup") || isDigital) && (
         <label className="ref-customer-name-input">
           <span>{t("name")}</span>

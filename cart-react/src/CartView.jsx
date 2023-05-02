@@ -4,9 +4,9 @@ import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import CartSlide from "./steps/CartSlide";
 import CheckoutSlide from "./steps/CheckoutSlide";
 
-const CartView = ({ cart, localization = {}, auth, successURL, cancelURL, onMessage }) => {
+const CartView = ({ cart, auth, successURL, cancelURL, onMessage }) => {
   return (
-    <ShoppingCartProvider cart={cart} localization={localization} auth={auth}>
+    <ShoppingCartProvider cart={cart} auth={auth}>
       <CartUI successURL={successURL} cancelURL={cancelURL} onMessage={onMessage} />
     </ShoppingCartProvider>
   );
