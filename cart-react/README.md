@@ -29,7 +29,7 @@ function App() {
 
   return (
     <div>
-      <Cart
+      <CartView
         cart={cart}
         auth={auth}
         successURL={"https://example.com/success"}
@@ -65,7 +65,7 @@ console.log(cart);
 */
 ```
 
-#### Cart state
+### Cart state
 
 | Prop                 | Type      | Description                                                                                                                   |
 | -------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -318,7 +318,7 @@ console.log(result);
 | `auth-account-id`   | _No_     | _number_                                                      | The user `id`. \* If the store provides sign in methods and a user is logged in.              |
 | `auth-save-address` | _No_     | _boolean_                                                     |                                                                                               |
 
-### Cart methods
+### Additional methods
 
 ### `cart.getProducts()`
 
