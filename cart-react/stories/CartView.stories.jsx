@@ -1,18 +1,13 @@
 import CartView from "../src/CartView.jsx";
 import "../src/cartview.css";
 
-import { createReflowCartStore, cartMap } from "../src/useCart";
+import { useCart, createStore } from "../src/useCart";
 
 // More on default export: https://storybook.js.org/docs/react/writing-stories/introduction#default-export
 export default {
   title: "Example/CartView",
   component: CartView,
 };
-
-// More on component templates: https://storybook.js.org/docs/react/writing-stories/introduction#using-args
-const Template = (args) => <CartView {...args} />;
-
-export const Localization = Template.bind({});
 
 const config = {
   storeID: "199976733",
@@ -40,34 +35,25 @@ const localization = {
   postcode: "Пощенски код",
 };
 
-// TODO: figure out a better way to do this
-delete localStorage[`reflowCartKey${config.storeID}`];
+export const Localization = ({ ...args }) => {
+  const cart = useCart({ ...config, localization });
 
-createReflowCartStore({ config, localization });
-
-const cart = cartMap.get(config.storeID);
-cart
-  .getState()
-  .cartManager.addProduct({ id: "379178066" })
-  .then(() => {
-    cart
-      .getState()
-      .cartManager.addProduct({ id: "558773655" })
-      .then(() => {
-        cart.getState().cartManager.addProduct({
-          id: "199976733",
-          variantID: "199976733_m",
-          personalization: [
-            { id: "199976733_engraving", inputText: "text" },
-            { id: "199976733_gift_wrap" },
-          ],
-        });
-      });
-  });
+  return (
+    <div className="container my-5">
+      <CartView cart={cart} {...args} />
+      <div className="mt-5">
+        <button id="add-physical-product" onClick={() => cart.addProduct({ id: "379178066" })}>
+          Add Physical Product
+        </button>
+        <button id="add-digital-product" onClick={() => cart.addProduct({ id: "558773655" })}>
+          Add Digital Product
+        </button>
+      </div>
+    </div>
+  );
+};
 
 Localization.args = {
-  config,
-  localization,
   onMessage: (error) => {
     let message = "";
 
