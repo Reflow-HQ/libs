@@ -170,7 +170,9 @@ export default class Cart {
       isUnavailable: false,
     };
 
-    this.state.quantity = this.calculateTotalQuantity();
+    if (newState.hasOwnProperty("products") && !newState.hasOwnProperty("quantity")) {
+      this.state.quantity = this.calculateTotalQuantity();
+    }
 
     if (!this.isDeliveryMethodValid(this.state.deliveryMethod)) {
       this.state.deliveryMethod = this.isDeliveryMethodValid(oldState.deliveryMethod)
@@ -356,7 +358,7 @@ export default class Cart {
   }
 
   getProducts() {
-    return !!this.state?.products || [];
+    return this.state?.products || [];
   }
 
   hasProducts() {
