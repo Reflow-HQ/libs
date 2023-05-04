@@ -4,20 +4,10 @@
 
 import React from "react";
 
-// import renderer from "react-test-renderer";
-import { render, renderHook, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
+import "@testing-library/jest-dom";
 
-import CartView, { useCart } from "../";
-
-let products = [
-  {
-    id: "123",
-    lineItemID: "456",
-    type: "physical",
-    inStock: true,
-    quantity: 1,
-  },
-];
+import Cart from "./mocks/Cart";
 
 const storeID = "1234";
 const cartKey = "key";
@@ -27,12 +17,77 @@ const config = {
 };
 
 const defaultCartContent = {
+  isLoaded: false,
   isLoading: false,
-  isLoaded: true,
   isUnavailable: false,
+
+  locale: "en-US",
+
+  errors: [],
+
+  products: [],
+  footerLinks: [],
+  total: 0,
+  subtotal: 0,
+  taxes: {},
+  locations: [],
+  shippingMethods: [],
+  shippableCountries: [],
+  paymentProviders: [],
+  signInProviders: [],
+
+  selectedLocation: -1,
+  selectedShippingMethod: -1,
 };
 
-function mockFetch() {
+const paymentProviders = [
+  {
+    provider: "paypal",
+    supported: true,
+    clientID: "1234",
+    merchantID: "5678",
+    order: 1,
+  },
+  {
+    provider: "stripe",
+    supported: true,
+    order: 1,
+    paymentOptions: [
+      {
+        id: "card",
+        name: "Card, Apple Pay, Google Pay",
+        currencies: "*",
+        countries: "*",
+      },
+    ],
+  },
+];
+
+const physicalProduct = {
+  id: "123",
+  lineItemID: "456",
+  name: "Hat",
+  type: "physical",
+  inStock: true,
+  quantity: 2,
+  variant: null,
+  inStock: 1,
+  availableQuantity: 999,
+  sku: "SKU70505",
+  unitPrice: 2000,
+  price: 4000,
+  tax: 0,
+  personalization: [],
+  categories: [],
+  minQty: 0,
+  maxQty: 99999,
+  discountedUnitPrice: 1500,
+  discountedPrice: 3000,
+};
+
+let cartContentResponse;
+
+function mockFetch(getDefaultResponse) {
   return (url) => {
     let response;
 
@@ -41,8 +96,9 @@ function mockFetch() {
         response = { cartKey };
         break;
       }
-      case `http://api.reflow.local/v1/stores/${storeID}/carts/${cartKey}`: {
-        response = { ...defaultCartContent, products };
+      case `http://api.reflow.local/v1/stores/${storeID}/carts/${cartKey}`:
+      case `http://api.reflow.local/v1/stores/${storeID}/carts/${cartKey}?deliveryMethod=pickup`: {
+        response = cartContentResponse;
         break;
       }
       default: {
@@ -60,43 +116,64 @@ function mockFetch() {
     });
   };
 }
-beforeAll(() => {
-  // we're using fake timers because we don't want to
-  // wait a full second for this test to run.
-  jest.useFakeTimers();
-});
-
-afterAll(() => {
-  jest.useRealTimers();
-});
 
 beforeEach(() => {
   global.fetch = jest.fn(mockFetch());
+  cartContentResponse = defaultCartContent;
+  delete localStorage["reflowCartKey1234"];
 });
 
 afterEach(() => {
   global.fetch.mockClear();
 });
 
-it("renders a loading screen", async () => {
-  // let cart;
+it("renders an error message when cart is unavailable", async () => {
+  cartContentResponse = null;
 
-  // act(() => {
-  // renderHook(() => {
-  // });
-  // cart = useCart(config);
+  act(() => {
+    render(<Cart config={config} />);
+  });
 
-  const { result } = renderHook(() => useCart(config));
+  expect(await screen.findByText("Unable to load shopping cart.")).toBeInTheDocument();
+});
 
-  render(<CartView cart={result.current} />);
+it("renders an error message when store has no payment methods", async () => {
+  cartContentResponse = { ...defaultCartContent };
 
-  jest.advanceTimersByTime(1000);
-  // await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+  act(() => {
+    render(<Cart config={config} />);
+  });
 
-  expect(await screen.findByTestId("cart")).toBeInTheDocument();
-  // const component = renderer.create(<CartView cart={cart} />);
-  // expect(component.toJSON()).toMatchSnapshot();
+  expect(
+    await screen.findByText("This store has no payment methods configured.")
+  ).toBeInTheDocument();
+});
 
-  // Todo: implement interactive snapshot testing
-  // https://jestjs.io/docs/snapshot-testing
+it("renders an empty cart message when the cart has no products", async () => {
+  cartContentResponse = {
+    ...defaultCartContent,
+    paymentProviders,
+    products: [],
+  };
+
+  act(() => {
+    render(<Cart config={config} />);
+  });
+
+  expect(await screen.findByText("Your shopping cart is empty.")).toBeInTheDocument();
+});
+
+it("renders the cart slide", async () => {
+  cartContentResponse = {
+    ...defaultCartContent,
+    paymentProviders,
+    products: [physicalProduct],
+  };
+
+  act(() => {
+    render(<Cart config={config} />);
+  });
+
+  expect(await screen.findByText("Shopping Cart")).toBeInTheDocument();
+  expect(await screen.findByText(physicalProduct.name)).toBeInTheDocument();
 });

@@ -20,7 +20,9 @@ export default function SummaryProduct({
   const cart = useShoppingCart();
   const t = cart.t;
 
-  const category = product.categories[0]?.name || t("product");
+  const category =
+    product.categories && product.categories[0] ? product.categories[0].name : t("product");
+  const image = product.image?.sm || "";
   const priceBreakdown = `${cart.formatCurrency(product.unitPrice)} x ${product.quantity}`;
 
   const showVariant = showVariantBreakdown && !!product.variant;
@@ -55,7 +57,7 @@ export default function SummaryProduct({
 
   return (
     <div className={`ref-product${hasQuantityError ? " ref-warning" : ""}`}>
-      <img className="ref-product-photo" src={product.image.sm} alt={product.name} />
+      <img className="ref-product-photo" src={image} alt={product.name} />
       <div className="ref-product-data">
         <div className="ref-product-info">
           <div>

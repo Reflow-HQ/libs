@@ -203,7 +203,7 @@ export default class Cart {
   }
 
   isEmpty() {
-    return !this.isLoaded() || !this.state.products.length;
+    return !this.isLoaded() || !this.hasProducts();
   }
 
   isUnavailable() {
@@ -211,9 +211,7 @@ export default class Cart {
   }
 
   calculateTotalQuantity() {
-    return this.state?.products
-      ? this.state.products.reduce((prev, curr) => prev + curr.quantity, 0)
-      : 0;
+    return this.getProducts().reduce((prev, curr) => prev + curr.quantity, 0);
   }
 
   isDeliveryMethodValid(deliveryMethod) {
@@ -366,7 +364,7 @@ export default class Cart {
   }
 
   hasPhysicalProducts() {
-    return !!this.state?.products.find((p) => p.type == "physical" && p.inStock);
+    return this.getProducts().find((p) => p.type == "physical" && p.inStock);
   }
 
   getShippableCountries() {
@@ -661,7 +659,7 @@ export default class Cart {
     try {
       let body = new FormData();
 
-      let product = this.state.products.find((p) => p.lineItemID === lineItemID);
+      let product = this.getProducts().find((p) => p.lineItemID === lineItemID);
 
       let formattedPersonalization = this.formatProductPersonalization(product.personalization);
 
@@ -696,7 +694,7 @@ export default class Cart {
     try {
       let body = new FormData();
 
-      let product = this.state.products.find((p) => p.lineItemID === lineItemID);
+      let product = this.getProducts().find((p) => p.lineItemID === lineItemID);
 
       let formattedPersonalization = this.formatProductPersonalization(product.personalization);
 

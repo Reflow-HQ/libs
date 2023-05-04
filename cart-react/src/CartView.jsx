@@ -31,9 +31,6 @@ export function CartUI({ successURL, cancelURL, onMessage }) {
       : ""
     : "";
 
-  console.log("render CartUI", isLoaded);
-  console.log("render CartUI", errorMessage);
-
   useEffect(() => {
     if (!products.length && step !== "cart") {
       setStep("cart");

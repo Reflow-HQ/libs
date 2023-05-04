@@ -144,8 +144,6 @@ export function useCart(config) {
     // when the component is unmounted
 
     return store.subscribe(() => {
-      let state = store.getState();
-      console.log(state);
       setCartObj(store.getState());
     });
 
