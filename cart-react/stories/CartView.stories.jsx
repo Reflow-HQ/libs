@@ -1,3 +1,4 @@
+import useAuth from "@reflowhq/auth-react";
 import CartView from "../src/CartView.jsx";
 import "../src/cartview.css";
 
@@ -36,11 +37,12 @@ const localization = {
 };
 
 export const Localization = ({ ...args }) => {
+  const auth = useAuth(config);
   const cart = useCart({ ...config, localization });
 
   return (
     <div className="container my-5">
-      <CartView cart={cart} {...args} />
+      <CartView auth={auth} cart={cart} {...args} />
       <div className="mt-5">
         <button id="add-physical-product" onClick={() => cart.addProduct({ id: "379178066" })}>
           Add Physical Product

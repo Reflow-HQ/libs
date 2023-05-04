@@ -5,8 +5,118 @@
 import { jest } from "@jest/globals";
 import Cart from "../index.js";
 
+const physicalProduct = {
+  id: "123",
+  lineItemID: "456",
+  type: "physical",
+  inStock: true,
+  quantity: 1,
+};
+
+const digitalProduct = {
+  id: "987",
+  lineItemID: "654",
+  type: "physical",
+  inStock: true,
+  quantity: 1,
+};
+
+const updatedProductQuantity = 5;
+const products = [physicalProduct];
+
+const address = {
+  name: "John Doe",
+  city: "New York",
+  country: "US",
+  state: "New York",
+  postcode: "12345",
+};
+
+const taxExemption = {
+  country: "US",
+  vat_number: {
+    input: "6789",
+    number: "US6789",
+    status: "valid",
+  },
+};
+
+const deliveryMethod = "shipping";
+const exemptionType = "tax-exemption-text";
+const exemptionValue = "6789";
+
+const storeID = "1234";
+const apiBase = "http://api.reflow.local/v1";
+const cartKey = "key";
+
+let refreshedState = {};
+
+function mockFetch() {
+  return (url) => {
+    let response;
+
+    switch (url) {
+      case `${apiBase}/stores/${storeID}/carts/`: {
+        response = { cartKey };
+        break;
+      }
+      case `${apiBase}/stores/${storeID}/carts/${cartKey}`: {
+        response = { products };
+        break;
+      }
+      case `${apiBase}/stores/${storeID}/add-to-cart/${physicalProduct.id}/${physicalProduct.quantity}/`: {
+        response = { cartKey, cartQuantity: physicalProduct.quantity };
+        refreshedState = { products: [physicalProduct] };
+        break;
+      }
+      case `${apiBase}/stores/${storeID}/update-cart-product/${cartKey}/${physicalProduct.id}/${updatedProductQuantity}/`: {
+        response = { cartQuantity: updatedProductQuantity };
+        refreshedState = { products: [{ ...physicalProduct, quantity: updatedProductQuantity }] };
+        break;
+      }
+      case `${apiBase}/stores/${storeID}/remove-cart-product/${cartKey}/${physicalProduct.id}/`: {
+        response = { cartQuantity: 0 };
+        refreshedState = { products: [] };
+        break;
+      }
+      case `${apiBase}/stores/${storeID}/update-address/${cartKey}/`: {
+        response = { success: true, taxExemptionRemoved: false };
+        refreshedState = { deliveryMethod, shippingAddress: address };
+        break;
+      }
+      case `${apiBase}/stores/${storeID}/update-tax-exemption/${cartKey}/`: {
+        response = { success: true };
+        refreshedState = {
+          deliveryMethod,
+          taxExemption,
+        };
+        break;
+      }
+      case `${apiBase}/stores/${storeID}/invalidate-tax-exemption/${cartKey}/`: {
+        response = { success: true, taxExemptionRemoved: true };
+        refreshedState = {
+          taxExemption: null,
+        };
+        break;
+      }
+      default: {
+        return Promise.resolve({
+          status: 404,
+          json: () => Promise.resolve({}),
+        });
+      }
+    }
+
+    return Promise.resolve({
+      status: 200,
+      ok: true,
+      json: () => Promise.resolve(response),
+    });
+  };
+}
+
 describe("Cart", () => {
-  let cart = new Cart({ storeID: "1234", apiBase: "http://api.reflow.local/v1" });
+  let cart = new Cart({ storeID, apiBase });
   let defaultCartState = cart.state;
 
   beforeEach(() => {
@@ -15,10 +125,21 @@ describe("Cart", () => {
 
     // Mock the cart.trigger method so we can track its evocations
     cart.trigger = jest.fn();
+    cart.scheduleRefresh = jest.fn(() => {
+      cart.updateState(refreshedState);
+    });
+
+    global.fetch = jest.fn(mockFetch());
   });
 
   afterEach(() => {
     cart.trigger.mockClear();
+    cart.scheduleRefresh.mockClear();
+    global.fetch.mockClear();
+
+    cart.state = { ...defaultCartState };
+
+    refreshedState = {};
   });
 
   it("should manage event listeners", async () => {
@@ -93,41 +214,6 @@ describe("Cart", () => {
   });
 
   it("should create new cart", async () => {
-    let products = [
-      {
-        id: 123,
-        type: "physical",
-        inStock: true,
-        quantity: 1,
-      },
-    ];
-
-    global.fetch = jest.fn((url) => {
-      let response = {};
-
-      if (/\/carts\/$/.test(url)) {
-        response = { cartKey: "key" };
-      } else if (/\/carts\/key$/.test(url)) {
-        response = {
-          products,
-        };
-      } else {
-        return Promise.resolve({
-          status: 404,
-          json: () => Promise.resolve({}),
-        });
-      }
-
-      return Promise.resolve({
-        status: 200,
-        ok: true,
-        json: () => Promise.resolve(response),
-      });
-    });
-
-    const cart = new Cart({ storeID: "987", apiBase: "http://api.reflow.local/v1" });
-    cart.trigger = jest.fn();
-
     expect(cart.isLoaded()).toBe(false);
     expect(cart.key).toBe(undefined);
 
@@ -135,84 +221,32 @@ describe("Cart", () => {
     await cart.refresh();
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(fetch).toHaveBeenNthCalledWith(1, "http://api.reflow.local/v1/stores/987/carts/", {
+    expect(fetch).toHaveBeenNthCalledWith(1, "http://api.reflow.local/v1/stores/1234/carts/", {
       method: "POST",
     });
-    expect(fetch).toHaveBeenNthCalledWith(2, "http://api.reflow.local/v1/stores/987/carts/key", {});
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      "http://api.reflow.local/v1/stores/1234/carts/key",
+      {}
+    );
 
     expect(cart.trigger).toHaveBeenCalledTimes(1);
     expect(cart.trigger).toHaveBeenCalledWith("change", {
+      ...defaultCartState,
       isLoaded: true,
-      isLoading: false,
-      isUnavailable: false,
-
-      locale: "en-US",
-
-      errors: [],
-
-      footerLinks: [],
-      total: 0,
-      subtotal: 0,
-      taxes: {},
-      locations: [],
-      shippingMethods: [],
-      shippableCountries: [],
-      paymentProviders: [],
-      signInProviders: [],
-
-      selectedLocation: -1,
-      selectedShippingMethod: -1,
-
+      deliveryMethod: "pickup",
       products: products,
       quantity: 1,
-      deliveryMethod: "pickup",
-      selectedLocation: -1,
-      selectedShippingMethod: -1,
     });
 
     expect(cart.isLoaded()).toBe(true);
     expect(cart.key).toBe("key");
-    expect(localStorage["reflowCartKey987"]).toBe("key");
+    expect(localStorage["reflowCartKey1234"]).toBe("key");
 
     expect(cart.state.products).toStrictEqual(products);
   });
 
   it("should create new cart when the key is invalid", async () => {
-    let products = [
-      {
-        id: 123,
-        type: "physical",
-        inStock: true,
-        quantity: 1,
-      },
-    ];
-
-    global.fetch = jest.fn((url) => {
-      let response = {};
-
-      if (/\/carts\/$/.test(url)) {
-        response = { cartKey: "key" };
-      } else if (/\/carts\/key$/.test(url)) {
-        response = {
-          products,
-        };
-      } else {
-        return Promise.resolve({
-          status: 404,
-          json: () => Promise.resolve({}),
-        });
-      }
-
-      return Promise.resolve({
-        status: 200,
-        ok: true,
-        json: () => Promise.resolve(response),
-      });
-    });
-
-    const cart = new Cart({ storeID: "987", apiBase: "http://api.reflow.local/v1" });
-    cart.trigger = jest.fn();
-
     // If the cart with the presented key doesn't exist,
     // create a new cart and fetch its contents
     cart.key = "nonexistent";
@@ -222,96 +256,45 @@ describe("Cart", () => {
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(fetch).toHaveBeenNthCalledWith(
       1,
-      "http://api.reflow.local/v1/stores/987/carts/nonexistent",
+      "http://api.reflow.local/v1/stores/1234/carts/nonexistent",
       {}
     );
-    expect(fetch).toHaveBeenNthCalledWith(2, "http://api.reflow.local/v1/stores/987/carts/", {
+    expect(fetch).toHaveBeenNthCalledWith(2, "http://api.reflow.local/v1/stores/1234/carts/", {
       method: "POST",
     });
-    expect(fetch).toHaveBeenNthCalledWith(3, "http://api.reflow.local/v1/stores/987/carts/key", {});
+    expect(fetch).toHaveBeenNthCalledWith(
+      3,
+      "http://api.reflow.local/v1/stores/1234/carts/key",
+      {}
+    );
 
     expect(cart.trigger).toHaveBeenCalledTimes(1);
     expect(cart.trigger).toHaveBeenCalledWith("change", {
+      ...defaultCartState,
       isLoaded: true,
-      isLoading: false,
-      isUnavailable: false,
-
-      locale: "en-US",
-
-      errors: [],
-
-      footerLinks: [],
-      total: 0,
-      subtotal: 0,
-      taxes: {},
-      locations: [],
-      shippingMethods: [],
-      shippableCountries: [],
-      paymentProviders: [],
-      signInProviders: [],
-
-      selectedLocation: -1,
-      selectedShippingMethod: -1,
-
+      deliveryMethod: "pickup",
       products: products,
       quantity: 1,
-      deliveryMethod: "pickup",
-      selectedLocation: -1,
-      selectedShippingMethod: -1,
     });
 
     expect(cart.isLoaded()).toBe(true);
     expect(cart.key).toBe("key");
-    expect(localStorage["reflowCartKey987"]).toBe("key");
+    expect(localStorage["reflowCartKey1234"]).toBe("key");
 
     expect(cart.state.products).toStrictEqual(products);
   });
 
   it("should add product to cart", async () => {
-    let product = {
-      id: "123",
-      lineItemID: "456",
-      type: "physical",
-      inStock: true,
-    };
+    const oldProducts = [];
+    const newProducts = [physicalProduct];
 
-    let cartKey = "key";
-    let quantity = 2;
-    let products = [];
+    delete localStorage[`reflowCartKey1234`];
 
-    global.fetch = jest.fn((url) => {
-      let response = {};
-
-      if (/\/add-to-cart/.test(url)) {
-        response = { cartKey, cartQuantity: quantity };
-        products = [{ ...product, quantity }];
-      } else {
-        return Promise.resolve({
-          status: 404,
-          json: () => Promise.resolve({}),
-        });
-      }
-
-      return Promise.resolve({
-        status: 200,
-        ok: true,
-        json: () => Promise.resolve(response),
-      });
-    });
-
-    const cart = new Cart({ storeID: "987", apiBase: "http://api.reflow.local/v1" });
-    delete localStorage["reflowCartKey987"];
-
-    cart.trigger = jest.fn();
-    cart.scheduleRefresh = jest.fn(() => {
-      cart.updateState({ products });
-    });
-
-    await cart.addProduct({ id: product.id }, quantity);
+    await cart.addProduct({ id: physicalProduct.id }, physicalProduct.quantity);
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/987/add-to-cart/${product.id}/${quantity}/`,
+      `http://api.reflow.local/v1/stores/1234/add-to-cart/${physicalProduct.id}/${physicalProduct.quantity}/`,
       {
         method: "POST",
         body: new FormData(),
@@ -323,75 +306,42 @@ describe("Cart", () => {
       ...defaultCartState,
       isLoaded: true,
       deliveryMethod: "pickup",
-      quantity,
+      quantity: physicalProduct.quantity,
+      products: oldProducts,
     });
 
-    expect(cart.trigger).toHaveBeenNthCalledWith(2, "product-added", { productID: product.id });
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "product-added", {
+      productID: physicalProduct.id,
+    });
 
     expect(cart.trigger).toHaveBeenNthCalledWith(3, "change", {
       ...defaultCartState,
       isLoaded: true,
       deliveryMethod: "pickup",
-      quantity,
-      products,
+      quantity: physicalProduct.quantity,
+      products: newProducts,
     });
 
     expect(cart.isLoaded()).toBe(true);
     expect(cart.key).toBe(cartKey);
-    expect(localStorage["reflowCartKey987"]).toBe(cartKey);
+    expect(localStorage["reflowCartKey1234"]).toBe(cartKey);
 
-    expect(cart.state.products).toStrictEqual(products);
-    expect(cart.getProducts()).toStrictEqual(products);
+    expect(cart.state.products).toStrictEqual(newProducts);
+    expect(cart.getProducts()).toStrictEqual(newProducts);
     expect(cart.hasProducts()).toStrictEqual(true);
   });
 
   it("should update line item quantity", async () => {
-    let product = {
-      id: "123",
-      lineItemID: "456",
-      type: "physical",
-      inStock: true,
-      quantity: 2,
-    };
+    const oldProducts = [physicalProduct];
+    const newProducts = [{ ...physicalProduct, quantity: updatedProductQuantity }];
 
-    let cartKey = "key";
-    let newQuantity = 5;
-    let products = [];
+    cart.state.products = oldProducts;
 
-    global.fetch = jest.fn((url) => {
-      let response = {};
-
-      if (/\/update-cart-product/.test(url)) {
-        response = { cartQuantity: newQuantity };
-        products = [{ ...product, quantity: newQuantity }];
-      } else {
-        return Promise.resolve({
-          status: 404,
-          json: () => Promise.resolve({}),
-        });
-      }
-
-      return Promise.resolve({
-        status: 200,
-        ok: true,
-        json: () => Promise.resolve(response),
-      });
-    });
-
-    const cart = new Cart({ storeID: "987", apiBase: "http://api.reflow.local/v1" });
-    cart.key = cartKey;
-    cart.state.products = [product];
-
-    cart.trigger = jest.fn();
-    cart.scheduleRefresh = jest.fn(() => {
-      cart.updateState({ products });
-    });
-
-    await cart.updateLineItemQuantity(product.lineItemID, newQuantity);
+    await cart.updateLineItemQuantity(physicalProduct.lineItemID, updatedProductQuantity);
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/987/update-cart-product/${cartKey}/${product.id}/${newQuantity}/`,
+      `http://api.reflow.local/v1/stores/1234/update-cart-product/${cartKey}/${physicalProduct.id}/${updatedProductQuantity}/`,
       {
         method: "POST",
         body: new FormData(),
@@ -403,48 +353,189 @@ describe("Cart", () => {
       ...defaultCartState,
       isLoaded: true,
       deliveryMethod: "pickup",
-      products: [product],
-      quantity: newQuantity,
+      quantity: updatedProductQuantity,
+      products: oldProducts,
     });
 
-    expect(cart.trigger).toHaveBeenNthCalledWith(2, "product-updated", { productID: product.id });
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "product-updated", {
+      productID: physicalProduct.id,
+    });
 
     expect(cart.trigger).toHaveBeenNthCalledWith(3, "change", {
       ...defaultCartState,
       isLoaded: true,
       deliveryMethod: "pickup",
-      quantity: newQuantity,
-      products,
+      quantity: updatedProductQuantity,
+      products: newProducts,
     });
 
     expect(cart.isLoaded()).toBe(true);
-    expect(cart.key).toBe(cartKey);
-    expect(localStorage["reflowCartKey987"]).toBe(cartKey);
 
-    expect(cart.state.products).toStrictEqual(products);
-    expect(cart.getProducts()).toStrictEqual(products);
+    expect(cart.state.products).toStrictEqual(newProducts);
+    expect(cart.getProducts()).toStrictEqual(newProducts);
     expect(cart.hasProducts()).toStrictEqual(true);
   });
 
   it("should remove line item", async () => {
-    let product = {
-      id: "123",
-      lineItemID: "456",
-      type: "physical",
-      inStock: true,
-      quantity: 5,
-    };
+    const oldProducts = [physicalProduct];
+    const newProducts = [];
 
-    let cartKey = "key";
-    let newQuantity = 0;
-    let products = [];
+    cart.state.products = oldProducts;
+
+    await cart.removeLineItem(physicalProduct.lineItemID);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      `http://api.reflow.local/v1/stores/1234/remove-cart-product/${cartKey}/${physicalProduct.id}/`,
+      {
+        method: "POST",
+        body: new FormData(),
+      }
+    );
+
+    expect(cart.trigger).toHaveBeenCalledTimes(3);
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "change", {
+      ...defaultCartState,
+      isLoaded: true,
+      deliveryMethod: "pickup",
+      quantity: 0,
+      products: oldProducts,
+    });
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "product-removed", {
+      productID: physicalProduct.id,
+    });
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(3, "change", {
+      ...defaultCartState,
+      isLoaded: true,
+      deliveryMethod: "pickup",
+      quantity: 0,
+      products: newProducts,
+    });
+
+    expect(cart.isLoaded()).toBe(true);
+
+    expect(cart.state.products).toStrictEqual(newProducts);
+    expect(cart.getProducts()).toStrictEqual(newProducts);
+    expect(cart.hasProducts()).toStrictEqual(false);
+  });
+
+  it("should update shipping address", async () => {
+    await cart.updateAddress({ address, deliveryMethod });
+
+    const body = new FormData();
+    body.append("address", JSON.stringify(address));
+    body.append("delivery_method", deliveryMethod);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      `http://api.reflow.local/v1/stores/1234/update-address/${cartKey}/`,
+      {
+        method: "POST",
+        body,
+      }
+    );
+
+    expect(cart.trigger).toHaveBeenCalledTimes(2);
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "address-updated");
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
+      ...defaultCartState,
+      isLoaded: true,
+      deliveryMethod,
+      shippingAddress: address,
+    });
+
+    expect(cart.isLoaded()).toBe(true);
+    expect(cart.state.shippingAddress).toStrictEqual(address);
+  });
+
+  it("should update tax exemption", async () => {
+    await cart.updateTaxExemption({ address, deliveryMethod, exemptionType, exemptionValue });
+
+    const body = new FormData();
+    body.append("address", JSON.stringify(address));
+    body.append("delivery-method", deliveryMethod);
+    body.append(exemptionType, exemptionValue);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      `http://api.reflow.local/v1/stores/1234/update-tax-exemption/${cartKey}/`,
+      {
+        method: "POST",
+        body,
+      }
+    );
+
+    expect(cart.trigger).toHaveBeenCalledTimes(2);
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "tax-exemption-updated");
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
+      ...defaultCartState,
+      isLoaded: true,
+      deliveryMethod,
+      taxExemption,
+    });
+
+    expect(cart.isLoaded()).toBe(true);
+    expect(cart.state.taxExemption).toStrictEqual(taxExemption);
+  });
+
+  it("should invalidate tax exemption", async () => {
+    await cart.invalidateTaxExemption({ address });
+
+    const body = new FormData();
+    body.append("address", JSON.stringify(address));
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      `http://api.reflow.local/v1/stores/1234/invalidate-tax-exemption/${cartKey}/`,
+      {
+        method: "POST",
+        body,
+      }
+    );
+
+    expect(cart.trigger).toHaveBeenCalledTimes(2);
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "tax-exemption-removed");
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
+      ...defaultCartState,
+      isLoaded: true,
+      deliveryMethod: "pickup",
+      taxExemption: null,
+    });
+
+    expect(cart.isLoaded()).toBe(true);
+    expect(cart.state.taxExemption).toStrictEqual(null);
+  });
+
+  it("should apply coupon", async () => {
+    const code = "5678";
+    const coupon = {
+      id: "1234",
+      name: "Coupon",
+      code: "5678",
+      type: "flat",
+      discount: 5000,
+      discountAmount: 5000,
+      originalProductSum: 60337,
+      error: null,
+      errorCode: null,
+    };
 
     global.fetch = jest.fn((url) => {
       let response = {};
 
-      if (/\/remove-cart-product/.test(url)) {
-        response = { cartQuantity: newQuantity };
-        products = [];
+      if (/\/apply-discount-code/.test(url)) {
+        response = { success: true, type: "coupon" };
+        refreshedState = {
+          coupon,
+        };
       } else {
         return Promise.resolve({
           status: 404,
@@ -459,52 +550,150 @@ describe("Cart", () => {
       });
     });
 
-    const cart = new Cart({ storeID: "987", apiBase: "http://api.reflow.local/v1" });
-    cart.key = cartKey;
-    cart.state.products = [product];
+    await cart.applyDiscountCode({ code });
 
-    cart.trigger = jest.fn();
-    cart.scheduleRefresh = jest.fn(() => {
-      cart.updateState({ products });
-    });
-
-    await cart.removeLineItem(product.lineItemID);
+    const body = new FormData();
+    body.append("code", code);
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/987/remove-cart-product/${cartKey}/${product.id}/`,
+      `http://api.reflow.local/v1/stores/1234/apply-discount-code/${cartKey}/`,
       {
         method: "POST",
-        body: new FormData(),
+        body,
       }
     );
 
-    expect(cart.trigger).toHaveBeenCalledTimes(3);
-    expect(cart.trigger).toHaveBeenNthCalledWith(1, "change", {
+    expect(cart.trigger).toHaveBeenCalledTimes(2);
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-added", { type: "coupon" });
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
       ...defaultCartState,
       isLoaded: true,
       deliveryMethod: "pickup",
-      products: [product],
-      quantity: newQuantity,
-    });
-
-    expect(cart.trigger).toHaveBeenNthCalledWith(2, "product-removed", { productID: product.id });
-
-    expect(cart.trigger).toHaveBeenNthCalledWith(3, "change", {
-      ...defaultCartState,
-      isLoaded: true,
-      deliveryMethod: "pickup",
-      quantity: newQuantity,
-      products: [],
+      coupon,
     });
 
     expect(cart.isLoaded()).toBe(true);
-    expect(cart.key).toBe(cartKey);
-    expect(localStorage["reflowCartKey987"]).toBe(cartKey);
+    expect(cart.state.coupon).toStrictEqual(coupon);
+  });
 
-    expect(cart.state.products).toStrictEqual([]);
-    expect(cart.getProducts()).toStrictEqual([]);
-    expect(cart.hasProducts()).toStrictEqual(false);
+  it("should apply gift card", async () => {
+    const code = "5678";
+    const giftCard = {
+      id: "1234",
+      code: "1111-1111-1111-1111",
+      last_4: "1111",
+      balance: 0,
+      discountAmount: 0,
+      error: null,
+      errorCode: null,
+    };
+
+    global.fetch = jest.fn((url) => {
+      let response = {};
+
+      if (/\/apply-discount-code/.test(url)) {
+        response = { success: true, type: "gift_card" };
+        refreshedState = {
+          giftCard,
+        };
+      } else {
+        return Promise.resolve({
+          status: 404,
+          json: () => Promise.resolve({}),
+        });
+      }
+
+      return Promise.resolve({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve(response),
+      });
+    });
+
+    await cart.applyDiscountCode({ code });
+
+    const body = new FormData();
+    body.append("code", code);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      `http://api.reflow.local/v1/stores/1234/apply-discount-code/${cartKey}/`,
+      {
+        method: "POST",
+        body,
+      }
+    );
+
+    expect(cart.trigger).toHaveBeenCalledTimes(2);
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-added", { type: "gift_card" });
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
+      ...defaultCartState,
+      isLoaded: true,
+      deliveryMethod: "pickup",
+      giftCard,
+    });
+
+    expect(cart.isLoaded()).toBe(true);
+    expect(cart.state.giftCard).toStrictEqual(giftCard);
+  });
+
+  it("should remove discount", async () => {
+    const code = "5678";
+
+    global.fetch = jest.fn((url) => {
+      let response = {};
+
+      if (/\/remove-discount-code/.test(url)) {
+        response = { success: true, type: "coupon" };
+        refreshedState = {
+          coupon: null,
+        };
+      } else {
+        return Promise.resolve({
+          status: 404,
+          json: () => Promise.resolve({}),
+        });
+      }
+
+      return Promise.resolve({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve(response),
+      });
+    });
+
+    await cart.removeDiscountCode({ code });
+
+    const body = new FormData();
+    body.append("code", code);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      `http://api.reflow.local/v1/stores/1234/remove-discount-code/${cartKey}/`,
+      {
+        method: "POST",
+        body,
+      }
+    );
+
+    expect(cart.trigger).toHaveBeenCalledTimes(2);
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-removed", { type: "coupon" });
+
+    expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
+      ...defaultCartState,
+      isLoaded: true,
+      deliveryMethod: "pickup",
+      coupon: null,
+    });
+
+    expect(cart.isLoaded()).toBe(true);
+    expect(cart.state.coupon).toStrictEqual(null);
   });
 
   it("should update state correctly", async () => {
@@ -547,8 +736,6 @@ describe("Cart", () => {
   });
 
   it("should set the correct delivery method", async () => {
-    const cart = new Cart({ storeID: "987", apiBase: "http://api.reflow.local/v1" });
-
     let data;
 
     expect(cart.state.deliveryMethod).toBe(undefined);
@@ -933,5 +1120,295 @@ describe("Cart", () => {
     cart.updateState(data);
 
     expect(cart.state.selectedShippingMethod).toBe(2);
+  });
+
+  it("should format the shipping address", async () => {
+    let address;
+
+    // No address provided, no address in local storage
+
+    let result = cart.getShippingAddress(address);
+
+    expect(result).toBe(undefined);
+
+    localStorage["reflowFormData1234"] = JSON.stringify({
+      shippingAddress: {},
+    });
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // Only name provided
+
+    address = {
+      name: "John Doe",
+    };
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // Country code not provided
+
+    address = {
+      name: "John Doe",
+      city: "New York",
+    };
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // City and country code provided, but no shippable countries
+
+    address = {
+      name: "John Doe",
+      city: "New York",
+      countryCode: "US",
+    };
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // City and country code provided, country not present in shippableCountries
+
+    address = {
+      name: "John Doe",
+      city: "New York",
+      countryCode: "US",
+    };
+
+    cart.state.shippableCountries = [
+      {
+        country_code: "ES",
+        has_postcode: true,
+        has_regions: true,
+      },
+    ];
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // City and country code provided, country is present in shippableCountries,
+    // but it requires a region and postcode
+
+    address = {
+      name: "John Doe",
+      city: "New York",
+      countryCode: "US",
+    };
+
+    cart.state.shippableCountries = [
+      {
+        country_code: "US",
+        has_postcode: true,
+        has_regions: true,
+      },
+    ];
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // City, country code and region provided, country is present in shippableCountries,
+    // but it requires a postcode
+
+    address = {
+      name: "John Doe",
+      city: "New York",
+      countryCode: "US",
+      state: "New York",
+    };
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // City, country code, region and postcode provided
+
+    address = {
+      name: "John Doe",
+      city: "New York",
+      countryCode: "US",
+      state: "New York",
+      postcode: "1234",
+    };
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toStrictEqual({
+      name: "John Doe",
+      city: "New York",
+      country: "US",
+      state: "New York",
+      postcode: "1234",
+    });
+
+    // City and country code provided, country is present in shippableCountries,
+    // it doesn't require region and postcode
+
+    address = {
+      name: "John Doe",
+      city: "New York",
+      countryCode: "US",
+    };
+
+    cart.state.shippableCountries = [
+      {
+        country_code: "US",
+        has_postcode: false,
+        has_regions: false,
+      },
+    ];
+
+    result = cart.getShippingAddress(address);
+
+    expect(result).toStrictEqual({
+      name: "John Doe",
+      city: "New York",
+      country: "US",
+    });
+
+    // No address provided - get it from local storage
+
+    localStorage["reflowFormData1234"] = JSON.stringify({
+      shippingAddress: address,
+    });
+
+    result = cart.getShippingAddress();
+
+    expect(result).toStrictEqual({
+      name: "John Doe",
+      city: "New York",
+      country: "US",
+    });
+  });
+
+  it("should format the digital address", async () => {
+    let address;
+
+    // No address provided, no address in local storage
+
+    let result = cart.getDigitalAddress(address);
+
+    expect(result).toBe(undefined);
+
+    localStorage["reflowFormData1234"] = JSON.stringify({
+      digitalAddress: {},
+    });
+
+    result = cart.getDigitalAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // Country code provided, country not present in shippableCountries
+
+    address = {
+      countryCode: "US",
+    };
+
+    result = cart.getDigitalAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // Country code provided, country not present in shippableCountries
+
+    address = {
+      city: "New York",
+      countryCode: "US",
+    };
+
+    cart.state.shippableCountries = [
+      {
+        country_code: "ES",
+      },
+    ];
+
+    result = cart.getDigitalAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // Country code provided, country is present in shippableCountries,
+    // but it requires a state and postcode
+
+    address = {
+      city: "New York",
+      countryCode: "US",
+    };
+
+    cart.state.shippableCountries = [
+      {
+        country_code: "US",
+      },
+    ];
+
+    result = cart.getDigitalAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // Country code and state provided, country is present in shippableCountries,
+    // but it requires a postcode
+
+    address = {
+      city: "New York",
+      countryCode: "US",
+      state: "New York",
+    };
+
+    result = cart.getDigitalAddress(address);
+
+    expect(result).toBe(undefined);
+
+    // City, country code, state and postcode provided
+
+    address = {
+      city: "New York",
+      countryCode: "US",
+      state: "New York",
+      postcode: "1234",
+    };
+
+    result = cart.getDigitalAddress(address);
+
+    expect(result).toStrictEqual({
+      country: "US",
+      state: "New York",
+      postcode: "1234",
+    });
+
+    // Country code provided, country is present in shippableCountries,
+    // it doesn't require state and postcode
+
+    address = {
+      city: "New York",
+      countryCode: "ES",
+    };
+
+    cart.state.shippableCountries = [
+      {
+        country_code: "ES",
+      },
+    ];
+
+    result = cart.getDigitalAddress(address);
+
+    expect(result).toStrictEqual({
+      country: "ES",
+    });
+
+    // No address provided, use the one from local storage
+
+    localStorage["reflowFormData1234"] = JSON.stringify({
+      digitalAddress: address,
+    });
+
+    result = cart.getDigitalAddress();
+
+    expect(result).toStrictEqual({
+      country: "ES",
+    });
   });
 });

@@ -207,7 +207,7 @@ export default class Cart {
   }
 
   isUnavailable() {
-    return this.isUnavailable;
+    return !!this.state.isUnavailable;
   }
 
   calculateTotalQuantity() {
@@ -386,7 +386,7 @@ export default class Cart {
   }
 
   getTaxPricingType() {
-    return this.state?.taxes ? this.state?.taxes?.details.pricingType : null;
+    return this.state?.taxes?.details?.pricingType || null;
   }
 
   canDeliver() {
@@ -805,11 +805,11 @@ export default class Cart {
         false
       );
 
-      this.scheduleRefresh();
-
       if (result.taxExemptionRemoved) {
         this.trigger("tax-exemption-removed");
       }
+
+      this.scheduleRefresh();
 
       return result;
     } catch (e) {
@@ -1000,11 +1000,8 @@ export default class Cart {
 
       return result;
     } catch (e) {
-      // showSystemError(getErrorText(e), "Couldn't update PayPal shipping");
-
       console.error("Reflow:", e);
       throw e;
-      // return actions.reject();
     }
   }
 }

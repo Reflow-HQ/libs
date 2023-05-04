@@ -31,6 +31,9 @@ export function CartUI({ successURL, cancelURL, onMessage }) {
       : ""
     : "";
 
+  console.log("render CartUI", isLoaded);
+  console.log("render CartUI", errorMessage);
+
   useEffect(() => {
     if (!products.length && step !== "cart") {
       setStep("cart");
@@ -68,7 +71,7 @@ export function CartUI({ successURL, cancelURL, onMessage }) {
 
   return (
     <div className="reflow-shopping-cart">
-      <div className={"ref-loading-backdrop " + (isLoading ? "active" : "")}></div>
+      <div className={"ref-loading-backdrop" + (isLoading ? " active" : "")}></div>
       {errorMessage ? (
         <div className="ref-message">{errorMessage}</div>
       ) : isLoaded ? (

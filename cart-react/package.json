@@ -12,7 +12,7 @@
     "use-sync-external-store": "^1.2.0"
   },
   "scripts": {
-    "test": "jest",
+    "test": "node --inspect-brk ../node_modules/.bin/jest",
     "watch": "start-storybook -p 8080",
     "build-storybook": "build-storybook",
     "build": "node build.js"

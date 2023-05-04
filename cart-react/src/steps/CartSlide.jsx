@@ -114,7 +114,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
   }
 
   return (
-    <div className="ref-cart">
+    <div className="ref-cart" data-testid="cart">
       <div className="ref-heading">{t("shopping_cart")}</div>
       <div className="ref-th">
         <div className="ref-product-col">{t("product")}</div>

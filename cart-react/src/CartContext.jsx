@@ -20,9 +20,8 @@ export function useShoppingCart() {
 export function ShoppingCartProvider({ children, ...props }) {
   const hasAuth = !!props.auth;
 
-  console.log("render");
-
   useEffect(() => {
+    console.log("refresh cart");
     // Fetch the cart contents on mount
     props.cart.refresh();
   }, []);

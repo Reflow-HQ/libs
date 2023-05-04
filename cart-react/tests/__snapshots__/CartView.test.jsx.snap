@@ -1,17 +1,21 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`button text changes when clicked 1`] = `
-[
+exports[`renders a loading screen 1`] = `
+<div
+  className="reflow-shopping-cart"
+>
   <div
-    className="ref-loading-backdrop "
-  />,
-  <button
-    className="test123"
-    onClick={[Function]}
-  >
-    Banana
-     
-    You clicked zero times.
-  </button>,
-]
+    className="ref-loading-backdrop"
+  />
+</div>
+`;
+
+exports[`renders the cart slide 1`] = `
+<div
+  className="reflow-shopping-cart"
+>
+  <div
+    className="ref-loading-backdrop"
+  />
+</div>
 `;
