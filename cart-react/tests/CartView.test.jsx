@@ -4,7 +4,7 @@
 
 import React from "react";
 
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
 import Cart from "./mocks/Cart";
@@ -29,7 +29,6 @@ const defaultCartContent = {
   footerLinks: [],
   total: 0,
   subtotal: 0,
-  taxes: {},
   locations: [],
   shippingMethods: [],
   shippableCountries: [],
@@ -87,17 +86,18 @@ const physicalProduct = {
 
 let cartContentResponse;
 
-function mockFetch(getDefaultResponse) {
+function mockFetch() {
   return (url) => {
+    const pathname = new URL(url).pathname;
+
     let response;
 
-    switch (url) {
-      case `http://api.reflow.local/v1/stores/${storeID}/carts/`: {
+    switch (pathname) {
+      case `/v1/stores/${storeID}/carts/`: {
         response = { cartKey };
         break;
       }
-      case `http://api.reflow.local/v1/stores/${storeID}/carts/${cartKey}`:
-      case `http://api.reflow.local/v1/stores/${storeID}/carts/${cartKey}?deliveryMethod=pickup`: {
+      case `/v1/stores/${storeID}/carts/${cartKey}`: {
         response = cartContentResponse;
         break;
       }
@@ -130,9 +130,7 @@ afterEach(() => {
 it("renders an error message when cart is unavailable", async () => {
   cartContentResponse = null;
 
-  act(() => {
-    render(<Cart config={config} />);
-  });
+  render(<Cart config={config} />);
 
   expect(await screen.findByText("Unable to load shopping cart.")).toBeInTheDocument();
 });
@@ -140,9 +138,7 @@ it("renders an error message when cart is unavailable", async () => {
 it("renders an error message when store has no payment methods", async () => {
   cartContentResponse = { ...defaultCartContent };
 
-  act(() => {
-    render(<Cart config={config} />);
-  });
+  render(<Cart config={config} />);
 
   expect(
     await screen.findByText("This store has no payment methods configured.")
@@ -156,9 +152,7 @@ it("renders an empty cart message when the cart has no products", async () => {
     products: [],
   };
 
-  act(() => {
-    render(<Cart config={config} />);
-  });
+  render(<Cart config={config} />);
 
   expect(await screen.findByText("Your shopping cart is empty.")).toBeInTheDocument();
 });
@@ -170,9 +164,7 @@ it("renders the cart slide", async () => {
     products: [physicalProduct],
   };
 
-  act(() => {
-    render(<Cart config={config} />);
-  });
+  render(<Cart config={config} />);
 
   expect(await screen.findByText("Shopping Cart")).toBeInTheDocument();
   expect(await screen.findByText(physicalProduct.name)).toBeInTheDocument();

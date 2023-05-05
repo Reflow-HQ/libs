@@ -28,7 +28,6 @@ export default class Cart {
       footerLinks: [],
       total: 0,
       subtotal: 0,
-      taxes: {},
       locations: [],
       shippingMethods: [],
       shippableCountries: [],
@@ -472,6 +471,10 @@ export default class Cart {
   formatCurrency(money) {
     const currencyConfig = this.state?.currencyConfig || this.getDefaultCurrencyConfig();
     let fractionDigits = 0;
+
+    if (isNaN(money)) {
+      money = 0;
+    }
 
     if (currencyConfig.hasDecimal) {
       // Currencies with cents are kept in the smallest unit ($12.34 is 1234 in the DB)

@@ -110,7 +110,30 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
       );
     }
 
-    return null;
+    return (
+      <div className="ref-row ref-checkout-buttons">
+        {cart.isPaypalSupported() && (
+          <div className="ref-paypal-express-checkout-holder">
+            <PayPalButton
+              fundingSource={"PAYPAL"}
+              step={step}
+              canSubmit={true}
+              successURL={successURL}
+              onMessage={onMessage}
+              style={{
+                height: 42,
+              }}
+            />
+          </div>
+        )}
+        <button
+          className="ref-button ref-standard-checkout-button"
+          onClick={() => setStep("details")}
+        >
+          {t("cart.checkout")}
+        </button>
+      </div>
+    );
   }
 
   return (

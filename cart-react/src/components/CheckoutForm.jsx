@@ -707,7 +707,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
         </div>
       )}
 
-      {taxes && taxDetails?.exemptionType && (
+      {taxDetails?.exemptionType && (
         <div className="ref-tax-note">
           <hr />
 
