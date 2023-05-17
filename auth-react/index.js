@@ -59,6 +59,9 @@ function makeAuthObject(auth) {
     get user() {
       return auth.user;
     },
+    get subscription() {
+      return auth.user.subscription;
+    },
     updateUser: auth.updateUser.bind(auth),
     isSignedIn: auth.isSignedIn.bind(auth),
     isNew: auth.isNew.bind(auth),
@@ -66,5 +69,8 @@ function makeAuthObject(auth) {
     signOut: auth.signOut.bind(auth),
     refresh: auth.refresh.bind(auth),
     getToken: auth.getToken.bind(auth),
+    createSubscription: auth.createSubscription.bind(auth),
+    isSubscribed: auth.isSubscribed.bind(auth),
+    modifySubscription: auth.modifySubscription.bind(auth),
   };
 }
