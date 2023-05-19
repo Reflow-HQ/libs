@@ -1,0 +1,13 @@
+{
+  "name": "cart",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "esbuild index.jsx --bundle --sourcemap --outdir=./ --servedir=./ --watch --serve=8080"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}

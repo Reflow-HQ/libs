@@ -142,4 +142,28 @@ describe("Auth", () => {
 
     expect(_authMap.size).toBe(0);
   });
+
+  it("should reuse auth instances", async () => {
+    const { result, unmount: unmount } = renderHook(() => useAuth({ storeID: 777123 }));
+    expect(result.current.isSignedIn()).toBe(false);
+    expect(_authMap.size).toBe(1);
+
+    const { unmount: unmount2 } = renderHook(() => useAuth({ storeID: 777123 }));
+    expect(_authMap.size).toBe(1);
+
+    const { unmount: unmount3 } = renderHook(() => useAuth({ storeID: 12345678 }));
+    expect(_authMap.size).toBe(2);
+
+    unmount();
+
+    expect(_authMap.size).toBe(2);
+
+    unmount2();
+
+    expect(_authMap.size).toBe(1);
+
+    unmount3();
+
+    expect(_authMap.size).toBe(0);
+  });
 });
