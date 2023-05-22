@@ -71,7 +71,7 @@ class Auth {
   }
 
   isSubscribed() {
-    return this.isSignedIn() && this.user.is_subscribed;
+    return this.isSignedIn() && !!this.subscription;
   }
 
   on(event, cb) {
@@ -390,12 +390,15 @@ class Auth {
       this._signInWindow.close();
       this._signInWindow = null;
 
+      this._isLoading = false;
+
       throw e;
     }
 
     this._signInWindow.location =
       response.signinURL + "?origin=" + encodeURIComponent(window.location.origin);
 
+    clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
       if (this._signInWindow && this._signInWindow.closed) {
         this._signInWindow = null;
@@ -543,12 +546,15 @@ class Auth {
       this._subscriptionWindow.close();
       this._subscriptionWindow = null;
 
+      this._isLoading = false;
+
       throw e;
     }
 
     this._subscriptionWindow.location =
       response.checkoutURL;
 
+    clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
       if (this._subscriptionWindow && this._subscriptionWindow.closed) {
         this._subscriptionWindow = null;
@@ -567,6 +573,8 @@ class Auth {
       if (!hasFocus && document.hasFocus()) {
         // We've switched back to this page/window. Refresh the state.
         hasFocus = true;
+
+        clearInterval(this._subscribeCheckInterval);
 
         await this.refresh();
       }
@@ -618,12 +626,15 @@ class Auth {
       this._subscriptionWindow.close();
       this._subscriptionWindow = null;
 
+      this._isLoading = false;
+
       throw e;
     }
 
     this._subscriptionWindow.location =
       response.subscriptionManagementURL;
 
+    clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
       if (this._subscriptionWindow && this._subscriptionWindow.closed) {
         this._subscriptionWindow = null;

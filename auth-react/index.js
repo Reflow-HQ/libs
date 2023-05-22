@@ -60,7 +60,7 @@ function makeAuthObject(auth) {
       return auth.user;
     },
     get subscription() {
-      return auth.user.subscription;
+      return auth.subscription;
     },
     updateUser: auth.updateUser.bind(auth),
     isSignedIn: auth.isSignedIn.bind(auth),
