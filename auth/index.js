@@ -13,9 +13,12 @@ class Auth {
 
     this._signInWindow = null;
     this._authToken = null;
-
+    
     this._checkWindowClosedInterval = null;
     this._loginCheckInterval = null;
+    
+    this._subscriptionWindow = null;
+    this._subscribeCheckInterval = null;
 
     if (autoBind) {
       this.bind();
@@ -65,6 +68,10 @@ class Auth {
 
   isSignedIn() {
     return !!this.get("key");
+  }
+
+  isSubscribed() {
+    return this.isSignedIn() && !!this.subscription;
   }
 
   on(event, cb) {
@@ -197,6 +204,7 @@ class Auth {
 
     clearInterval(this._checkWindowClosedInterval);
     clearInterval(this._loginCheckInterval);
+    clearInterval(this._subscribeCheckInterval);
 
     window.removeEventListener("message", this._messageListener);
 
@@ -382,12 +390,15 @@ class Auth {
       this._signInWindow.close();
       this._signInWindow = null;
 
+      this._isLoading = false;
+
       throw e;
     }
 
     this._signInWindow.location =
       response.signinURL + "?origin=" + encodeURIComponent(window.location.origin);
 
+    clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
       if (this._signInWindow && this._signInWindow.closed) {
         this._signInWindow = null;
@@ -482,6 +493,158 @@ class Auth {
     this.broadcast("signout", { error: false });
 
     return true;
+  }
+
+  async createSubscription(data) {
+    if (!this.isSignedIn() || this._isLoading) {
+      return;
+    }
+
+    if (this._subscriptionWindow) {
+      // Already open
+      this._subscriptionWindow.focus();
+      return;
+    }
+
+    // Open the window. Center it relative to the current one.
+    const w = 600,
+      h = 800;
+    const y = window.outerHeight / 2 + window.screenY - h / 2;
+    const x = window.outerWidth / 2 + window.screenX - w / 2;
+
+    this._subscriptionWindow = window.open(
+      "about:blank",
+      "reflow-subscribe",
+      `width=${w},height=${h},top=${y},left=${x}`
+    );
+
+    let body = new FormData();
+
+    for (let key in data) {
+      if (key == null) continue;
+      let val = data[key];
+      body.set(key, val);
+    }
+
+    let response;
+
+    try {
+      this._isLoading = true;
+      response = await this.api("/auth/user/subscribe", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.get("key")}`,
+        },
+        body,
+      });
+      this._isLoading = false;
+
+    } catch (e) {
+      console.error("Reflow: " + e);
+      if (e.data) console.error(e.data);
+
+      this._subscriptionWindow.close();
+      this._subscriptionWindow = null;
+
+      this._isLoading = false;
+
+      throw e;
+    }
+
+    this._subscriptionWindow.location =
+      response.checkoutURL;
+
+    clearInterval(this._checkWindowClosedInterval);
+    this._checkWindowClosedInterval = setInterval(() => {
+      if (this._subscriptionWindow && this._subscriptionWindow.closed) {
+        this._subscriptionWindow = null;
+      }
+
+      if (!this._subscriptionWindow) {
+        clearInterval(this._checkWindowClosedInterval);
+      }
+    }, 500);
+
+    let hasFocus = document.hasFocus();
+
+    clearInterval(this._subscribeCheckInterval);
+    this._subscribeCheckInterval = setInterval(async () => {
+
+      if (!hasFocus && document.hasFocus()) {
+        // We've switched back to this page/window. Refresh the state.
+        hasFocus = true;
+
+        clearInterval(this._subscribeCheckInterval);
+
+        await this.refresh();
+      }
+
+      hasFocus = document.hasFocus();
+    }, 250);
+  }
+
+  async modifySubscription(data) {
+
+    if (!this.isSignedIn() || this._isLoading) {
+      return;
+    }
+
+    if (this._subscriptionWindow) {
+      // Already open
+      this._subscriptionWindow.focus();
+      return;
+    }
+
+    // Open the window. Center it relative to the current one.
+    const w = 600,
+      h = 800;
+    const y = window.outerHeight / 2 + window.screenY - h / 2;
+    const x = window.outerWidth / 2 + window.screenX - w / 2;
+
+    this._subscriptionWindow = window.open(
+      "about:blank",
+      "reflow-modify-subscription",
+      `width=${w},height=${h},top=${y},left=${x}`
+    );
+
+    let response;
+
+    try {
+      this._isLoading = true;
+      response = await this.api("/auth/user/manage-subscription", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.get("key")}`,
+        },
+      });
+      this._isLoading = false;
+
+    } catch (e) {
+      console.error("Reflow: " + e);
+      if (e.data) console.error(e.data);
+
+      this._subscriptionWindow.close();
+      this._subscriptionWindow = null;
+
+      this._isLoading = false;
+
+      throw e;
+    }
+
+    this._subscriptionWindow.location =
+      response.subscriptionManagementURL;
+
+    clearInterval(this._checkWindowClosedInterval);
+    this._checkWindowClosedInterval = setInterval(() => {
+      if (this._subscriptionWindow && this._subscriptionWindow.closed) {
+        this._subscriptionWindow = null;
+      }
+
+      if (!this._subscriptionWindow) {
+        clearInterval(this._checkWindowClosedInterval);
+      }
+    }, 500);
+
   }
 }
 

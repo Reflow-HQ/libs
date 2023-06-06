@@ -22,6 +22,7 @@ describe("Auth", () => {
 
     expect(Object.keys(result.current)).toStrictEqual([
       "user",
+      "subscription",
       "updateUser",
       "isSignedIn",
       "isNew",
@@ -29,6 +30,9 @@ describe("Auth", () => {
       "signOut",
       "refresh",
       "getToken",
+      "createSubscription",
+      "isSubscribed",
+      "modifySubscription",
     ]);
 
     expect(result.current.user).toBe(null);

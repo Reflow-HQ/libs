@@ -416,14 +416,14 @@ describe("Auth", () => {
     expect(addEventListener).toHaveBeenCalledTimes(2);
     expect(removeEventListener).toHaveBeenCalledTimes(1);
     expect(removeEventListener).toHaveBeenCalledWith("message", auth6._messageListener);
-    expect(clearInterval).toHaveBeenCalledTimes(2);
+    expect(clearInterval).toHaveBeenCalledTimes(3);
     expect(auth6._checkWindowClosedInterval).toBe(null);
     expect(auth6._loginCheckInterval).toBe(null);
 
     auth5.on("change", () => {});
 
     expect(setTimeout).toHaveBeenCalledTimes(0);
-    expect(clearInterval).toHaveBeenCalledTimes(2);
+    expect(clearInterval).toHaveBeenCalledTimes(3);
     expect(auth5._listeners["change"].length).toBe(1);
 
     auth5.unbind();
@@ -454,7 +454,7 @@ describe("Auth", () => {
     auth5.unbind();
 
     expect(auth5._boundCounter).toBe(3);
-    expect(clearInterval).toHaveBeenCalledTimes(4);
+    expect(clearInterval).toHaveBeenCalledTimes(6);
     expect(auth5.isBound()).toBe(true);
 
     auth5.unbind();
@@ -466,7 +466,7 @@ describe("Auth", () => {
     auth5.unbind();
 
     expect(auth5._boundCounter).toBe(0);
-    expect(clearInterval).toHaveBeenCalledTimes(6);
+    expect(clearInterval).toHaveBeenCalledTimes(9);
     expect(auth5.isBound()).toBe(false);
 
     jest.useRealTimers();
