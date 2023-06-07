@@ -1,7 +1,7 @@
 import React from "react";
 import CartView, { useCart } from "@reflowhq/cart-react";
 import useAuth from "@reflowhq/auth-react";
-import "@reflowhq/cart-react/src/cartview.css";
+import "@reflowhq/cart-react/dist/style.css";
 
 const config = {
   storeID: "199976733",

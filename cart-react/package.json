@@ -1,15 +1,16 @@
 {
   "name": "@reflowhq/cart-react",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
   "style": "dist/style.css",
   "keywords": [],
   "author": "Reflow HQ",
   "license": "MIT",
+  "main": "dist/index.js",
   "dependencies": {
+    "@reflowhq/cart": "^1.0.0",
     "lodash.debounce": "^4.0.8",
-    "prop-types": "^15.8.1",
-    "use-sync-external-store": "^1.2.0"
+    "prop-types": "^15.8.1"
   },
   "scripts": {
     "test": "jest",
