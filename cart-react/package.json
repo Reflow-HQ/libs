@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "style": "dist/style.css",
-  "keywords": [],
+  "keywords": [
+    "shopping",
+    "cart",
+    "ecomerce",
+    "react",
+    "hook"
+  ],
   "author": "Reflow HQ",
   "license": "MIT",
   "main": "dist/index.js",
@@ -44,5 +50,13 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reflow-hq/libs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/reflow-hq/libs/issues"
+  },
+  "homepage": "https://github.com/reflow-hq/libs#readme"
 }
