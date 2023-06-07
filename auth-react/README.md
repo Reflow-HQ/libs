@@ -1,6 +1,6 @@
 # Reflow Auth-React
 
-This is a React hook which you can use to add user accounts and authentication to any app using [Reflow](https://reflowhq.com/docs/store-management/registrations.html). It is compatible with React 18+ and builds upon the [vanilla Auth](https://github.com/reflow-hq/reflow-libs/tree/main/auth) library.
+This is a React hook which you can use to add user accounts and authentication to any app using [Reflow](https://reflowhq.com/docs/store-management/registrations.html). It is compatible with React 18+ and builds upon the [vanilla Auth](https://github.com/reflow-hq/libs/tree/master/auth) library.
 
 The hook handles event syncing between open tabs and automatically syncs user information with the Reflow backend, making it a robust auth solution for frontend apps.
 
@@ -58,7 +58,7 @@ function MyComponent() {
 }
 ```
 
-You can see a full featured example in the [examples](https://github.com/reflow-hq/reflow-libs/tree/main/auth-react/examples) directory. You can also browse the test directory or read the source directly, it's only 50 lines long.
+You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/auth-react/examples) directory. You can also browse the test directory or read the source directly, it's only 50 lines long.
 
 ## API
 

@@ -1,6 +1,6 @@
 # Reflow Auth
 
-This is a JS library for adding user accounts to any frontend using [Reflow](https://reflowhq.com/docs/store-management/registrations.html). It is written in vanilla JS and can work in any project and framework. For React projects, you can check out [the hook](https://github.com/reflow-hq/reflow-libs/tree/main/auth-react) version of this library.
+This is a JS library for adding user accounts to any frontend using [Reflow](https://reflowhq.com/docs/store-management/registrations.html). It is written in vanilla JS and can work in any project and framework. For React projects, you can check out [the hook](https://github.com/reflow-hq/libs/tree/master/auth-react) version of this library.
 
 ## Installation
 
@@ -20,7 +20,7 @@ import Auth from "@reflowhq/auth";
 window.auth = new Auth({ storeID: "<your storeid here>" });
 ```
 
-You can see a full featured example in the [examples](https://github.com/reflow-hq/reflow-libs/tree/main/auth/examples) directory.
+You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/auth/examples) directory.
 
 ## API
 
