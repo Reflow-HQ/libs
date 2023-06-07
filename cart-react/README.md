@@ -44,7 +44,7 @@ function App() {
 }
 ```
 
-You can see a full featured example in the [examples](https://github.com/reflow-hq/reflow-libs/tree/main/cart-react/examples) directory.
+You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/cart-react/examples) directory.
 
 ## API
 

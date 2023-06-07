@@ -4,8 +4,7 @@ import useAuth from "@reflowhq/auth-react";
 import "@reflowhq/cart-react/dist/style.css";
 
 const config = {
-  storeID: "199976733",
-  apiBase: "http://api.reflow.local/v1",
+  storeID: "267418190"
 };
 
 function App() {
@@ -25,18 +24,18 @@ function App() {
       />
       <div className="mt-5">
         <div
-          id="add-physical-product"
+          id="add-product-1"
           className="btn btn-primary me-2"
-          onClick={() => cart.addProduct({ id: "379178066" })}
+          onClick={() => cart.addProduct({ id: "108661429" })}
         >
-          Add Physical Product
+          Add Product 1
         </div>
         <div
-          id="add-digital-product"
+          id="add-product-2"
           className="btn btn-primary"
-          onClick={() => cart.addProduct({ id: "558773655" })}
+          onClick={() => cart.addProduct({ id: "277093884" })}
         >
-          Add Digital Product
+          Add Product 2
         </div>
       </div>
     </div>

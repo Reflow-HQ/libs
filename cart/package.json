@@ -18,9 +18,7 @@
     "lodash.debounce": "^4.0.8"
   },
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "publish": "echo Todo",
-    "build": "esbuild index.js --outfile=./dist/index.js --format=esm --bundle --minify --log-level=warning --target=es2020,chrome80,firefox80,safari13"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "devDependencies": {
     "jest": "^29.4.3",

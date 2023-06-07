@@ -16,7 +16,8 @@
     "test": "jest",
     "watch": "start-storybook -p 8080",
     "build-storybook": "build-storybook",
-    "build": "node build.js"
+    "build": "node build.js",
+    "publish": "npm run build"
   },
   "devDependencies": {
     "@babel/plugin-proposal-export-default-from": "^7.18.10",
