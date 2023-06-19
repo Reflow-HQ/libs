@@ -1,5 +1,5 @@
 class Auth {
-  constructor({ storeID, apiBase = "https://api.reflowhq.com/v1", autoBind = true }) {
+  constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", autoBind = true }) {
     this.storeID = storeID;
     this.apiBase = apiBase;
 
@@ -13,10 +13,10 @@ class Auth {
 
     this._signInWindow = null;
     this._authToken = null;
-    
+
     this._checkWindowClosedInterval = null;
     this._loginCheckInterval = null;
-    
+
     this._subscriptionWindow = null;
     this._subscribeCheckInterval = null;
 
@@ -538,7 +538,6 @@ class Auth {
         body,
       });
       this._isLoading = false;
-
     } catch (e) {
       console.error("Reflow: " + e);
       if (e.data) console.error(e.data);
@@ -551,8 +550,7 @@ class Auth {
       throw e;
     }
 
-    this._subscriptionWindow.location =
-      response.checkoutURL;
+    this._subscriptionWindow.location = response.checkoutURL;
 
     clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
@@ -569,7 +567,6 @@ class Auth {
 
     clearInterval(this._subscribeCheckInterval);
     this._subscribeCheckInterval = setInterval(async () => {
-
       if (!hasFocus && document.hasFocus()) {
         // We've switched back to this page/window. Refresh the state.
         hasFocus = true;
@@ -584,7 +581,6 @@ class Auth {
   }
 
   async modifySubscription(data) {
-
     if (!this.isSignedIn() || this._isLoading) {
       return;
     }
@@ -618,7 +614,6 @@ class Auth {
         },
       });
       this._isLoading = false;
-
     } catch (e) {
       console.error("Reflow: " + e);
       if (e.data) console.error(e.data);
@@ -631,8 +626,7 @@ class Auth {
       throw e;
     }
 
-    this._subscriptionWindow.location =
-      response.subscriptionManagementURL;
+    this._subscriptionWindow.location = response.subscriptionManagementURL;
 
     clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
@@ -644,7 +638,6 @@ class Auth {
         clearInterval(this._checkWindowClosedInterval);
       }
     }, 500);
-
   }
 }
 

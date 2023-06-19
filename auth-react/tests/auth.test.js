@@ -72,7 +72,7 @@ describe("Auth", () => {
   it("should rerender and unmount", async () => {
     let auth = new Auth({
       storeID: "1234",
-      apiBase: "http://api.reflow.local/v1",
+      apiBase: "http://api.reflow.local/v2",
       autoBind: false,
     });
 

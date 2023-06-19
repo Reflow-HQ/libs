@@ -6,7 +6,7 @@ import { jest } from "@jest/globals";
 import Auth from "../index.js";
 
 describe("Auth", () => {
-  let auth = new Auth({ storeID: "1234", apiBase: "http://api.reflow.local/v1" });
+  let auth = new Auth({ storeID: "1234", apiBase: "http://api.reflow.local/v2" });
 
   beforeEach(() => {
     // Hide console.error() spam
@@ -131,7 +131,7 @@ describe("Auth", () => {
 
     global.open = jest.fn(() => signInWindow);
 
-    let auth = new Auth({ storeID: "2345", apiBase: "http://api.reflow.local/v1" });
+    let auth = new Auth({ storeID: "2345", apiBase: "http://api.reflow.local/v2" });
     expect(auth.isSignedIn()).toBe(false);
     expect(auth._loginCheckInterval).toBeNull();
 
@@ -173,7 +173,7 @@ describe("Auth", () => {
 
     expect(auth.isSignedIn()).toBe(false);
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v1/stores/1234/auth/state", {
+    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/stores/1234/auth/state", {
       headers: {
         Authorization: `Bearer key123`,
       },
@@ -209,7 +209,7 @@ describe("Auth", () => {
     expect(user).toEqual({ name: "Mr. Name From Server" });
     expect(auth.user.name).toBe("Mr. Name From Server");
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v1/stores/1234/auth/state", {
+    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/stores/1234/auth/state", {
       headers: {
         Authorization: `Bearer key123`,
       },
