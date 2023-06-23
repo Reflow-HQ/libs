@@ -676,6 +676,14 @@
   padding: 0;
 }
 
+.ref-checkout .ref-checkout-content {
+  padding: 5% 0;
+}
+
+.ref-checkout .ref-summary-content {
+  padding: 5%;
+}
+
 .ref-checkout-form .ref-heading-delivery,
 .ref-checkout-form .ref-heading-payment {
   margin-top: 40px;
@@ -950,8 +958,7 @@
 }
 
 @media (min-width: 576px) {
-  .ref-checkout .ref-checkout-content,
-  .ref-checkout .ref-summary-content {
+  .ref-checkout .ref-checkout-content {
     padding: 5%;
   }
 

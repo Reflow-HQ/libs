@@ -46,7 +46,7 @@ const exemptionType = "tax-exemption-text";
 const exemptionValue = "6789";
 
 const storeID = "1234";
-const apiBase = "http://api.reflow.local/v1";
+const apiBase = "http://api.reflow.local/v2";
 const cartKey = "key";
 
 let refreshedState = {};
@@ -221,12 +221,12 @@ describe("Cart", () => {
     await cart.refresh();
 
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(fetch).toHaveBeenNthCalledWith(1, "http://api.reflow.local/v1/stores/1234/carts/", {
+    expect(fetch).toHaveBeenNthCalledWith(1, "http://api.reflow.local/v2/stores/1234/carts/", {
       method: "POST",
     });
     expect(fetch).toHaveBeenNthCalledWith(
       2,
-      "http://api.reflow.local/v1/stores/1234/carts/key",
+      "http://api.reflow.local/v2/stores/1234/carts/key",
       {}
     );
 
@@ -256,15 +256,15 @@ describe("Cart", () => {
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(fetch).toHaveBeenNthCalledWith(
       1,
-      "http://api.reflow.local/v1/stores/1234/carts/nonexistent",
+      "http://api.reflow.local/v2/stores/1234/carts/nonexistent",
       {}
     );
-    expect(fetch).toHaveBeenNthCalledWith(2, "http://api.reflow.local/v1/stores/1234/carts/", {
+    expect(fetch).toHaveBeenNthCalledWith(2, "http://api.reflow.local/v2/stores/1234/carts/", {
       method: "POST",
     });
     expect(fetch).toHaveBeenNthCalledWith(
       3,
-      "http://api.reflow.local/v1/stores/1234/carts/key",
+      "http://api.reflow.local/v2/stores/1234/carts/key",
       {}
     );
 
@@ -294,7 +294,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/add-to-cart/${physicalProduct.id}/${physicalProduct.quantity}/`,
+      `http://api.reflow.local/v2/stores/1234/add-to-cart/${physicalProduct.id}/${physicalProduct.quantity}/`,
       {
         method: "POST",
         body: new FormData(),
@@ -341,7 +341,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/update-cart-product/${cartKey}/${physicalProduct.id}/${updatedProductQuantity}/`,
+      `http://api.reflow.local/v2/stores/1234/update-cart-product/${cartKey}/${physicalProduct.id}/${updatedProductQuantity}/`,
       {
         method: "POST",
         body: new FormData(),
@@ -386,7 +386,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/remove-cart-product/${cartKey}/${physicalProduct.id}/`,
+      `http://api.reflow.local/v2/stores/1234/remove-cart-product/${cartKey}/${physicalProduct.id}/`,
       {
         method: "POST",
         body: new FormData(),
@@ -430,7 +430,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/update-address/${cartKey}/`,
+      `http://api.reflow.local/v2/stores/1234/update-address/${cartKey}/`,
       {
         method: "POST",
         body,
@@ -462,7 +462,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/update-tax-exemption/${cartKey}/`,
+      `http://api.reflow.local/v2/stores/1234/update-tax-exemption/${cartKey}/`,
       {
         method: "POST",
         body,
@@ -492,7 +492,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/invalidate-tax-exemption/${cartKey}/`,
+      `http://api.reflow.local/v2/stores/1234/invalidate-tax-exemption/${cartKey}/`,
       {
         method: "POST",
         body,
@@ -557,7 +557,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/apply-discount-code/${cartKey}/`,
+      `http://api.reflow.local/v2/stores/1234/apply-discount-code/${cartKey}/`,
       {
         method: "POST",
         body,
@@ -620,7 +620,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/apply-discount-code/${cartKey}/`,
+      `http://api.reflow.local/v2/stores/1234/apply-discount-code/${cartKey}/`,
       {
         method: "POST",
         body,
@@ -674,7 +674,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v1/stores/1234/remove-discount-code/${cartKey}/`,
+      `http://api.reflow.local/v2/stores/1234/remove-discount-code/${cartKey}/`,
       {
         method: "POST",
         body,

@@ -680,14 +680,14 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
                           </div>
                           <div className="ref-method-name">
                             <b>{method.name}</b>
-                            {method.delivery_time && (
+                            {!!method.delivery_time && (
                               <small>
                                 {getDeliveryDate(method.delivery_time) +
                                   " - " +
                                   getDeliveryDate(method.delivery_time + 2)}
                               </small>
                             )}
-                            {method.note && <small>{method.note}</small>}
+                            {!!method.note && <small>{method.note}</small>}
                           </div>
                           <div className="ref-method-price">
                             {cart.formatCurrency(method.price)}

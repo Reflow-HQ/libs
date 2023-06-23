@@ -5,7 +5,7 @@ import defaultLocalization from "./locales/locale_en-US";
 // Cart Manager Class
 
 export default class Cart {
-  constructor({ storeID, apiBase = "https://api.reflowhq.com/v1", localization }) {
+  constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", localization }) {
     this.storeID = storeID;
     this.apiBase = apiBase;
     this.localization = {
