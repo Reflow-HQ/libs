@@ -1,5 +1,4 @@
-import ReactDOM from "react-dom";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useShoppingCart, useAuth } from "../CartContext";
 
 import useExternalScript from "../hooks/useExternalScript";
@@ -15,6 +14,7 @@ export default function PayPalButton({
   const auth = useAuth();
   const cart = useShoppingCart();
 
+  const containerRef = useRef();
   const paypalProvider = cart.getPaymentProvider("paypal");
 
   if (!paypalProvider) return null;
@@ -33,6 +33,12 @@ export default function PayPalButton({
   const sdkLoaded = state === "ready";
 
   const [paypalError, setPaypalError] = useState("");
+
+  useEffect(() => {
+    if (sdkLoaded) {
+      renderButton();
+    }
+  }, [sdkLoaded]);
 
   async function createOrder() {
     if (!canSubmit()) return;
@@ -121,22 +127,18 @@ export default function PayPalButton({
   }
 
   function renderButton() {
-    const Button = paypal.Buttons.driver("react", { React, ReactDOM });
-
-    return (
-      <Button
-        fundingSource={paypal.FUNDING[fundingSource]}
-        createOrder={createOrder}
-        onApprove={onApprove}
-        onShippingChange={onShippingChange}
-        onCancel={onCancel}
-        onError={onError}
-        style={style}
-      />
-    );
+    paypal
+      .Buttons({
+        fundingSource: paypal.FUNDING[fundingSource],
+        createOrder,
+        onApprove,
+        onCancel,
+        onError,
+        onShippingChange,
+        style,
+      })
+      .render(containerRef.current);
   }
 
-  if (!paypalProvider) return null;
-
-  return <>{sdkLoaded ? renderButton() : null}</>;
+  return <div ref={containerRef}></div>;
 }
