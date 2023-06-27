@@ -102,29 +102,20 @@ Adds a new product to the cart.
 
 `options` can have the following keys:
 
-| Prop              | Required | Description                                                                                              |
-| ----------------- | -------- | -------------------------------------------------------------------------------------------------------- |
-| `id`              | _Yes_    | The `id` of the product you want to add to the cart.                                                     |
-| `variantID`       | _No\*_   | The id of the selected product variant (\* **required if the product has variants**)                     |
-| `personalization` | _No_     | An array of objects describing the applied personalizations.                                             |
-| `files`           | _No_     | An array of objects describing the files that need to be uploaded for personalizations of type `"file"`. |
+| Prop              | Required | Description                                                                          |
+| ----------------- | -------- | ------------------------------------------------------------------------------------ |
+| `id`              | _Yes_    | The `id` of the product you want to add to the cart.                                 |
+| `variantID`       | _No\*_   | The id of the selected product variant (\* **required if the product has variants**) |
+| `personalization` | _No_     | An array of objects describing the applied personalizations.                         |
 
 Each `personalization` object can have the following props:
 
-| Prop        | Required | Description                                                                                       |
-| ----------- | -------- | ------------------------------------------------------------------------------------------------- |
-| `id`        | _Yes_    | The personalization id.                                                                           |
-| `inputText` | _No_     | The personalization text (for personalizations of type `"text"`).                                 |
-| `selected`  | _No_     | The selected value from the personalization dropdown (for personalizations of type `"dropdown"`). |
-| `filename`  | _No_     | The name of the uploaded file (for personalizations of type `"file"`).                            |
-| `filehash`  | _No_     | //TODO (for personalizations of type `"file"`).                                                   |
-
-Each `file` object can have the following props:
-
-| Prop   | Required | Description                                                                                                                                                                    |
-| ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `hash` | _Yes_    | //TODO                                                                                                                                                                         |
-| `file` | _Yes_    | A [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) or a [File](https://developer.mozilla.org/en-US/docs/Web/API/File) object that will be uploaded to the server. |
+| Prop        | Required | Description                                                                                                                                                                                                            |
+| ----------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | _Yes_    | The personalization id.                                                                                                                                                                                                |
+| `inputText` | _No_     | The personalization text (for personalizations of type `"text"`).                                                                                                                                                      |
+| `selected`  | _No_     | The selected value from the personalization dropdown (for personalizations of type `"dropdown"`).                                                                                                                      |
+| `file`      | _No_     | A [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) or a [File](https://developer.mozilla.org/en-US/docs/Web/API/File) object that will be uploaded to the server (for personalizations of type `"file"`). |
 
 ```js
 let result = await cart.addProduct(
@@ -254,8 +245,12 @@ console.log(result);
 
 Updates the tax exemption.
 
-- exemptionType - "tax-exemption-file" or "tax-exemption-text"
-- exemptionValue - a [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) or a [File](https://developer.mozilla.org/en-US/docs/Web/API/File) object that will be uploaded to the server or a string (VAT number)
+| Prop             | Required | Possible Values                                                                                                                                                                                                                         |
+| ---------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `address`        | _Yes_    | object                                                                                                                                                                                                                                  |
+| `deliveryMethod` | _Yes_    | `'shipping'`, `'pickup'`, `'digital'`                                                                                                                                                                                                   |
+| `exemptionType`  | _Yes_    | `'tax-exemption-file'` or `'tax-exemption-text'`                                                                                                                                                                                        |
+| `exemptionValue` | _Yes_    | a [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) or a [File](https://developer.mozilla.org/en-US/docs/Web/API/File) object that will be uploaded to the server (jpg, jpeg, png, pdf, doc, docx) or a string (VAT number) |
 
 ```js
 let result = await cart.updateTaxExemption({

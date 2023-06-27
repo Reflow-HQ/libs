@@ -607,16 +607,24 @@ export default class Cart {
     await this.refreshState(queryParams);
   }
 
-  async addProduct({ id, variantID, personalization = [], files = [] }, quantity = 1) {
+  async addProduct({ id, variantID, personalization = [] }, quantity = 1) {
     try {
       let body = new FormData();
+      let files = [];
 
       if (personalization && personalization.length) {
         for (const p of personalization) {
-          if (p.filename && p.filehash) {
-            if (!files.findIndex((f) => f.hash === p.filehash)) {
-              throw new Error(`Reflow: File with hash ${p.filehash} not provided!`);
-            }
+          if (p.file) {
+            let hash = "pers_file_" + Math.floor(Math.random() * 999999).toString() + Date.now();
+            p.filename = p.file.name;
+            p.filehash = hash;
+
+            files.push({
+              file: p.file,
+              hash,
+            });
+
+            delete p.file;
           }
         }
 
