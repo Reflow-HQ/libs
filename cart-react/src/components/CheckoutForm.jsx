@@ -64,7 +64,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
     cart.setSelectedShippingMethod,
   ];
 
-  const isInVactionMode = vacationMode?.enabled;
+  const isInVactionMode = !!vacationMode?.enabled;
   const shouldShowPaypalButtons =
     cart.isPaypalSupported() && !isInVactionMode && !cart.hasZeroValue();
   const debouncedUpdateAddress = useCallback(debounce(updateAddress, 500), []);

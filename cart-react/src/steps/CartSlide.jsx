@@ -10,12 +10,16 @@ import FooterLinks from "../components/FooterLinks";
 const CartSlide = ({ successURL, onMessage, step, setStep }) => {
   const cart = useShoppingCart();
 
-  const { t, products, footerLinks, subtotal, taxes, errors, localFormData } = cart;
+  const { t, products, footerLinks, subtotal, taxes, vacationMode, errors, localFormData } = cart;
 
   const formDataKey = localFormData.formDataKey;
   const useFormData = useLocalStorageFormData(formDataKey);
 
   const [termsAccepted, setTermsAccepted] = useFormData("termsAccepted", false);
+
+  const isInVactionMode = !!vacationMode?.enabled;
+  const shouldShowPaypalButtons =
+    cart.isPaypalSupported() && !isInVactionMode && !cart.hasZeroValue();
 
   const taxAmount = taxes?.amount || 0;
 
@@ -88,7 +92,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
             </span>
           </label>
           <div className="ref-row ref-checkout-buttons">
-            {cart.isPaypalSupported() && (
+            {shouldShowPaypalButtons && (
               <div className="ref-paypal-express-checkout-holder">
                 <PayPalButton
                   fundingSource={"PAYPAL"}
@@ -102,7 +106,12 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
                 />
               </div>
             )}
-            <button className="ref-button ref-standard-checkout-button">
+            <button
+              className={`ref-button ref-standard-checkout-button${
+                isInVactionMode ? " inactive" : ""
+              }`}
+              disabled={isInVactionMode}
+            >
               {t("cart.checkout")}
             </button>
           </div>
@@ -112,7 +121,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
 
     return (
       <div className="ref-row ref-checkout-buttons">
-        {cart.isPaypalSupported() && (
+        {shouldShowPaypalButtons && (
           <div className="ref-paypal-express-checkout-holder">
             <PayPalButton
               fundingSource={"PAYPAL"}
@@ -127,7 +136,8 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
           </div>
         )}
         <button
-          className="ref-button ref-standard-checkout-button"
+          className={`ref-button ref-standard-checkout-button${isInVactionMode ? " inactive" : ""}`}
+          disabled={isInVactionMode}
           onClick={() => setStep("details")}
         >
           {t("cart.checkout")}
