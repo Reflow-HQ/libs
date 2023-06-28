@@ -9,7 +9,14 @@ import Instructions from "../components/Instructions";
 import FooterLinks from "../components/FooterLinks";
 import CheckoutForm from "../components/CheckoutForm";
 
-export default function CheckoutSlide({ successURL, cancelURL, onMessage, step, setStep }) {
+export default function CheckoutSlide({
+  successURL,
+  cancelURL,
+  onMessage,
+  step,
+  setStep,
+  demoMode,
+}) {
   const cart = useShoppingCart();
   const { paymentProviders, locations, t, taxExemptionRemoved, setTaxExemptionRemoved } = cart;
 
@@ -122,6 +129,7 @@ export default function CheckoutSlide({ successURL, cancelURL, onMessage, step, 
             cancelURL={cancelURL}
             onMessage={onMessage}
             onCheckoutSuccess={onCheckoutSuccess}
+            demoMode={demoMode}
           />
         )}
 
