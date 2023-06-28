@@ -5,9 +5,10 @@ import CartProduct from "../components/CartProduct";
 import { useShoppingCart } from "../CartContext";
 import useLocalStorageFormData from "../hooks/useLocalStorageFormData";
 import PayPalButton from "../components/PayPalButton";
+import PayPalDemoButton from "../components/PayPalDemoButton";
 import FooterLinks from "../components/FooterLinks";
 
-const CartSlide = ({ successURL, onMessage, step, setStep }) => {
+const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
   const cart = useShoppingCart();
 
   const { t, products, footerLinks, subtotal, taxes, vacationMode, errors, localFormData } = cart;
@@ -92,20 +93,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
             </span>
           </label>
           <div className="ref-row ref-checkout-buttons">
-            {shouldShowPaypalButtons && (
-              <div className="ref-paypal-express-checkout-holder">
-                <PayPalButton
-                  fundingSource={"PAYPAL"}
-                  step={step}
-                  canSubmit={() => !!termsAccepted}
-                  successURL={successURL}
-                  onMessage={onMessage}
-                  style={{
-                    height: 42,
-                  }}
-                />
-              </div>
-            )}
+            {renderPaypalButton(() => !!termsAccepted)}
             <button
               className={`ref-button ref-standard-checkout-button${
                 isInVactionMode ? " inactive" : ""
@@ -121,20 +109,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
 
     return (
       <div className="ref-row ref-checkout-buttons">
-        {shouldShowPaypalButtons && (
-          <div className="ref-paypal-express-checkout-holder">
-            <PayPalButton
-              fundingSource={"PAYPAL"}
-              step={step}
-              canSubmit={true}
-              successURL={successURL}
-              onMessage={onMessage}
-              style={{
-                height: 42,
-              }}
-            />
-          </div>
-        )}
+        {renderPaypalButton(() => true)}
         <button
           className={`ref-button ref-standard-checkout-button${isInVactionMode ? " inactive" : ""}`}
           disabled={isInVactionMode}
@@ -142,6 +117,33 @@ const CartSlide = ({ successURL, onMessage, step, setStep }) => {
         >
           {t("cart.checkout")}
         </button>
+      </div>
+    );
+  }
+
+  function renderPaypalButton(canSubmit) {
+    if (!shouldShowPaypalButtons) return null;
+
+    if (demoMode) {
+      return (
+        <div className="ref-paypal-express-checkout-holder">
+          <PayPalDemoButton />
+        </div>
+      );
+    }
+
+    return (
+      <div className="ref-paypal-express-checkout-holder">
+        <PayPalButton
+          fundingSource={"PAYPAL"}
+          step={step}
+          canSubmit={canSubmit}
+          successURL={successURL}
+          onMessage={onMessage}
+          style={{
+            height: 42,
+          }}
+        />
       </div>
     );
   }

@@ -1208,3 +1208,34 @@
     padding: 25px 35px 35px;
   }
 }
+
+/* Fake Paypal buttons */
+
+.reflow-shopping-cart .paypal-button {
+  height: 55px;
+  padding: 16px;
+  margin-bottom: 7px;
+  font-size: 16px;
+  text-align: center;
+  border-radius: var(--ref-border-radius);
+  cursor: pointer;
+}
+
+.paypal-button.paypal-button-gold:hover {
+  filter: brightness(0.95);
+}
+
+.reflow-shopping-cart .ref-paypal-express-checkout-holder .paypal-button {
+  height: 43px;
+  padding: 10px;
+}
+
+.reflow-shopping-cart .paypal-button-gold {
+  color: #2c2e2f;
+  background: #ffc439;
+}
+
+.reflow-shopping-cart .paypal-button-black {
+  color: var(--ref-white);
+  background: #2c2e2f;
+}

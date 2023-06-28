@@ -4,15 +4,20 @@ import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import CartSlide from "./steps/CartSlide";
 import CheckoutSlide from "./steps/CheckoutSlide";
 
-const CartView = ({ cart, auth, successURL, cancelURL, onMessage }) => {
+const CartView = ({ cart, auth, successURL, cancelURL, onMessage, demoMode = false }) => {
   return (
     <ShoppingCartProvider cart={cart} auth={auth}>
-      <CartUI successURL={successURL} cancelURL={cancelURL} onMessage={onMessage} />
+      <CartUI
+        successURL={successURL}
+        cancelURL={cancelURL}
+        onMessage={onMessage}
+        demoMode={demoMode}
+      />
     </ShoppingCartProvider>
   );
 };
 
-export function CartUI({ successURL, cancelURL, onMessage }) {
+export function CartUI({ successURL, cancelURL, onMessage, demoMode }) {
   const [step, setStep] = useState("cart");
 
   const cart = useShoppingCart();
@@ -46,6 +51,7 @@ export function CartUI({ successURL, cancelURL, onMessage }) {
           successURL={successURL}
           cancelURL={cancelURL}
           onMessage={onMessage}
+          demoMode={demoMode}
         />
       );
     } else {
@@ -56,6 +62,7 @@ export function CartUI({ successURL, cancelURL, onMessage }) {
           successURL={successURL}
           cancelURL={cancelURL}
           onMessage={onMessage}
+          demoMode={demoMode}
         />
       );
     }
