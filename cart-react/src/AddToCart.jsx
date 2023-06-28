@@ -3,25 +3,14 @@ import React, { useState, useRef } from "react";
 import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import QuantityWidget from "./widgets/QuantityWidget";
 
-const AddToCart = ({
-  cart,
-  product,
-  buttonText,
-  showVariants,
-  showQuantity,
-  showPersonalization,
-  showButton,
-  onMessage,
-}) => {
+const AddToCart = ({ cart, product, buttonText, showQuantity, showPersonalization, onMessage }) => {
   return (
     <ShoppingCartProvider cart={cart}>
       <AddToCartUI
         product={product}
         buttonText={buttonText}
-        showVariants={showVariants}
         showQuantity={showQuantity}
         showPersonalization={showPersonalization}
-        showButton={showButton}
         onMessage={onMessage}
       />
     </ShoppingCartProvider>
@@ -31,10 +20,8 @@ const AddToCart = ({
 export function AddToCartUI({
   product,
   buttonText,
-  showVariants = true,
   showQuantity = true,
   showPersonalization = true,
-  showButton = true,
   onMessage,
 }) {
   const cart = useShoppingCart();
@@ -173,7 +160,7 @@ export function AddToCartUI({
   }
 
   function shouldShowVariants() {
-    return showVariants && hasVariants();
+    return hasVariants();
   }
 
   function shouldShowQuantity() {
@@ -185,7 +172,7 @@ export function AddToCartUI({
   }
 
   function shouldShowButton() {
-    return showButton;
+    return true;
   }
 
   function shouldShowControls(personalization) {
