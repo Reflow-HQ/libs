@@ -118,8 +118,16 @@ class Auth {
     return this.get("user");
   }
 
+  get subscription() {
+    return this.get("subscription");
+  }
+
   userSameAs(user) {
     return JSON.stringify(this.user) === JSON.stringify(user);
+  }
+
+  subscriptionSameAs(sub) {
+    return JSON.stringify(this.subscription) === JSON.stringify(sub);
   }
 
   setIsNew() {
@@ -273,9 +281,10 @@ class Auth {
         lastRefresh: Date.now(),
       });
 
-      if (!this.userSameAs(result.user)) {
+      if (!this.userSameAs(result.user) || !this.subscriptionSameAs(result.subscription)) {
         this.set({
           user: result.user,
+          subscription: result.subscription,
         });
         this.trigger("modify");
         this.trigger("change");
@@ -350,7 +359,7 @@ class Auth {
     }
   }
 
-  async signIn() {
+  async signIn(options = {}) {
     if (this.isSignedIn() || this._isLoading) {
       return;
     }
@@ -395,14 +404,21 @@ class Auth {
       throw e;
     }
 
-    this._signInWindow.location =
-      response.signinURL + "?origin=" + encodeURIComponent(window.location.origin);
+    let params = "?origin=" + encodeURIComponent(window.location.origin);
+
+    if (options.subscribeTo) {
+      params += "&subscribeTo=" + Number(options.subscribeTo);
+    }
+
+    this._signInWindow.location = response.signinURL + params;
 
     clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
-      if (this._signInWindow && this._signInWindow.closed) {
-        this._signInWindow = null;
-      }
+      try {
+        if (this._signInWindow && this._signInWindow.closed) {
+          this._signInWindow = null;
+        }
+      } catch (e) {}
 
       if (!this._signInWindow) {
         clearInterval(this._checkWindowClosedInterval);
@@ -447,6 +463,7 @@ class Auth {
             key: status.session,
             expiresAt: Date.now() + status.lifetime * 1000,
             user: status.user,
+            subscription: status.subscription,
             token: status.token,
             lastRefresh: Date.now(),
           });
@@ -496,7 +513,13 @@ class Auth {
   }
 
   async createSubscription(data) {
-    if (!this.isSignedIn() || this._isLoading) {
+    if (this._isLoading) {
+      return;
+    }
+
+    if (!this.isSignedIn()) {
+      // Sign in and initiate a subscription in the same window
+      this.signIn({ subscribeTo: data.priceID });
       return;
     }
 
@@ -554,9 +577,11 @@ class Auth {
 
     clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
-      if (this._subscriptionWindow && this._subscriptionWindow.closed) {
-        this._subscriptionWindow = null;
-      }
+      try {
+        if (this._subscriptionWindow && this._subscriptionWindow.closed) {
+          this._subscriptionWindow = null;
+        }
+      } catch (e) {}
 
       if (!this._subscriptionWindow) {
         clearInterval(this._checkWindowClosedInterval);
@@ -580,8 +605,9 @@ class Auth {
     }, 250);
   }
 
-  async modifySubscription(data) {
+  async modifySubscription() {
     if (!this.isSignedIn() || this._isLoading) {
+      console.error("Reflow: Can't modify subscription, user is not signed in");
       return;
     }
 
@@ -630,9 +656,11 @@ class Auth {
 
     clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
-      if (this._subscriptionWindow && this._subscriptionWindow.closed) {
-        this._subscriptionWindow = null;
-      }
+      try {
+        if (this._subscriptionWindow && this._subscriptionWindow.closed) {
+          this._subscriptionWindow = null;
+        }
+      } catch (e) {}
 
       if (!this._subscriptionWindow) {
         clearInterval(this._checkWindowClosedInterval);

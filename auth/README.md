@@ -137,10 +137,42 @@ auth.refresh();
 
 ### `auth.getToken()`
 
-Async method which resolves to a signed JWT containing user info. Pass it to your server in order to validate the request on the backend. See examples/express-signin to see an example.
+Async method which resolves to a signed JWT containing user info. Pass it to your server in order to validate the request on the backend. See `examples/express-signin` to see an example.
 
 ```js
 await auth.getToken();
+```
+
+### `auth.createSubscription( options )`
+
+This method initiates the [subscription flow](https://reflowhq.com/docs/guide/subscriptions-how#subscription-flow). It is called with an ID of the price which the customer is to be subscribed to. This will open a window with a Stripe payment page where the customer can enter their payment details and finalize their subscription.
+
+If the user is not signed in when this method is called, they will be prompted to sign in first, and will then proceed to payment.
+
+`options` is an object which must contain a `priceID` key, which you can obtain by using the [Reflow API](https://reflowhq.com/docs/api/).
+
+```js
+async auth.createSubscription({
+  priceID: "123456789",
+});
+```
+
+### `auth.modifySubscription()`
+
+This method lets users modify their subscription. When called, it will open a window with a Stripe subscription management page, where the customer can upgrade to another subscription plan, switch between monthly and yearly billing (if you have this configured), and update their payment method and billing info.
+
+This method only works if the user is signed in and has a subscription.
+
+```js
+async auth.modifySubscription();
+```
+
+### `auth.isSubscribed()`
+
+This method will return true or false depending on whether the currently signed in user has an active subscription for your store.
+
+```js
+auth.isSubscribed();
 ```
 
 ## Events
