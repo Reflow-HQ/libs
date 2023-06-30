@@ -221,6 +221,7 @@ This event is triggered in all cases that can lead to a change in the authentica
 
 - The user signs in or out of their account.
 - The user is edited with the updateUser method.
+- The user signs up for a subscription plan or modifies the plan they are on.
 - The user has been edited in the Reflow backend.
 
 You can use it to trigger updates to your application's UI state.

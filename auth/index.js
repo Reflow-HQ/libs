@@ -371,8 +371,8 @@ class Auth {
     }
 
     // Open the signin window. Center it relative to the current one.
-    const w = 600,
-      h = 600;
+    const w = 650,
+      h = 650;
     const y = window.outerHeight / 2 + window.screenY - h / 2;
     const x = window.outerWidth / 2 + window.screenX - w / 2;
 
@@ -530,7 +530,7 @@ class Auth {
     }
 
     // Open the window. Center it relative to the current one.
-    const w = 600,
+    const w = 650,
       h = 800;
     const y = window.outerHeight / 2 + window.screenY - h / 2;
     const x = window.outerWidth / 2 + window.screenX - w / 2;
@@ -618,7 +618,7 @@ class Auth {
     }
 
     // Open the window. Center it relative to the current one.
-    const w = 600,
+    const w = 650,
       h = 800;
     const y = window.outerHeight / 2 + window.screenY - h / 2;
     const x = window.outerWidth / 2 + window.screenX - w / 2;

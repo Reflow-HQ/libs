@@ -197,6 +197,8 @@ async auth.createSubscription({
 });
 ```
 
+See a [live example](https://codesandbox.io/s/react-reflow-pricing-table-3kdc6l), which demonstrates how to build a pricing page with monthly/yearly switch and initiating a subscription.
+
 ### `auth.modifySubscription()`
 
 This method lets users modify their subscription. When called, it will open a window with a Stripe subscription management page, where the customer can upgrade to another subscription plan, switch between monthly and yearly billing (if you have this configured), and update their payment method and billing info.
@@ -206,6 +208,8 @@ This method only works if the user is signed in and has a subscription.
 ```js
 async auth.modifySubscription();
 ```
+
+See a [live example](https://codesandbox.io/s/react-reflow-pricing-table-3kdc6l), which demonstrates how to build a pricing page with monthly/yearly switch, initiate and modify a subscription.
 
 ### `auth.isSubscribed()`
 
