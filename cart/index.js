@@ -8,6 +8,8 @@ export default class Cart {
   constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", localization }) {
     this.storeID = storeID;
     this.apiBase = apiBase;
+    this.apiCache = new Map();
+
     this.localization = {
       ...defaultLocalization,
       ...localization,
@@ -53,10 +55,22 @@ export default class Cart {
     return new IntlMessageFormat(this.localization[key], this.localization.locale).format(data);
   }
 
-  api(endpoint, options) {
-    return fetch(this.apiBase + "/stores/" + this.storeID + endpoint, options).then(
+  api(endpoint, options = {}) {
+    if (typeof endpoint != "string" || !endpoint.trim().length) {
+      return Promise.reject("Reflow: Endpoint Required");
+    }
+
+    endpoint = endpoint.replace(/^\/+/, "");
+
+    if (this.apiCache.has(endpoint)) {
+      return this.apiCache.get(endpoint);
+    }
+
+    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options).then(
       async (response) => {
         let data = await response.json();
+
+        this.apiCache.delete(endpoint);
 
         if (!response.ok) {
           let err = Error(data.error || "HTTP error");
@@ -68,6 +82,10 @@ export default class Cart {
         return data;
       }
     );
+
+    this.apiCache.set(endpoint, result);
+
+    return result;
   }
 
   on(event, cb) {

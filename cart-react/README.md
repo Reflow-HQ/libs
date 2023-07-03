@@ -14,6 +14,10 @@ npm install @reflowhq/cart-react
 
 This library is meant to run in the browser. Just import the hook and pass your storeID, which you can obtain from Reflow's website:
 
+### `<CartView/>`
+
+Renders a shopping cart.
+
 ```js
 import CartView, { useCart } from "@reflowhq/cart-react";
 import useAuth from "@reflowhq/auth-react";
@@ -44,7 +48,72 @@ function App() {
 }
 ```
 
+#### Props
+
+| Prop         | Type       | Description                                                                                                                  |
+| ------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `cart`       | _object_   | The result of calling the `useCart` hook.                                                                                    |
+| `auth`       | _object_   | The result of calling the `useAuth` hook from `@reflowhq/auth-react`.                                                        |
+| `successURL` | _string_   | The URL where the customer will be redirected after a successful payment.                                                    |
+| `cancelURL`  | _string_   | The URL where the customer will be redirected after a failed or canceled payment.                                            |
+| `onMessage`  | _function_ | Called with an object with `type`, `title` and `description` keys. You can use it to show success/error messages in a toast. |
+
 You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/cart-react/examples) directory.
+
+### `<AddToCart/>`
+
+Renders controls for variant selection, personalization option, a quantity widget and a button that adds the product to the cart.
+
+```js
+import { useState, useEffect } from "react";
+import { AddToCart, useCart } from "@reflowhq/cart-react";
+import "@reflowhq/cart-react/src/cartview.css";
+
+const config = {
+  storeID: "1234",
+};
+
+function App() {
+  const cart = useCart(config);
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      const result = await cart.api(`/products`);
+      setProducts(result.data);
+    }
+    fetchProducts();
+  }, []);
+
+  return (
+    <div>
+      {products.map((product) => (
+        <AddToCart
+          key={product.id}
+          cart={cart}
+          product={product}
+          onMessage={(message) => {
+            alert(message.title);
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+#### Props
+
+| Prop                  | Type       | Description                                                                                                                  |
+| --------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `cart`                | _object_   | The result of calling the `useCart` hook.                                                                                    |
+| `product`             | _object_   |                                                                                                                              |
+| `buttonText`          | _string_   | Redefines the "Add to Cart" button text, if set.                                                                             |
+| `showQuantity`        | _boolean_  | Whether the component should display the auntity widget.                                                                     |
+| `showPersonalization` | _boolean_  | Whether the component should display the product personalization options.                                                    |
+| `onMessage`           | _function_ | Called with an object with `type`, `title` and `description` keys. You can use it to show success/error messages in a toast. |
+
+You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/add-to-cart/examples) directory.
 
 ## API
 
@@ -202,7 +271,7 @@ console.log(result);
 Removes the coupon/gift card with the given code from the cart.
 
 ```js
-let result = await cart.applyDiscountCode({ code: "1234" });
+let result = await cart.removeDiscountCode({ code: "1234" });
 
 console.log(result);
 

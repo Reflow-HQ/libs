@@ -265,16 +265,6 @@ export function AddToCartUI({
         </div>
       )}
 
-      {shouldShowQuantity() && (
-        <QuantityWidget
-          active={product.in_stock}
-          originalQuantity={quantity || 1}
-          maxQuantity={product.max_quantity}
-          availableQuantity={getActiveVariantOptions().available_quantity}
-          updateQuantity={(quantity) => setQuantity(quantity)}
-        />
-      )}
-
       {shouldShowPersonalization() && (
         <form
           ref={personalizationForm}
@@ -317,6 +307,16 @@ export function AddToCartUI({
             </div>
           ))}
         </form>
+      )}
+
+      {shouldShowQuantity() && (
+        <QuantityWidget
+          active={product.in_stock}
+          originalQuantity={quantity || 1}
+          maxQuantity={product.max_quantity}
+          availableQuantity={getActiveVariantOptions().available_quantity}
+          updateQuantity={(quantity) => setQuantity(quantity)}
+        />
       )}
 
       {shouldShowButton() && (

@@ -1254,11 +1254,6 @@
   margin: 0 var(--ref-gutter-sm) var(--ref-gutter-sm) 0;
 }
 
-.reflow-add-to-cart .ref-quantity-widget > div {
-  min-width: 0;
-  width: 1em;
-}
-
 .reflow-add-to-cart .ref-personalization {
   margin-top: 1em;
   margin-bottom: 1.5em;
