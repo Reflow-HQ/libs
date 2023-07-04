@@ -88,7 +88,7 @@ You can see a full featured example in the [examples](https://github.com/reflow-
 
 ### `<AddToCart/>`
 
-Renders controls for variant selection, personalization option, a quantity widget and a button that adds the product to the cart.
+Renders controls for variant selection, personalization options, a quantity widget and a button that adds the product to the cart.
 
 ```js
 import { useState, useEffect } from "react";
