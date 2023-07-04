@@ -83,7 +83,6 @@ function createStore(config) {
 
     // Reflow API
 
-    api: cart.api.bind(cart),
     refresh: cart.refresh.bind(cart),
     addProduct: cart.addProduct.bind(cart),
     updateLineItemQuantity: cart.updateLineItemQuantity.bind(cart),

@@ -11,11 +11,10 @@ function App() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    async function fetchProducts() {
-      const result = await fetch(`https://api.reflowhq.com/v2/stores/${config.storeID}/products/`);
-      setProducts(result.data);
-    }
-    fetchProducts();
+    fetch(`https://api.reflowhq.com/v2/stores/${config.storeID}/products/`)
+      .then((response) => response.json())
+      .then((r) => setProducts(r.data))
+      .catch((error) => console.error(error));
   }, []);
 
   return (
