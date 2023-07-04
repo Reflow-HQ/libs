@@ -1,30 +1,15 @@
 import React, { useState, useRef } from "react";
 
-import { ShoppingCartProvider, useShoppingCart } from "./CartContext";
 import QuantityWidget from "./widgets/QuantityWidget";
 
-const AddToCart = ({ cart, product, buttonText, showQuantity, showPersonalization, onMessage }) => {
-  return (
-    <ShoppingCartProvider cart={cart}>
-      <AddToCartUI
-        product={product}
-        buttonText={buttonText}
-        showQuantity={showQuantity}
-        showPersonalization={showPersonalization}
-        onMessage={onMessage}
-      />
-    </ShoppingCartProvider>
-  );
-};
-
-export function AddToCartUI({
+export default function AddToCart({
+  cart,
   product,
   buttonText,
   showQuantity = true,
   showPersonalization = true,
   onMessage,
 }) {
-  const cart = useShoppingCart();
   const personalizationForm = useRef();
 
   const [quantity, setQuantity] = useState(product.min_quantity || 1);
@@ -338,5 +323,3 @@ export function AddToCartUI({
     </div>
   );
 }
-
-export default AddToCart;

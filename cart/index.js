@@ -62,15 +62,24 @@ export default class Cart {
 
     endpoint = endpoint.replace(/^\/+/, "");
 
-    if (this.apiCache.has(endpoint)) {
-      return this.apiCache.get(endpoint);
+    const method = options.method?.toUpperCase() || "GET";
+    const body =
+      options.body instanceof Object
+        ? new URLSearchParams(options.body).toString()
+        : typeof options.body === "string"
+        ? options.body
+        : "";
+    const requestKey = endpoint + method + body;
+
+    if (this.apiCache.has(requestKey)) {
+      return this.apiCache.get(requestKey);
     }
 
-    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options).then(
-      async (response) => {
+    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options)
+      .then(async (response) => {
         let data = await response.json();
 
-        this.apiCache.delete(endpoint);
+        this.apiCache.delete(requestKey);
 
         if (!response.ok) {
           let err = Error(data.error || "HTTP error");
@@ -80,10 +89,12 @@ export default class Cart {
         }
 
         return data;
-      }
-    );
+      })
+      .catch((e) => {
+        this.apiCache.delete(requestKey);
+      });
 
-    this.apiCache.set(endpoint, result);
+    this.apiCache.set(requestKey, result);
 
     return result;
   }
@@ -652,6 +663,16 @@ export default class Cart {
           body.append(`personalization_files[${hash}]`, file);
         }
       }
+
+      this.api(
+        `/add-to-cart/${id}/` +
+          quantity +
+          "/" +
+          (variantID || "") +
+          (this.key ? "?cartKey=" + this.key : ""),
+        { method: "POST", body },
+        false
+      );
 
       let result = await this.api(
         `/add-to-cart/${id}/` +
