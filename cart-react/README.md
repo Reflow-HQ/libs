@@ -500,13 +500,13 @@ These can be translated by adding the `geo` property to the localization JSON. I
 }
 ```
 
-We recommend [downloading our example file](https://reflowhq.com/locale_regions_example_en-US.json) for the geo property in English. You can then remove the countries that are unnecessary for you store, translate the ones you need and move them to your [localization file](#specifying-a-localization-file) under the `geo` property.
+We recommend [downloading our example file](https://reflowhq.com/locale_regions_example_en-US.json) for the geo property in English. You can then remove the countries that are unnecessary for you store, translate the ones you need and move them to your localization file under the `geo` property.
 
 ### Local Currency
 
-Reflow supports a wide array of currencies that can be used for everything in your store, including product prices and shipping costs. You can change the currency of your store from the [general settings](pathname:///../store/settings) page.
+Reflow supports a wide array of currencies that can be used for everything in your store, including product prices and shipping costs. You can change the currency of your store from the [general settings](https://reflowhq.com/store/settings) page.
 
-For a full list of available currencies visit the [Currency Support docs](/guide/currency-support).
+For a full list of available currencies visit the [Currency Support docs](https://reflowhq.com/docs/guide/currency-support).
 
 ## License
 
