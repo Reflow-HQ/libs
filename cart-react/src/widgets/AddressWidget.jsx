@@ -97,7 +97,11 @@ export default function AddressWidget({
               <option value="">{t("cart.select_country")}</option>
               {countries.map((c) => (
                 <option key={c.country_code} value={c.country_code}>
-                  {c.country_name}
+                  {t(
+                    "geo." + c.country_code + ".country_name",
+                    {},
+                    { ignoreNotFoundErrors: true }
+                  ) || c.country_name}
                 </option>
               ))}
             </select>
@@ -116,7 +120,11 @@ export default function AddressWidget({
                   <option value="">{country.region_title}</option>
                   {Object.entries(country.regions).map(([rCode, rName]) => (
                     <option key={rCode} value={rCode}>
-                      {rName}
+                      {t(
+                        "geo." + country.country_code + ".regions." + rCode,
+                        {},
+                        { ignoreNotFoundErrors: true }
+                      ) || rName}
                     </option>
                   ))}
                 </select>

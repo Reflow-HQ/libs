@@ -35,6 +35,21 @@ const localization = {
   country: "Държава",
   state: "Област",
   postcode: "Пощенски код",
+  geo: {
+    CA: {
+      country_name: "Канада",
+      regions: {
+        NS: "Нова Скотия",
+        AB: "Алберта",
+      },
+    },
+    US: {
+      country_name: "САЩ",
+      regions: {
+        AZ: "АРИЗОНА",
+      },
+    },
+  },
 };
 
 const physicalProduct = {

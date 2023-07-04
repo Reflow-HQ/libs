@@ -16,6 +16,7 @@
   "author": "Reflow HQ",
   "license": "MIT",
   "dependencies": {
+    "@formatjs/icu-messageformat-parser": "^2.6.0",
     "intl-messageformat": "^10.3.0",
     "lodash.debounce": "^4.0.8"
   },

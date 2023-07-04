@@ -2,6 +2,8 @@ import IntlMessageFormat from "intl-messageformat";
 import debounce from "lodash.debounce";
 import defaultLocalization from "./locales/locale_en-US";
 
+import validateLocaleJSON from "./helpers/validateLocaleJSON";
+
 // Cart Manager Class
 
 export default class Cart {
@@ -12,7 +14,7 @@ export default class Cart {
 
     this.localization = {
       ...defaultLocalization,
-      ...localization,
+      ...validateLocaleJSON(localization),
     };
 
     this._listeners = {};
@@ -47,8 +49,11 @@ export default class Cart {
     this.bind();
   }
 
-  translate(key, data) {
+  translate(key, data, flags = {}) {
+    key = key.toLowerCase();
+
     if (!this.localization[key]) {
+      if (flags.ignoreNotFoundErrors) return "";
       throw new Error(`Reflow: Localization key "${key}" is not defined.`);
     }
 
