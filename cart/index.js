@@ -8,6 +8,8 @@ export default class Cart {
   constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", localization }) {
     this.storeID = storeID;
     this.apiBase = apiBase;
+    this.apiCache = new Map();
+
     this.localization = {
       ...defaultLocalization,
       ...localization,
@@ -53,10 +55,31 @@ export default class Cart {
     return new IntlMessageFormat(this.localization[key], this.localization.locale).format(data);
   }
 
-  api(endpoint, options) {
-    return fetch(this.apiBase + "/stores/" + this.storeID + endpoint, options).then(
-      async (response) => {
+  api(endpoint, options = {}) {
+    if (typeof endpoint != "string" || !endpoint.trim().length) {
+      return Promise.reject("Reflow: Endpoint Required");
+    }
+
+    endpoint = endpoint.replace(/^\/+/, "");
+
+    const method = options.method?.toUpperCase() || "GET";
+    const body =
+      options.body instanceof Object
+        ? new URLSearchParams(options.body).toString()
+        : typeof options.body === "string"
+        ? options.body
+        : "";
+    const requestKey = endpoint + method + body;
+
+    if (this.apiCache.has(requestKey)) {
+      return this.apiCache.get(requestKey);
+    }
+
+    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options)
+      .then(async (response) => {
         let data = await response.json();
+
+        this.apiCache.delete(requestKey);
 
         if (!response.ok) {
           let err = Error(data.error || "HTTP error");
@@ -66,8 +89,14 @@ export default class Cart {
         }
 
         return data;
-      }
-    );
+      })
+      .catch((e) => {
+        this.apiCache.delete(requestKey);
+      });
+
+    this.apiCache.set(requestKey, result);
+
+    return result;
   }
 
   on(event, cb) {
@@ -634,6 +663,16 @@ export default class Cart {
           body.append(`personalization_files[${hash}]`, file);
         }
       }
+
+      this.api(
+        `/add-to-cart/${id}/` +
+          quantity +
+          "/" +
+          (variantID || "") +
+          (this.key ? "?cartKey=" + this.key : ""),
+        { method: "POST", body },
+        false
+      );
 
       let result = await this.api(
         `/add-to-cart/${id}/` +

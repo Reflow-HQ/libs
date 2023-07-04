@@ -16,6 +16,7 @@ export default function SummaryProduct({
   showQuantityWidget = false,
   showRemoveButton = false,
   showPriceBreakdown = false,
+  updateQuantity,
 }) {
   const cart = useShoppingCart();
   const t = cart.t;
@@ -93,7 +94,13 @@ export default function SummaryProduct({
           <div>
             {showQuantityWidget && (
               <div className="ref-product-quantity">
-                <QuantityWidget product={product} />
+                <QuantityWidget
+                  active={product.inStock}
+                  originalQuantity={product.quantity}
+                  maxQuantity={product.maxQty}
+                  availableQuantity={product.availableQuantity}
+                  updateQuantity={updateQuantity}
+                />
               </div>
             )}
             {quantityErrorMessage && (

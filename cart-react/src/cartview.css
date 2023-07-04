@@ -1239,3 +1239,73 @@
   color: var(--ref-white);
   background: #2c2e2f;
 }
+
+/* Add to cart */
+
+.reflow-add-to-cart .ref-variant {
+  margin-bottom: var(--ref-gutter-md);
+}
+
+.reflow-add-to-cart .ref-variant label {
+  display: inline-block;
+}
+
+.reflow-add-to-cart .ref-quantity-widget {
+  margin: 0 var(--ref-gutter-sm) var(--ref-gutter-sm) 0;
+}
+
+.reflow-add-to-cart .ref-personalization {
+  margin-top: 1em;
+  margin-bottom: 1.5em;
+  max-width: 400px;
+}
+
+.reflow-add-to-cart .ref-personalization .ref-row {
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.reflow-add-to-cart .ref-personalization input[type="checkbox"] {
+  margin-left: 8px;
+}
+
+.reflow-add-to-cart .ref-personalization input[type="text"] {
+  width: 100%;
+}
+
+.reflow-add-to-cart .ref-personalization .ref-price {
+  text-transform: capitalize;
+  font-weight: bold;
+  margin: 0;
+}
+
+.reflow-add-to-cart .ref-personalization p {
+  margin-bottom: 8px;
+}
+
+.reflow-add-to-cart .ref-min-qty-message {
+  font-size: 0.9em;
+  margin-top: 4px;
+}
+
+.reflow-add-to-cart .ref-personalization.ref-required label span {
+  color: var(--ref-danger);
+}
+
+.reflow-add-to-cart .ref-personalization.ref-required .ref-check svg {
+  color: var(--ref-primary);
+  width: 1.2em;
+  height: 1.2em;
+  position: relative;
+  top: -1px;
+}
+
+.reflow-add-to-cart .ref-personalization-label {
+  display: flex;
+  align-items: center;
+}
+
+.reflow-add-to-cart .ref-form-control {
+  width: auto;
+}
