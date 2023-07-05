@@ -7,7 +7,7 @@ import validateLocaleJSON from "./helpers/validateLocaleJSON";
 // Cart Manager Class
 
 export default class Cart {
-  constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", localization }) {
+  constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", localization = {} }) {
     this.storeID = storeID;
     this.apiBase = apiBase;
     this.apiCache = new Map();
@@ -80,8 +80,8 @@ export default class Cart {
       return this.apiCache.get(requestKey);
     }
 
-    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options)
-      .then(async (response) => {
+    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options).then(
+      async (response) => {
         let data = await response.json();
 
         this.apiCache.delete(requestKey);
@@ -94,10 +94,8 @@ export default class Cart {
         }
 
         return data;
-      })
-      .catch((e) => {
-        this.apiCache.delete(requestKey);
-      });
+      }
+    );
 
     this.apiCache.set(requestKey, result);
 

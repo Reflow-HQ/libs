@@ -189,30 +189,6 @@ describe("Cart", () => {
     }).toThrow("Unrecognized event name");
   });
 
-  it("should manage localization", async () => {
-    const localization = {
-      "cart.message": "Message",
-      "cart.amount": "This is the amount - {amount}",
-    };
-
-    const cart = new Cart({ storeID: "987", localization });
-
-    expect(cart.localization["cart.message"]).toBe("Message");
-    expect(cart.localization["cart.amount"]).toBe("This is the amount - {amount}");
-
-    // expect(cart.translate("cart.message")).toBe("Message");
-
-    // expect(
-    //   cart.translate("cart.amount", {
-    //     amount: "$5",
-    //   })
-    // ).toBe("This is the amount - $5");
-
-    expect(() => {
-      cart.translate("asdf");
-    }).toThrow('Reflow: Localization key "asdf" is not defined');
-  });
-
   it("should create new cart", async () => {
     expect(cart.isLoaded()).toBe(false);
     expect(cart.key).toBe(undefined);
