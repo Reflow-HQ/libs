@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/cart-react",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "style": "dist/style.css",
   "keywords": [
@@ -14,7 +14,7 @@
   "license": "MIT",
   "main": "dist/index.js",
   "dependencies": {
-    "@reflowhq/cart": "^1.0.0",
+    "@reflowhq/cart": "^2.0.0",
     "lodash.debounce": "^4.0.8",
     "prop-types": "^15.8.1"
   },
