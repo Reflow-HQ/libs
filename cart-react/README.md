@@ -14,9 +14,35 @@ npm install @reflowhq/cart-react
 
 This library is meant to run in the browser. Just import the hook and pass your storeID, which you can obtain from Reflow's website:
 
+### `useCart(config)`
+
+```js
+import { useCart } from "@reflowhq/cart-react";
+import localization from "./localization.json";
+
+const config = {
+  storeID: "1234",
+  localization,
+};
+
+function App() {
+  const cart = useCart(config);
+  ...
+}
+```
+
+The `config` can have the following keys:
+
+| Prop           | Type     | Required | Description                                                           |
+| -------------- | -------- | -------- | --------------------------------------------------------------------- |
+| `storeID`      | _string_ | _Yes_    | The `id` of your Reflow store.                                        |
+| `localization` | _object_ | _No_     | An object consisting of key/value pairs. [Learn more](#localization). |
+
+The `cart` object the hook returns contains the current [cart state](#cart-state) and a lot of useful [funtions](#reflow-api).
+
 ### `<CartView/>`
 
-Renders a shopping cart.
+Renders a two-step shopping cart - Overview and Checkout.
 
 ```js
 import CartView, { useCart } from "@reflowhq/cart-react";
@@ -50,19 +76,19 @@ function App() {
 
 #### Props
 
-| Prop         | Type       | Description                                                                                                                  |
-| ------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `cart`       | _object_   | The result of calling the `useCart` hook.                                                                                    |
-| `auth`       | _object_   | The result of calling the `useAuth` hook from `@reflowhq/auth-react`.                                                        |
-| `successURL` | _string_   | The URL where the customer will be redirected after a successful payment.                                                    |
-| `cancelURL`  | _string_   | The URL where the customer will be redirected after a failed or canceled payment.                                            |
-| `onMessage`  | _function_ | Called with an object with `type`, `title` and `description` keys. You can use it to show success/error messages in a toast. |
+| Prop         | Type       | Required | Description                                                                                                                           |
+| ------------ | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `cart`       | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                             |
+| `auth`       | _object_   | _No_     | The result of calling the `useAuth` hook from `@reflowhq/auth-react`.                                                                 |
+| `successURL` | _string_   | _No_     | The URL where the customer will be redirected after a successful payment.                                                             |
+| `cancelURL`  | _string_   | _No_     | The URL where the customer will be redirected after a failed or canceled payment.                                                     |
+| `onMessage`  | _function_ | _No_     | Called with a `message` object with `type`, `title` and `description` keys. You can use it to show success/error messages in a toast. |
 
 You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/cart-react/examples) directory.
 
 ### `<AddToCart/>`
 
-Renders controls for variant selection, personalization option, a quantity widget and a button that adds the product to the cart.
+Renders controls for variant selection, personalization options, a quantity widget and a button that adds the product to the cart.
 
 ```js
 import { useState, useEffect } from "react";
@@ -103,16 +129,16 @@ function App() {
 
 #### Props
 
-| Prop                  | Type       | Description                                                                                                                  |
-| --------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `cart`                | _object_   | The result of calling the `useCart` hook.                                                                                    |
-| `product`             | _object_   |                                                                                                                              |
-| `buttonText`          | _string_   | Redefines the "Add to Cart" button text, if set.                                                                             |
-| `showQuantity`        | _boolean_  | Whether the component should display the auntity widget.                                                                     |
-| `showPersonalization` | _boolean_  | Whether the component should display the product personalization options.                                                    |
-| `onMessage`           | _function_ | Called with an object with `type`, `title` and `description` keys. You can use it to show success/error messages in a toast. |
+| Prop                  | Type       | Required | Description                                                                                                                           |
+| --------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `cart`                | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                             |
+| `product`             | _object_   | _Yes_    |                                                                                                                                       |
+| `buttonText`          | _string_   | _No_     | Redefines the "Add to Cart" button text, if set.                                                                                      |
+| `showQuantity`        | _boolean_  | _No_     | Whether the component should display the auntity widget.                                                                              |
+| `showPersonalization` | _boolean_  | _No_     | Whether the component should display the product personalization options.                                                             |
+| `onMessage`           | _function_ | _No_     | Called with a `message` object with `type`, `title` and `description` keys. You can use it to show success/error messages in a toast. |
 
-You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/add-to-cart/examples) directory.
+You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/cart-react/examples) directory.
 
 ## API
 
@@ -381,9 +407,106 @@ console.log(result);
 | `auth-account-id`   | _No_     | _number_                                                      | The user `id`. \* If the store provides sign in methods and a user is logged in.              |
 | `auth-save-address` | _No_     | _boolean_                                                     |                                                                                               |
 
-### Additional methods
+## Localization
 
-### `cart.getProducts()`
+To translate this toolkit, you need to pass a localization object to the `useCart` hook. This will change the entire user interface of Reflow components, including labels, text prompts and error messages. Example:
+
+```js
+import localization from "./localization.json";
+
+const cart = useCart({
+  storeID: "1234",
+  localization,
+});
+```
+
+To create a translation, **follow these steps:**
+
+1. Download the [en-US.json](https://cdn.reflowhq.com/v2/en-US.json) file. This is Reflow's default language file. You will use it as a starting point.
+2. Translate some or all of the phrases to your language of choice. This is covered in the next section.
+3. Save the translation file somewhere in your project.
+4. Import it and pass it to the `useCart` hook.
+5. Check your browser's console for any error messages that may point you to potential problems with your translation.
+
+### Translation File Format
+
+The translation file is a simple JSON consisting of key/value pairs. The process of translating Reflow consists of rewriting the values to your language of choice.
+
+```json
+// The default en-US.json in English
+{
+  "locale": "en-US",
+
+  "shopping_cart": "Shopping Cart",
+  "product": "Product",
+  ...
+}
+```
+
+```json
+// A localized example in French
+{
+  "locale": "fr-FR",
+
+  "shopping_cart": "Panier",
+  "product": "Produit",
+  ...
+}
+```
+
+### Instructions
+
+- The keys should not be changed. They are used by the library for matching UI elements with their localized text.
+- The values represent the actual content that is visible in the UI. They should be replaced with the translation in the chosen language.
+- All lines in the JSON (except for the `locale` property) are optional. You can omit the lines you don't wish to translate. In that case the default English equivalent will be used.
+- The `locale` line is special. It only accepts a standard ISO country-language tag. This is the locale used for formatting prices and dates, among other things.
+
+### Message Format
+
+The values in the JSON follow the standardized [ICU message format](https://unicode-org.github.io/icu/userguide/format_parse/messages/). You can learn more about the message format [here](https://reflowhq.com/docs/html-toolkit/localization#message-format).
+
+### Translating Countries and Regions
+
+In some cases the `CartView` component can display select inputs for customers to choose their country and region (e.g. for shipping address). By default all the countries and their regions names are shown in English.
+
+These can be translated by adding the `geo` property to the localization JSON. In it, you can define what names should be displayed for the countries and regions you wish to translate. Here is an example:
+
+```json
+"geo": {
+  "BE": {
+    "country_name": "Belgique",
+  },
+  "DE": {
+    "country_name": "Allemagne",
+  },
+  "CA": {
+    "country_name": "Canada",
+    "regions": {
+      "AB": "Alberta",
+      "BC": "Colombie-Britannique",
+      "MB": "Manitoba",
+      "NB": "Nouveau-Brunswick",
+      "NL": "Terre-Neuve-et-Labrador",
+      "NT": "Territoires du Nord-Ouest",
+      "NS": "Nouvelle-Écosse",
+      "NU": "Nunavut",
+      "ON": "Ontario",
+      "PE": "île du Prince-Édouard",
+      "QC": "Québec",
+      "SK": "Saskatchewan",
+      "YT": "Yukon"
+    }
+  },
+}
+```
+
+We recommend [downloading our example file](https://reflowhq.com/locale_regions_example_en-US.json) for the geo property in English. You can then remove the countries that are unnecessary for you store, translate the ones you need and move them to your localization file under the `geo` property.
+
+### Local Currency
+
+Reflow supports a wide array of currencies that can be used for everything in your store, including product prices and shipping costs. You can change the currency of your store from the [general settings](https://reflowhq.com/store/settings) page.
+
+For a full list of available currencies visit the [Currency Support docs](https://reflowhq.com/docs/guide/currency-support).
 
 ## License
 

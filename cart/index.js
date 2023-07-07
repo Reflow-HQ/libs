@@ -2,17 +2,19 @@ import IntlMessageFormat from "intl-messageformat";
 import debounce from "lodash.debounce";
 import defaultLocalization from "./locales/locale_en-US";
 
+import validateLocaleJSON from "./helpers/validateLocaleJSON";
+
 // Cart Manager Class
 
 export default class Cart {
-  constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", localization }) {
+  constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", localization = {} }) {
     this.storeID = storeID;
     this.apiBase = apiBase;
     this.apiCache = new Map();
 
     this.localization = {
       ...defaultLocalization,
-      ...localization,
+      ...validateLocaleJSON(localization),
     };
 
     this._listeners = {};
@@ -47,8 +49,11 @@ export default class Cart {
     this.bind();
   }
 
-  translate(key, data) {
+  translate(key, data, flags = {}) {
+    key = key.toLowerCase();
+
     if (!this.localization[key]) {
+      if (flags.ignoreNotFoundErrors) return "";
       throw new Error(`Reflow: Localization key "${key}" is not defined.`);
     }
 
@@ -75,8 +80,8 @@ export default class Cart {
       return this.apiCache.get(requestKey);
     }
 
-    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options)
-      .then(async (response) => {
+    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options).then(
+      async (response) => {
         let data = await response.json();
 
         this.apiCache.delete(requestKey);
@@ -89,10 +94,8 @@ export default class Cart {
         }
 
         return data;
-      })
-      .catch((e) => {
-        this.apiCache.delete(requestKey);
-      });
+      }
+    );
 
     this.apiCache.set(requestKey, result);
 
