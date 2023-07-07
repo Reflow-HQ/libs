@@ -11,8 +11,15 @@ import AddressWidget from "../widgets/AddressWidget";
 import AuthButton from "../components/AuthButton";
 import PaymentButton from "../components/PaymentButton";
 import PayPalButton from "../components/PayPalButton";
+import PayPalDemoButton from "../components/PayPalDemoButton";
 
-export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheckoutSuccess }) {
+export default function CheckoutForm({
+  successURL,
+  cancelURL,
+  onMessage,
+  onCheckoutSuccess,
+  demoMode,
+}) {
   const cart = useShoppingCart();
 
   const formDataKey = cart.localFormData.formDataKey;
@@ -64,7 +71,7 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
     cart.setSelectedShippingMethod,
   ];
 
-  const isInVactionMode = vacationMode?.enabled;
+  const isInVactionMode = !!vacationMode?.enabled;
   const shouldShowPaypalButtons =
     cart.isPaypalSupported() && !isInVactionMode && !cart.hasZeroValue();
   const debouncedUpdateAddress = useCallback(debounce(updateAddress, 500), []);
@@ -206,6 +213,11 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
   }
 
   async function checkout(paymentMethod, paymentID) {
+    if (demoMode) {
+      alert("Payment doesn't work in demo mode!");
+      return;
+    }
+
     if (isInVactionMode) {
       const message = vacationMode.message || t("store_unavailable");
 
@@ -273,6 +285,10 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
   }
 
   function renderPaypalButtons() {
+    if (demoMode) {
+      return <PayPalDemoButton />;
+    }
+
     let fundingSources = ["PAYPAL"];
 
     if (!cart.isStripeSupported()) {
@@ -287,9 +303,12 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
             key={fundingSource}
             fundingSource={fundingSource}
             checkoutStep="checkout"
-            canSubmit={true}
+            canSubmit={() => true}
             successURL={successURL}
             onMessage={onMessage}
+            style={{
+              height: 55,
+            }}
           />
         ))}
       </div>
@@ -680,14 +699,14 @@ export default function CheckoutForm({ successURL, cancelURL, onMessage, onCheck
                           </div>
                           <div className="ref-method-name">
                             <b>{method.name}</b>
-                            {method.delivery_time && (
+                            {!!method.delivery_time && (
                               <small>
                                 {getDeliveryDate(method.delivery_time) +
                                   " - " +
                                   getDeliveryDate(method.delivery_time + 2)}
                               </small>
                             )}
-                            {method.note && <small>{method.note}</small>}
+                            {!!method.note && <small>{method.note}</small>}
                           </div>
                           <div className="ref-method-price">
                             {cart.formatCurrency(method.price)}

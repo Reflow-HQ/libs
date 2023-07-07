@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 
 import QuantityWidget from "../widgets/QuantityWidget";
 
@@ -7,9 +7,13 @@ import RemoveProductButton from "./RemoveProductButton";
 
 import SummaryProduct from "./SummaryProduct";
 
+import debounce from "lodash.debounce";
+
 export default function CartProduct({ product }) {
   const cart = useShoppingCart();
   const t = cart.t;
+
+  const updateQuantity = useCallback(debounce(updateProductQuantity, 500), []);
 
   let quantityErrorMessage = "";
 
@@ -33,6 +37,10 @@ export default function CartProduct({ product }) {
     return cart.formatCurrency(price);
   }
 
+  function updateProductQuantity(quantity) {
+    cart.updateLineItemQuantity(product.lineItemID, quantity);
+  }
+
   if (product.inStock) {
     if (product.quantity > product.availableQuantity) {
       quantityErrorMessage = t("cart.left_in_stock", { in_stock: product.availableQuantity });
@@ -53,6 +61,7 @@ export default function CartProduct({ product }) {
           showQuantityWidget={true}
           showRemoveButton={true}
           showPriceBreakdown={false}
+          updateQuantity={updateQuantity}
         />
       </div>
       <div className="ref-price-col">
@@ -61,7 +70,13 @@ export default function CartProduct({ product }) {
       <div className="ref-quantity-col">
         <div className="ref-product-quantity">
           <div className="ref-quantity-container">
-            <QuantityWidget product={product} />
+            <QuantityWidget
+              active={product.inStock}
+              originalQuantity={product.quantity}
+              maxQuantity={product.maxQty}
+              availableQuantity={product.availableQuantity}
+              updateQuantity={updateQuantity}
+            />
           </div>
           <div className="ref-product-qty-message">{quantityErrorMessage}</div>
           <RemoveProductButton product={product}>{t("remove")}</RemoveProductButton>

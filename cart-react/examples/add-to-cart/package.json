@@ -1,0 +1,21 @@
+{
+  "name": "add-to-cart-example",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "esbuild index.jsx --bundle --sourcemap --outdir=./ --servedir=./ --watch --serve=8080"
+  },
+  "devDependencies": {
+    "@reflowhq/auth-react": "^1.0.0",
+    "@reflowhq/cart-react": "^1.0.0",
+    "esbuild": "^0.17.10",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}

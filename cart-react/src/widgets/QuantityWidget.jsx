@@ -1,28 +1,29 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 
-import { useShoppingCart } from "../CartContext";
-
-import debounce from "lodash.debounce";
-
-export default function QuantityWidget({ product }) {
-  const cart = useShoppingCart();
-
-  const [quantity, setQuantity] = useState(() => product.quantity);
-
-  const updateQuantity = useCallback(debounce(updateProductQuantity, 500), []);
+export default function QuantityWidget({
+  active = true,
+  originalQuantity,
+  maxQuantity,
+  availableQuantity,
+  updateQuantity,
+}) {
+  const [quantity, setQuantity] = useState(() => originalQuantity);
 
   useEffect(() => {
-    if (quantity !== product.quantity) {
-      setQuantity(product.quantity);
+    if (quantity !== originalQuantity) {
+      setQuantity(originalQuantity);
     }
-  }, [product.quantity]);
+  }, [originalQuantity]);
 
   function getMinQuantity() {
     return 1;
   }
 
   function getMaxQuantity() {
-    return Math.min(product.availableQuantity, product.maxQty);
+    return Math.min(
+      isNaN(parseInt(availableQuantity)) ? Infinity : availableQuantity,
+      isNaN(parseInt(maxQuantity)) ? Infinity : maxQuantity
+    );
   }
 
   function canIncreaseQuantity() {
@@ -50,16 +51,12 @@ export default function QuantityWidget({ product }) {
 
     if (newQuantity !== quantity) {
       setQuantity(newQuantity);
-      updateQuantity(newQuantity);
+      updateQuantity && updateQuantity(newQuantity);
     }
   }
 
-  function updateProductQuantity(quantity) {
-    cart.updateLineItemQuantity(product.lineItemID, quantity);
-  }
-
   return (
-    <div className={`ref-quantity-widget${!product.inStock ? " inactive" : ""}`}>
+    <div className={`ref-quantity-widget${!active ? " inactive" : ""}`}>
       <div className="ref-decrease" onClick={() => decreaseQuantity()}>
         <span></span>
       </div>

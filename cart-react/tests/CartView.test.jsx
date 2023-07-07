@@ -13,7 +13,7 @@ const storeID = "1234";
 const cartKey = "key";
 const config = {
   storeID,
-  apiBase: "http://api.reflow.local/v1",
+  apiBase: "http://api.reflow.local/v2",
 };
 
 const defaultCartContent = {
@@ -93,11 +93,11 @@ function mockFetch() {
     let response;
 
     switch (pathname) {
-      case `/v1/stores/${storeID}/carts/`: {
+      case `/v2/stores/${storeID}/carts/`: {
         response = { cartKey };
         break;
       }
-      case `/v1/stores/${storeID}/carts/${cartKey}`: {
+      case `/v2/stores/${storeID}/carts/${cartKey}`: {
         response = cartContentResponse;
         break;
       }

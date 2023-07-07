@@ -2,15 +2,19 @@ import IntlMessageFormat from "intl-messageformat";
 import debounce from "lodash.debounce";
 import defaultLocalization from "./locales/locale_en-US";
 
+import validateLocaleJSON from "./helpers/validateLocaleJSON";
+
 // Cart Manager Class
 
 export default class Cart {
-  constructor({ storeID, apiBase = "https://api.reflowhq.com/v1", localization }) {
+  constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", localization = {} }) {
     this.storeID = storeID;
     this.apiBase = apiBase;
+    this.apiCache = new Map();
+
     this.localization = {
       ...defaultLocalization,
-      ...localization,
+      ...validateLocaleJSON(localization),
     };
 
     this._listeners = {};
@@ -45,18 +49,42 @@ export default class Cart {
     this.bind();
   }
 
-  translate(key, data) {
+  translate(key, data, flags = {}) {
+    key = key.toLowerCase();
+
     if (!this.localization[key]) {
+      if (flags.ignoreNotFoundErrors) return "";
       throw new Error(`Reflow: Localization key "${key}" is not defined.`);
     }
 
     return new IntlMessageFormat(this.localization[key], this.localization.locale).format(data);
   }
 
-  api(endpoint, options) {
-    return fetch(this.apiBase + "/stores/" + this.storeID + endpoint, options).then(
+  api(endpoint, options = {}) {
+    if (typeof endpoint != "string" || !endpoint.trim().length) {
+      return Promise.reject("Reflow: Endpoint Required");
+    }
+
+    endpoint = endpoint.replace(/^\/+/, "");
+
+    const method = options.method?.toUpperCase() || "GET";
+    const body =
+      options.body instanceof Object
+        ? new URLSearchParams(options.body).toString()
+        : typeof options.body === "string"
+        ? options.body
+        : "";
+    const requestKey = endpoint + method + body;
+
+    if (this.apiCache.has(requestKey)) {
+      return this.apiCache.get(requestKey);
+    }
+
+    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options).then(
       async (response) => {
         let data = await response.json();
+
+        this.apiCache.delete(requestKey);
 
         if (!response.ok) {
           let err = Error(data.error || "HTTP error");
@@ -68,6 +96,10 @@ export default class Cart {
         return data;
       }
     );
+
+    this.apiCache.set(requestKey, result);
+
+    return result;
   }
 
   on(event, cb) {
@@ -607,16 +639,24 @@ export default class Cart {
     await this.refreshState(queryParams);
   }
 
-  async addProduct({ id, variantID, personalization = [], files = [] }, quantity = 1) {
+  async addProduct({ id, variantID, personalization = [] }, quantity = 1) {
     try {
       let body = new FormData();
+      let files = [];
 
       if (personalization && personalization.length) {
         for (const p of personalization) {
-          if (p.filename && p.filehash) {
-            if (!files.findIndex((f) => f.hash === p.filehash)) {
-              throw new Error(`Reflow: File with hash ${p.filehash} not provided!`);
-            }
+          if (p.file) {
+            let hash = "pers_file_" + Math.floor(Math.random() * 999999).toString() + Date.now();
+            p.filename = p.file.name;
+            p.filehash = hash;
+
+            files.push({
+              file: p.file,
+              hash,
+            });
+
+            delete p.file;
           }
         }
 
@@ -626,6 +666,16 @@ export default class Cart {
           body.append(`personalization_files[${hash}]`, file);
         }
       }
+
+      this.api(
+        `/add-to-cart/${id}/` +
+          quantity +
+          "/" +
+          (variantID || "") +
+          (this.key ? "?cartKey=" + this.key : ""),
+        { method: "POST", body },
+        false
+      );
 
       let result = await this.api(
         `/add-to-cart/${id}/` +
