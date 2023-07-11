@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/cart-react",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "",
   "style": "dist/style.css",
   "keywords": [
@@ -14,7 +14,7 @@
   "license": "MIT",
   "main": "dist/index.js",
   "dependencies": {
-    "@reflowhq/cart": "^2.0.0",
+    "@reflowhq/cart": "^2.0.1",
     "lodash.debounce": "^4.0.8",
     "prop-types": "^15.8.1"
   },
@@ -23,7 +23,7 @@
     "watch": "start-storybook -p 8080",
     "build-storybook": "build-storybook",
     "build": "node build.js",
-    "publish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@babel/plugin-proposal-export-default-from": "^7.18.10",
