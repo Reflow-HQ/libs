@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 
 import CartProduct from "../components/CartProduct";
 
@@ -16,6 +16,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
   const formDataKey = localFormData.formDataKey;
   const useFormData = useLocalStorageFormData(formDataKey);
 
+  const acceptTermsInput = useRef();
   const [termsAccepted, setTermsAccepted] = useFormData("termsAccepted", false);
 
   const isInVactionMode = !!vacationMode?.enabled;
@@ -32,6 +33,36 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
     }
 
     return cart.formatCurrency(price);
+  }
+
+  function canSubmit() {
+    if (!acceptTermsInput.current) return true;
+
+    if (!acceptTermsInput.current.checkValidity()) {
+      let errorText = "";
+      for (let i = 0; i < footerLinks.length; i++) {
+        let link = footerLinks[i];
+
+        if (link.required) {
+          errorText += !errorText
+            ? "Please agree to the "
+            : i === footerLinks.length - 1
+            ? " and "
+            : ", ";
+          errorText += link.name;
+        }
+      }
+
+      errorText += ".";
+
+      onMessage({
+        type: "error",
+        description: errorText,
+      });
+      return false;
+    }
+
+    return true;
   }
 
   function onSubmit(e) {
@@ -70,6 +101,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
         <form className="ref-accept-terms" onSubmit={onSubmit}>
           <label>
             <input
+              ref={acceptTermsInput}
               type="checkbox"
               id="ref-terms-agreement"
               required
@@ -93,7 +125,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
             </span>
           </label>
           <div className="ref-row ref-checkout-buttons">
-            {renderPaypalButton(() => !!termsAccepted)}
+            {renderPaypalButton()}
             <button
               className={`ref-button ref-standard-checkout-button${
                 isInVactionMode ? " inactive" : ""
@@ -109,7 +141,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
 
     return (
       <div className="ref-row ref-checkout-buttons">
-        {renderPaypalButton(() => true)}
+        {renderPaypalButton()}
         <button
           className={`ref-button ref-standard-checkout-button${isInVactionMode ? " inactive" : ""}`}
           disabled={isInVactionMode}
@@ -121,7 +153,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
     );
   }
 
-  function renderPaypalButton(canSubmit) {
+  function renderPaypalButton() {
     if (!shouldShowPaypalButtons) return null;
 
     if (demoMode) {
@@ -136,7 +168,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
       <div className="ref-paypal-express-checkout-holder">
         <PayPalButton
           fundingSource={"PAYPAL"}
-          step={step}
+          checkoutStep={step}
           canSubmit={canSubmit}
           successURL={successURL}
           onMessage={onMessage}
