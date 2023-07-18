@@ -246,6 +246,18 @@ auth.on("change", changeCb);
 auth.off("change", changeCb);
 ```
 
+## Test Mode
+
+With Reflow's test mode you can try out your store integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
+
+To enable test mode, just add `testMode: true` to the config object:
+
+```js
+import Auth from "@reflowhq/auth";
+
+window.auth = new Auth({ storeID: "<your storeid here>", testMode: true });
+```
+
 ## License
 
 Released under the MIT license.
