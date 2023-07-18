@@ -24,6 +24,7 @@ function createStore(config) {
   state = {
     ...(cart.state || {}),
     storeID: config.storeID,
+    testMode: cart.testMode,
     localFormData: cart.localFormData,
 
     showLoading: () => cart.updateState({ isLoading: true }),

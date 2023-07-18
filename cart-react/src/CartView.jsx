@@ -22,7 +22,7 @@ export function CartUI({ successURL, cancelURL, onMessage, demoMode }) {
 
   const cart = useShoppingCart();
 
-  const { products, isLoading, isLoaded, isUnavailable, t } = cart;
+  const { products, isLoading, isLoaded, isUnavailable, testMode, t } = cart;
 
   const errorMessage = isUnavailable
     ? t("cart.errors.unavailable")
@@ -75,6 +75,15 @@ export function CartUI({ successURL, cancelURL, onMessage, demoMode }) {
 
   return (
     <div className="reflow-shopping-cart">
+      {!!testMode && (
+        <div
+          title='Test Mode is enabled. The Reflow data displayed on the page is from your store&apos;s Test mode. 
+        To view Live data, disable the reflow.js "data-testmode" attribute.'
+          className="ref-test-mode-badge"
+        >
+          Test Mode
+        </div>
+      )}
       <div className={"ref-loading-backdrop" + (isLoading ? " active" : "")}></div>
       {errorMessage ? (
         <div className="ref-message">{errorMessage}</div>

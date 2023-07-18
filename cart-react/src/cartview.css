@@ -1309,3 +1309,15 @@
 .reflow-add-to-cart .ref-form-control {
   width: auto;
 }
+
+.ref-test-mode-badge {
+  background: #e79520;
+  color: #fff;
+  padding: 8px 12px;
+  max-width: 100px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+  border-radius: 2px;
+}
