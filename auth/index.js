@@ -405,13 +405,16 @@ class Auth {
       throw e;
     }
 
-    let params = "?origin=" + encodeURIComponent(window.location.origin);
+    const url = new URL(response.signinURL);
+    const params = new URLSearchParams(url.search);
+    params.append("origin", window.location.origin);
 
     if (options.subscribeTo) {
-      params += "&subscribeTo=" + Number(options.subscribeTo);
+      params.append("subscribeTo", Number(options.subscribeTo));
     }
 
-    this._signInWindow.location = response.signinURL + params;
+    url.search = params.toString();
+    this._signInWindow.location = url.toString();
 
     clearInterval(this._checkWindowClosedInterval);
     this._checkWindowClosedInterval = setInterval(() => {
