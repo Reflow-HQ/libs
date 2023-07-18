@@ -77,8 +77,8 @@ export function CartUI({ successURL, cancelURL, onMessage, demoMode }) {
     <div className="reflow-shopping-cart">
       {!!testMode && (
         <div
-          title='Test Mode is enabled. The Reflow data displayed on the page is from your store&apos;s Test mode. 
-        To view Live data, disable the reflow.js "data-testmode" attribute.'
+          title="Test Mode is enabled. The Reflow data displayed on the page is from your store's Test mode. 
+        To view Live data, remove the testMode prop from the config object."
           className="ref-test-mode-badge"
         >
           Test Mode

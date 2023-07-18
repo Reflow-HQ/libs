@@ -1,7 +1,8 @@
 class Auth {
-  constructor({ storeID, apiBase = "https://api.reflowhq.com/v2", autoBind = true }) {
+  constructor({ storeID, apiBase, autoBind = true, testMode = false }) {
     this.storeID = storeID;
-    this.apiBase = apiBase;
+    this.apiBase = apiBase || `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
+    this.testMode = testMode || false;
 
     this._boundCounter = 0;
 

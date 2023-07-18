@@ -7,10 +7,10 @@ import validateLocaleJSON from "./helpers/validateLocaleJSON";
 // Cart Manager Class
 
 export default class Cart {
-  constructor({ storeID, localization, testMode = false }) {
+  constructor({ storeID, apiBase, localization, testMode = false }) {
     this.storeID = storeID;
     this.testMode = testMode || false;
-    this.apiBase = `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
+    this.apiBase = apiBase || `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
     this.apiCache = new Map();
 
     this.localization = {
