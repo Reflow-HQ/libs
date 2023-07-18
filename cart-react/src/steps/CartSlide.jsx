@@ -39,26 +39,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
     if (!acceptTermsInput.current) return true;
 
     if (!acceptTermsInput.current.checkValidity()) {
-      let errorText = "";
-      for (let i = 0; i < footerLinks.length; i++) {
-        let link = footerLinks[i];
-
-        if (link.required) {
-          errorText += !errorText
-            ? "Please agree to the "
-            : i === footerLinks.length - 1
-            ? " and "
-            : ", ";
-          errorText += link.name;
-        }
-      }
-
-      errorText += ".";
-
-      onMessage({
-        type: "error",
-        description: errorText,
-      });
+      acceptTermsInput.current.reportValidity();
       return false;
     }
 
