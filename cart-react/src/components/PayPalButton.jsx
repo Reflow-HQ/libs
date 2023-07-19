@@ -1,8 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useShoppingCart, useAuth } from "../CartContext";
 
 import useExternalScript from "../hooks/useExternalScript";
 import formatURL from "../utilities/formatURL";
+
+import debounce from "lodash.debounce";
 
 export default function PayPalButton({
   fundingSource,
@@ -16,6 +18,7 @@ export default function PayPalButton({
 
   const containerRef = useRef();
   const paypalProvider = cart.getPaymentProvider("paypal");
+  const debouncedRenderButton = useCallback(debounce(renderButton, 500), []);
 
   if (!paypalProvider) return null;
 
@@ -36,7 +39,7 @@ export default function PayPalButton({
 
   useEffect(() => {
     if (sdkLoaded) {
-      renderButton();
+      debouncedRenderButton();
     }
   }, [sdkLoaded]);
 
