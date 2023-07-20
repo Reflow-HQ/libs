@@ -117,6 +117,10 @@ export default function PayPalButton({
   }
 
   function onError() {
+    // If we stop the createOrder process, because canSubmit() returns false,
+    // paypal throws an error. We should let the browser handle this error.
+    if (!canSubmit()) return;
+
     // The default error message for 500 errors.
     let errorText = "Sorry, your transaction could not be processed. Please try again.";
 
