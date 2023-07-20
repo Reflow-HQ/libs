@@ -262,6 +262,7 @@ export default function CheckoutForm({
 
       onCheckoutSuccess(result, paymentMethod, paymentID);
     } catch (e) {
+      console.log(e);
       if (e.data && e.data.errors) {
         setFormErrors(e.data.errors);
 
@@ -302,7 +303,7 @@ export default function CheckoutForm({
           <PayPalButton
             key={fundingSource}
             fundingSource={fundingSource}
-            checkoutStep="checkout"
+            checkoutStep="details"
             canSubmit={() => true}
             successURL={successURL}
             onMessage={onMessage}
@@ -423,7 +424,7 @@ export default function CheckoutForm({
             id="ref-field-phone"
             className="ref-form-control"
             value={phone || user?.meta.phone || ""}
-            pattern="[0-9 \\+\\-]{5,30}"
+            pattern="[0-9 \+\-]{5,30}"
             placeholder="+1234567890"
             required
             onChange={(e) => setPhone(e.target.value)}

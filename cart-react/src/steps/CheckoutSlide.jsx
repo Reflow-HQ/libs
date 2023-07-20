@@ -119,18 +119,19 @@ export default function CheckoutSlide({
   return (
     <div className="ref-checkout">
       <div className="ref-checkout-content">
-        <div className="ref-back" onClick={() => setStep("cart")}>
-          ← {t("cart.back_to_cart")}
-        </div>
-
         {showForm && (
-          <CheckoutForm
-            successURL={successURL}
-            cancelURL={cancelURL}
-            onMessage={onMessage}
-            onCheckoutSuccess={onCheckoutSuccess}
-            demoMode={demoMode}
-          />
+          <>
+            <div className="ref-back" onClick={() => setStep("cart")}>
+              ← {t("cart.back_to_cart")}
+            </div>
+            <CheckoutForm
+              successURL={successURL}
+              cancelURL={cancelURL}
+              onMessage={onMessage}
+              onCheckoutSuccess={onCheckoutSuccess}
+              demoMode={demoMode}
+            />
+          </>
         )}
 
         {showInstructions && <Instructions instructions={instructions} />}

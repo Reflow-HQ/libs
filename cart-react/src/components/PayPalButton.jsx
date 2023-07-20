@@ -11,6 +11,7 @@ export default function PayPalButton({
   style = {},
   checkoutStep,
   canSubmit,
+  successURL,
   onMessage,
 }) {
   const auth = useAuth();
