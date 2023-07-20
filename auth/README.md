@@ -248,7 +248,7 @@ auth.off("change", changeCb);
 
 ## Test Mode
 
-With Reflow's [test mode](https://reflowhq.com/docs/api/test-mode) you can try out your store integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
+With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your store integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
 
 To enable test mode, just add `testMode: true` to the config object:
 
@@ -257,6 +257,8 @@ import Auth from "@reflowhq/auth";
 
 window.auth = new Auth({ storeID: "<your storeid here>", testMode: true });
 ```
+
+While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow store, and payments will be made with PayPal's Sandbox and Stripe's test credit card info.
 
 ## License
 

@@ -508,6 +508,28 @@ Reflow supports a wide array of currencies that can be used for everything in yo
 
 For a full list of available currencies visit the [Currency Support docs](https://reflowhq.com/docs/guide/currency-support).
 
+## Test Mode
+
+With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your store integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
+
+To enable test mode, just add `testMode: true` to the config object:
+
+```js
+import { useCart } from "@reflowhq/cart-react";
+
+const config = {
+  storeID: "1234",
+  testMode: true,
+};
+
+function App() {
+  const cart = useCart(config);
+  // ...
+}
+```
+
+While testMode is active, orders will be recorded in the "Test mode" section of your Reflow store, and payments will be made with PayPal's Sandbox and Stripe's test credit card info.
+
 ## License
 
 Released under the MIT license.
