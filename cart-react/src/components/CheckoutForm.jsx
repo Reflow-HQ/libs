@@ -262,7 +262,6 @@ export default function CheckoutForm({
 
       onCheckoutSuccess(result, paymentMethod, paymentID);
     } catch (e) {
-      console.log(e);
       if (e.data && e.data.errors) {
         setFormErrors(e.data.errors);
 
