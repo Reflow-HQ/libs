@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import useAuth from "@reflowhq/auth-react";
 
 import Container from "react-bootstrap/Container";
@@ -20,12 +20,42 @@ function App() {
     auth.signOut();
   }
 
+  function register() {
+    auth.register();
+  }
+
   function onEdit(newData) {
-    auth.updateUser({
-      name: newData.name,
-      email: newData.email,
-      meta: newData.meta,
-    });
+    auth
+      .updateUser({
+        name: newData.name,
+        email: newData.email,
+        meta: newData.meta,
+      })
+      .then((result) => {
+        if (result.email_update && !result.email_update.verified) {
+          alert(
+            `A verification email was sent to ${result.email_update.new_email}. Please follow the link in the email to confirm your new address.`
+          );
+        }
+      })
+      .catch((e) => {
+        alert("Profile update failed!");
+      });
+  }
+
+  function resetPassword() {
+    if (!auth.isSignedIn()) return;
+
+    auth
+      .sendPasswordResetLink()
+      .then(() => {
+        alert(
+          `A verification email was sent to ${auth.user.email}. Please follow the link in the email to change your password.`
+        );
+      })
+      .catch((e) => {
+        alert("Profile update failed!");
+      });
   }
 
   return (
@@ -42,7 +72,12 @@ function App() {
             {auth.isSignedIn() ? (
               <Button onClick={signOut}>Sign Out</Button>
             ) : (
-              <Button onClick={signIn}>Sign In</Button>
+              <>
+                <Button className="me-2" onClick={signIn}>
+                  Sign In
+                </Button>
+                <Button onClick={register}>Register</Button>
+              </>
             )}
           </Navbar.Collapse>
         </Container>
@@ -56,7 +91,7 @@ function App() {
               <Card.Title className="mt-3">{auth.user.name}</Card.Title>
               <Card.Text>Profile data:</Card.Text>
               <pre>{JSON.stringify(auth.user, null, "  ")}</pre>
-              <Edit user={auth.user} onChange={onEdit} />
+              <Edit user={auth.user} onChange={onEdit} resetPassword={resetPassword} />
             </Card.Body>
           </Card>
         ) : (
