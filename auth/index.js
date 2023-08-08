@@ -349,7 +349,7 @@ class Auth {
         this.newEmail = result["email_update"]["new_email"];
 
         if (!this._emailUpdatedListenerBound) {
-          this._emailUpdated = async () => {
+          this._emailUpdatedListener = async () => {
             await this.refresh();
 
             if (this.user.email === this.newEmail) {
@@ -357,8 +357,6 @@ class Auth {
               this._emailUpdatedListenerBound = false;
             }
           };
-
-          this._emailUpdatedListener = this._emailUpdated.bind(this);
 
           window.addEventListener("focus", this._emailUpdatedListener, false);
           this._emailUpdatedListenerBound = true;
