@@ -142,12 +142,12 @@ describe("Auth", () => {
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-signin",
-      "width=600,height=600,top=84,left=212"
+      "width=650,height=650,top=59,left=187"
     );
 
     expect(auth._signInWindow).toEqual(signInWindow);
     expect(auth._signInWindow.location).toEqual(
-      "https://banana123.com/?origin=http%3A%2F%2Flocalhost"
+      "https://banana123.com/?origin=http%3A%2F%2Flocalhost&step=login"
     );
 
     // Todo: think of a way to simulate the window open postMessage response
