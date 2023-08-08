@@ -345,18 +345,24 @@ class Auth {
       }
 
       // The email update needs verification
-      if (result["email_update"] && !this._emailUpdatedListenerBound) {
-        this._emailUpdatedListener = async () => {
-          await this.refresh();
+      if (result["email_update"]) {
+        this.newEmail = result["email_update"]["new_email"];
 
-          if (this.user.email === result["email_update"]["new_email"]) {
-            window.removeEventListener("focus", this._emailUpdatedListener.bind(this), false);
-            this._emailUpdatedListenerBound = false;
-          }
-        };
+        if (!this._emailUpdatedListenerBound) {
+          this._emailUpdated = async () => {
+            await this.refresh();
 
-        window.addEventListener("focus", this._emailUpdatedListener.bind(this), false);
-        this._emailUpdatedListenerBound = true;
+            if (this.user.email === this.newEmail) {
+              window.removeEventListener("focus", this._emailUpdatedListener, false);
+              this._emailUpdatedListenerBound = false;
+            }
+          };
+
+          this._emailUpdatedListener = this._emailUpdated.bind(this);
+
+          window.addEventListener("focus", this._emailUpdatedListener, false);
+          this._emailUpdatedListenerBound = true;
+        }
       }
 
       return result;
