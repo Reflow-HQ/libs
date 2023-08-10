@@ -344,6 +344,25 @@ class Auth {
         this.broadcast("modify");
       }
 
+      // The email update needs verification
+      if (result["email_update"]) {
+        this.newEmail = result["email_update"]["new_email"];
+
+        if (!this._emailUpdatedListenerBound) {
+          this._emailUpdatedListener = async () => {
+            await this.refresh();
+
+            if (this.user.email === this.newEmail) {
+              window.removeEventListener("focus", this._emailUpdatedListener, false);
+              this._emailUpdatedListenerBound = false;
+            }
+          };
+
+          window.addEventListener("focus", this._emailUpdatedListener, false);
+          this._emailUpdatedListenerBound = true;
+        }
+      }
+
       return result;
     } catch (e) {
       console.error("Reflow: Unable to update user.");
@@ -358,6 +377,10 @@ class Auth {
 
       throw e;
     }
+  }
+
+  async register() {
+    return this.signIn({ step: "register" });
   }
 
   async signIn(options = {}) {
@@ -408,6 +431,7 @@ class Auth {
     const url = new URL(response.signinURL);
     const params = new URLSearchParams(url.search);
     params.append("origin", window.location.origin);
+    params.append("step", options.step || "login");
 
     if (options.subscribeTo) {
       params.append("subscribeTo", Number(options.subscribeTo));
@@ -514,6 +538,22 @@ class Auth {
     this.broadcast("signout", { error: false });
 
     return true;
+  }
+
+  async sendPasswordResetLink() {
+    try {
+      return await this.api("/auth/user/send-reset-password-email", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.get("key")}`,
+        },
+      });
+    } catch (e) {
+      console.error("Reflow: Unable to send reset password link email.");
+      if (e.data) console.error(e.data);
+
+      throw e;
+    }
   }
 
   async createSubscription(data) {

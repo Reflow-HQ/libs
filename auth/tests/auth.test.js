@@ -17,7 +17,7 @@ describe("Auth", () => {
   });
 
   afterEach(() => {
-    auth.trigger.mockClear();
+    jest.clearAllMocks();
   });
 
   it("should get and set", async () => {
@@ -147,7 +147,7 @@ describe("Auth", () => {
 
     expect(auth._signInWindow).toEqual(signInWindow);
     expect(auth._signInWindow.location).toEqual(
-      "https://banana123.com/?origin=http%3A%2F%2Flocalhost"
+      "https://banana123.com/?origin=http%3A%2F%2Flocalhost&step=login"
     );
 
     // Todo: think of a way to simulate the window open postMessage response
@@ -219,7 +219,7 @@ describe("Auth", () => {
     expect(auth.trigger).toHaveBeenCalledWith("change");
   });
 
-  it("should update the user user successfully", async () => {
+  it("should update the user successfully", async () => {
     let name = "J Doe";
     let email = "email@example.com";
     let meta = {
@@ -253,7 +253,129 @@ describe("Auth", () => {
     expect(auth.trigger).toHaveBeenCalledWith("change");
   });
 
-  it("should fail to update the user user because of validation", async () => {
+  it("should update the user email successfully", async () => {
+    let oldUser = auth.user;
+    let oldSubscription = auth.subscription;
+
+    let newEmail = "new.email@example.com";
+    let newUserData = { ...oldUser };
+
+    global.fetch = jest.fn((url) => {
+      let response = {};
+
+      if (url.includes("/auth/user")) {
+        response = {
+          success: true,
+          user: {
+            name: oldUser.name,
+            email: oldUser.email,
+            meta: oldUser.meta,
+          },
+          email_update: {
+            new_email: newEmail,
+            previous_email: oldUser.email,
+            verified: false,
+          },
+        };
+      } else if (url.includes("/auth/state")) {
+        response = {
+          user: newUserData,
+          subscription: oldSubscription,
+        };
+      }
+
+      return Promise.resolve({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve(response),
+      });
+    });
+
+    jest.spyOn(window, "addEventListener");
+    jest.spyOn(window, "removeEventListener");
+
+    // Update the user's email, the request will return the old email,
+    // because we need to first verify the change.
+    // We should set an event listener in order to check for changes to the profile.
+
+    const result = await auth.updateUser({ email: newEmail });
+    expect(result.user).toEqual({ name: oldUser.name, email: oldUser.email, meta: oldUser.meta });
+    expect(result.success).toEqual(true);
+    expect(auth.user.name).toBe(oldUser.name);
+    expect(auth.user.email).toBe(oldUser.email);
+    expect(auth.user.meta.phone).toBe(oldUser.meta.phone);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(auth.trigger).toHaveBeenCalledTimes(0);
+
+    expect(auth.newEmail).toBe(newEmail);
+    expect(window.addEventListener).toHaveBeenCalledTimes(1);
+    expect(window.addEventListener).toHaveBeenCalledWith(
+      "focus",
+      auth._emailUpdatedListener,
+      false
+    );
+    expect(auth._emailUpdatedListenerBound).toBe(true);
+
+    jest.clearAllMocks();
+
+    // Update the email again, the event listener should still be bound
+
+    newEmail = "new.email2@example.com";
+
+    await auth.updateUser({ email: newEmail });
+    expect(auth.user.email).toBe(oldUser.email);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(auth.trigger).toHaveBeenCalledTimes(0);
+
+    expect(auth.newEmail).toBe(newEmail);
+    expect(window.addEventListener).toHaveBeenCalledTimes(0);
+    expect(auth._emailUpdatedListenerBound).toBe(true);
+
+    jest.clearAllMocks();
+
+    // Check for changes to the user profile.
+    // We're currently returning the old user data,
+    // so nothing should change
+
+    await auth._emailUpdatedListener();
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    expect(auth.user.name).toBe(oldUser.name);
+    expect(auth.user.email).toBe(oldUser.email);
+    expect(auth.user.meta.phone).toBe(oldUser.meta.phone);
+
+    expect(auth.trigger).toHaveBeenCalledTimes(0);
+
+    expect(window.addEventListener).toHaveBeenCalledTimes(0);
+    expect(window.removeEventListener).toHaveBeenCalledTimes(0);
+    expect(auth._emailUpdatedListenerBound).toBe(true);
+
+    jest.clearAllMocks();
+
+    // Update the user email and check for changes again.
+    // This time the email has been updated, so the event listener should be removed
+
+    newUserData.email = newEmail;
+
+    await auth._emailUpdatedListener();
+
+    expect(auth.user.name).toBe(oldUser.name);
+    expect(auth.user.email).toBe(newEmail);
+    expect(auth.user.meta.phone).toBe(oldUser.meta.phone);
+
+    expect(auth.trigger).toHaveBeenCalledTimes(2);
+    expect(auth.trigger).toHaveBeenCalledWith("modify");
+    expect(auth.trigger).toHaveBeenCalledWith("change");
+
+    expect(window.addEventListener).toHaveBeenCalledTimes(0);
+    expect(window.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(auth._emailUpdatedListenerBound).toBe(false);
+
+    jest.clearAllMocks();
+  });
+
+  it("should fail to update the user because of validation", async () => {
     let oldUser = auth.user;
 
     let result;

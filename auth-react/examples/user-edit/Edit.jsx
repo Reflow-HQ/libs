@@ -3,7 +3,7 @@ import React, { useState, useRef } from "react";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 
-export default function Edit({ user, onChange }) {
+export default function Edit({ user, onChange, resetPassword }) {
   const [newData, setData] = useState({ ...user });
   const [isModalVisible, setVisible] = useState(false);
 
@@ -80,7 +80,7 @@ export default function Edit({ user, onChange }) {
                 required
               />
             </div>
-            <div className="form-check form-switch">
+            <div className="form-check form-switch mb-3">
               <input
                 id="formCheck-1"
                 className="form-check-input"
@@ -92,6 +92,11 @@ export default function Edit({ user, onChange }) {
                 Example Setting
               </label>
             </div>
+            {user.provider === "email_password" && (
+              <div className="mb-3">
+                <Button onClick={resetPassword}>Change Password</Button>
+              </div>
+            )}
           </form>
         </Modal.Body>
         <Modal.Footer>
