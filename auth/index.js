@@ -1,5 +1,10 @@
 class Auth {
-  constructor({ storeID, apiBase, autoBind = true, testMode = false }) {
+  constructor({
+    storeID,
+    apiBase,
+    autoBind = true,
+    testMode = false
+  }) {
     this.storeID = storeID;
     this.apiBase = apiBase || `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
     this.testMode = testMode || false;
@@ -300,9 +305,13 @@ class Auth {
         // Delete the local session and signout components.
 
         this.clear();
-        this.trigger("signout", { error: "user_not_found" });
+        this.trigger("signout", {
+          error: "user_not_found"
+        });
         this.trigger("change");
-        this.broadcast("signout", { error: "user_not_found" });
+        this.broadcast("signout", {
+          error: "user_not_found"
+        });
       }
 
       throw e;
@@ -338,7 +347,9 @@ class Auth {
       });
 
       if (!this.userSameAs(result.user)) {
-        this.set({ user: result.user });
+        this.set({
+          user: result.user
+        });
         this.trigger("modify");
         this.trigger("change");
         this.broadcast("modify");
@@ -370,9 +381,13 @@ class Auth {
 
       if (e.status == 403) {
         this.clear();
-        this.trigger("signout", { error: "user_not_found" });
+        this.trigger("signout", {
+          error: "user_not_found"
+        });
         this.trigger("change");
-        this.broadcast("signout", { error: "user_not_found" });
+        this.broadcast("signout", {
+          error: "user_not_found"
+        });
       }
 
       throw e;
@@ -380,7 +395,9 @@ class Auth {
   }
 
   async register() {
-    return this.signIn({ step: "register" });
+    return this.signIn({
+      step: "register"
+    });
   }
 
   async signIn(options = {}) {
@@ -419,6 +436,7 @@ class Auth {
     } catch (e) {
       console.error("Reflow: " + e);
       if (e.data) console.error(e.data);
+      if (e.error) console.error(e.error);
 
       this._signInWindow.close();
       this._signInWindow = null;
@@ -533,9 +551,13 @@ class Auth {
 
     this.clear();
 
-    this.trigger("signout", { error: false });
+    this.trigger("signout", {
+      error: false
+    });
     this.trigger("change");
-    this.broadcast("signout", { error: false });
+    this.broadcast("signout", {
+      error: false
+    });
 
     return true;
   }
@@ -563,7 +585,9 @@ class Auth {
 
     if (!this.isSignedIn()) {
       // Sign in and initiate a subscription in the same window
-      this.signIn({ subscribeTo: data.priceID });
+      this.signIn({
+        subscribeTo: data.priceID
+      });
       return;
     }
 
