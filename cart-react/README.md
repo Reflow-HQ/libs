@@ -47,7 +47,7 @@ Renders a two-step shopping cart - Overview and Checkout.
 ```js
 import CartView, { useCart } from "@reflowhq/cart-react";
 import useAuth from "@reflowhq/auth-react";
-import "@reflowhq/cart-react/src/cartview.css";
+import "@reflowhq/cart-react/dist/style.css";
 
 const config = {
   storeID: "1234",
@@ -93,7 +93,7 @@ Renders controls for variant selection, personalization options, a quantity widg
 ```js
 import { useState, useEffect } from "react";
 import { AddToCart, useCart } from "@reflowhq/cart-react";
-import "@reflowhq/cart-react/src/cartview.css";
+import "@reflowhq/cart-react/dist/style.css";
 
 const config = {
   storeID: "1234",
@@ -182,6 +182,7 @@ console.log(cart);
 | `shippingMethods`    | _array_   | The available shipping methods for the provided shipping address.                                                             |
 | `shippableCountries` | _array_   | The countries the items in the cart can be shipped to.                                                                        |
 | `shippingAddress`    | _object_  | The shipping address entered by the user.                                                                                     |
+| `quantity`           | _number_  | The total number of products currently in the cart, taking into account quantity.                                             |
 | `errors`             | _array_   | An array of objects describing the errors encountered. Includes error type, severity, message.                                |
 
 ### Reflow API
