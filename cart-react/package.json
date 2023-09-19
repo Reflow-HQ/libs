@@ -22,7 +22,7 @@
     "test": "jest",
     "watch": "start-storybook -p 8080",
     "build-storybook": "build-storybook",
-    "build": "node build.js",
+    "build": "node build.js && npx tsc",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
