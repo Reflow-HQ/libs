@@ -22,7 +22,7 @@ export default function AddToCart({
   function getButtonText() {
     let text = buttonText || cart.t("add_to_cart.button_text");
 
-    if (!isInStock()) {
+    if (!canBePurchased()) {
       text = cart.t("out_of_stock");
     }
 
@@ -74,12 +74,8 @@ export default function AddToCart({
     return personalizationValues[id][input];
   }
 
-  function isInStock() {
-    return product.in_stock;
-  }
-
   function canBePurchased() {
-    return isInStock();
+    return getActiveVariantOptions().in_stock;
   }
 
   async function addToCart(e) {
@@ -251,7 +247,7 @@ export default function AddToCart({
               onChange={(e) => setActiveVariant(e.target.value)}
             >
               {product.variants.items.map((variant) => (
-                <option key={variant.id} value={variant.id} disabled={!variant.in_stock}>
+                <option key={variant.id} value={variant.id}>
                   {variant.name}
                 </option>
               ))}
@@ -306,7 +302,7 @@ export default function AddToCart({
 
       {shouldShowQuantity() && (
         <QuantityWidget
-          active={product.in_stock}
+          active={canBePurchased()}
           originalQuantity={quantity || 1}
           maxQuantity={product.max_quantity}
           availableQuantity={getActiveVariantOptions().available_quantity}
