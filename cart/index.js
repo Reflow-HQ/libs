@@ -668,16 +668,6 @@ export default class Cart {
         }
       }
 
-      this.api(
-        `/add-to-cart/${id}/` +
-          quantity +
-          "/" +
-          (variantID || "") +
-          (this.key ? "?cartKey=" + this.key : ""),
-        { method: "POST", body },
-        false
-      );
-
       let result = await this.api(
         `/add-to-cart/${id}/` +
           quantity +

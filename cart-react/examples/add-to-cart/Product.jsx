@@ -33,7 +33,7 @@ export default function Product({
             setSelectedVariant(variant)
           }}
           onMessage={(message) => {
-            alert(message.title);
+            alert(`${message.title}\n${message.description ?? ''}`);
           }}
         />
       </div>

@@ -137,9 +137,16 @@ export default function AddToCart({
       setQuantity(1);
       setPersonalizationValues({});
     } catch (e) {
-      // showSystemError(getErrorText(e, "system"), txt("add_to_cart.error"));
 
       console.error("Reflow: Couldn't add product to cart", e);
+
+      if (onMessage) {
+        onMessage({
+          title: cart.t("add_to_cart.error"),
+          description: e.data && e.data.errorCode ? cart.t(e.data.errorCode) : null
+        });
+      }
+
     }
   }
 

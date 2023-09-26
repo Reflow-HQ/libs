@@ -76,14 +76,13 @@ function App() {
 
 #### Props
 
-| Prop               | Type       | Required | Description                                                                                                                           |
-| ------------------ | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `cart`             | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                             |
-| `auth`             | _object_   | _No_     | The result of calling the `useAuth` hook from `@reflowhq/auth-react`.                                                                 |
-| `successURL`       | _string_   | _No_     | The URL where the customer will be redirected after a successful payment.                                                             |
-| `cancelURL`        | _string_   | _No_     | The URL where the customer will be redirected after a failed or canceled payment.                                                     |
-| `onMessage`        | _function_ | _No_     | Called with a `message` object with `type`, `title` and `description` keys. You can use it to show success/error messages in a toast. |
-| `onVariantSelect`  | _function_ | _No_     | Called when a different variant is selected for purchase. Returns an object containing all properties of the newly selected variant.  |
+| Prop          | Type       | Required | Description                                                                                                                                                   |
+| ------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cart`        | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                                                     |
+| `auth`        | _object_   | _No_     | The result of calling the `useAuth` hook from `@reflowhq/auth-react`.                                                                                         |
+| `successURL`  | _string_   | _No_     | The URL where the customer will be redirected after a successful payment.                                                                                     |
+| `cancelURL`   | _string_   | _No_     | The URL where the customer will be redirected after a failed or canceled payment.                                                                             |
+| `onMessage`   | _function_ | _No_     | Called when the component produces any messages that should be shown to the customer. Returns a `message` object with `type`, `title` and `description` keys. |
 
 You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/cart-react/examples) directory.
 
@@ -130,14 +129,15 @@ function App() {
 
 #### Props
 
-| Prop                  | Type       | Required | Description                                                                                                                           |
-| --------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `cart`                | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                             |
-| `product`             | _object_   | _Yes_    |                                                                                                                                       |
-| `buttonText`          | _string_   | _No_     | Redefines the "Add to Cart" button text, if set.                                                                                      |
-| `showQuantity`        | _boolean_  | _No_     | Whether the component should display the auntity widget.                                                                              |
-| `showPersonalization` | _boolean_  | _No_     | Whether the component should display the product personalization options.                                                             |
-| `onMessage`           | _function_ | _No_     | Called with a `message` object with `type`, `title` and `description` keys. You can use it to show success/error messages in a toast. |
+| Prop                  | Type       | Required | Description                                                                                                                                                   |
+| --------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cart`                | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                                                     |
+| `product`             | _object_   | _Yes_    |                                                                                                                                                               |
+| `buttonText`          | _string_   | _No_     | Redefines the "Add to Cart" button text, if set.                                                                                                              |
+| `showQuantity`        | _boolean_  | _No_     | Whether the component should display the auntity widget.                                                                                                      |
+| `showPersonalization` | _boolean_  | _No_     | Whether the component should display the product personalization options.                                                                                     |
+| `onMessage`           | _function_ | _No_     | Called when the component produces any messages that should be shown to the customer. Returns a `message` object with `type`, `title` and `description` keys. |
+| `onVariantSelect`     | _function_ | _No_     | Called when a different variant is selected for purchase. Returns a `variant` object containing all properties of the newly selected variant.                          |
 
 You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/cart-react/examples) directory.
 
