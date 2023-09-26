@@ -8,6 +8,7 @@ export default function AddToCart({
   buttonText,
   showQuantity = true,
   showPersonalization = true,
+  onVariantSelect,
   onMessage,
 }) {
   const personalizationForm = useRef();
@@ -42,6 +43,15 @@ export default function AddToCart({
       : product;
 
     return variant || product;
+  }
+
+  function setActiveVariant(id) {
+
+    setSelectedVariant(id);
+
+    if (onVariantSelect) {
+      onVariantSelect(product.variants.items.find((v) => v.id == id));
+    }
   }
 
   function setPersonalizationInput(id, input, value) {
@@ -238,7 +248,7 @@ export default function AddToCart({
               name="variant-state"
               required=""
               value={selectedVariant}
-              onChange={(e) => setSelectedVariant(e.target.value)}
+              onChange={(e) => setActiveVariant(e.target.value)}
             >
               {product.variants.items.map((variant) => (
                 <option key={variant.id} value={variant.id} disabled={!variant.in_stock}>
