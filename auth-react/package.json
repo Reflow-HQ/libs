@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/auth-react",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "React hook for login and account management with Reflow",
   "exports": "./index.js",
   "type": "module",
@@ -22,7 +22,8 @@
   "license": "MIT",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "build": "npx tsc"
+    "build": "npx tsc",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",
