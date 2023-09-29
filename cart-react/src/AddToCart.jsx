@@ -8,6 +8,7 @@ export default function AddToCart({
   buttonText,
   showQuantity = true,
   showPersonalization = true,
+  onVariantSelect,
   onMessage,
 }) {
   const personalizationForm = useRef();
@@ -21,7 +22,7 @@ export default function AddToCart({
   function getButtonText() {
     let text = buttonText || cart.t("add_to_cart.button_text");
 
-    if (!isInStock()) {
+    if (!canBePurchased()) {
       text = cart.t("out_of_stock");
     }
 
@@ -44,6 +45,15 @@ export default function AddToCart({
     return variant || product;
   }
 
+  function setActiveVariant(id) {
+
+    setSelectedVariant(id);
+
+    if (onVariantSelect) {
+      onVariantSelect(product.variants.items.find((v) => v.id == id));
+    }
+  }
+
   function setPersonalizationInput(id, input, value) {
     setPersonalizationValues((prevPersonalization) => {
       return {
@@ -64,12 +74,8 @@ export default function AddToCart({
     return personalizationValues[id][input];
   }
 
-  function isInStock() {
-    return product.in_stock;
-  }
-
   function canBePurchased() {
-    return isInStock();
+    return getActiveVariantOptions().in_stock;
   }
 
   async function addToCart(e) {
@@ -131,9 +137,16 @@ export default function AddToCart({
       setQuantity(1);
       setPersonalizationValues({});
     } catch (e) {
-      // showSystemError(getErrorText(e, "system"), txt("add_to_cart.error"));
 
       console.error("Reflow: Couldn't add product to cart", e);
+
+      if (onMessage) {
+        onMessage({
+          title: cart.t("add_to_cart.error"),
+          description: e.data && e.data.errorCode ? cart.t(e.data.errorCode) : null
+        });
+      }
+
     }
   }
 
@@ -238,10 +251,10 @@ export default function AddToCart({
               name="variant-state"
               required=""
               value={selectedVariant}
-              onChange={(e) => setSelectedVariant(e.target.value)}
+              onChange={(e) => setActiveVariant(e.target.value)}
             >
               {product.variants.items.map((variant) => (
-                <option key={variant.id} value={variant.id} disabled={!variant.in_stock}>
+                <option key={variant.id} value={variant.id}>
                   {variant.name}
                 </option>
               ))}
@@ -296,7 +309,7 @@ export default function AddToCart({
 
       {shouldShowQuantity() && (
         <QuantityWidget
-          active={product.in_stock}
+          active={canBePurchased()}
           originalQuantity={quantity || 1}
           maxQuantity={product.max_quantity}
           availableQuantity={getActiveVariantOptions().available_quantity}
