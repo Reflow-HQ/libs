@@ -252,7 +252,11 @@ export default function CheckoutForm({
       await cart.refresh();
 
       if (!cart.canFinish()) {
-        onMessage({ type: "error", description: cart.getStateErrors()[0] });
+        onMessage({
+          type: "error",
+          title: t("cart.errors.cannot_complete"),
+          description: cart.getStateErrors()[0],
+        });
         return;
       }
 

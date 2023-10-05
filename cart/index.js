@@ -396,7 +396,7 @@ export default class Cart {
   }
 
   hasPhysicalProducts() {
-    return this.getProducts().find((p) => p.type == "physical" && p.inStock);
+    return this.getProducts().find((p) => p.type == "physical");
   }
 
   getShippableCountries() {
