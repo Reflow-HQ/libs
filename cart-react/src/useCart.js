@@ -1,4 +1,7 @@
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect
+} from "react";
 import Cart from "@reflowhq/cart";
 
 export const cartMap = new Map();
@@ -27,9 +30,15 @@ function createStore(config) {
     testMode: cart.testMode,
     localFormData: cart.localFormData,
 
-    showLoading: () => cart.updateState({ isLoading: true }),
-    hideLoading: () => cart.updateState({ isLoading: false }),
-    setTaxExemptionRemoved: (taxExemptionRemoved) => setState({ taxExemptionRemoved }),
+    showLoading: () => cart.updateState({
+      isLoading: true
+    }),
+    hideLoading: () => cart.updateState({
+      isLoading: false
+    }),
+    setTaxExemptionRemoved: (taxExemptionRemoved) => setState({
+      taxExemptionRemoved
+    }),
 
     setDeliveryMethod: cart.setDeliveryMethod.bind(cart),
     setSelectedLocation: cart.setSelectedLocation.bind(cart),
@@ -53,6 +62,7 @@ function createStore(config) {
     canShip: cart.canShip.bind(cart),
     canFinish: cart.canFinish.bind(cart),
     hasZeroValue: cart.hasZeroValue.bind(cart),
+    getStateErrors: cart.getStateErrors.bind(cart),
 
     formatCurrency: cart.formatCurrency.bind(cart),
     getTaxPricingType: cart.getTaxPricingType.bind(cart),
@@ -109,7 +119,9 @@ function createStore(config) {
       };
 
       const onTaxExemptionRemoved = () => {
-        setState({ taxExemptionRemoved: true });
+        setState({
+          taxExemptionRemoved: true
+        });
       };
 
       listeners.add(listener);

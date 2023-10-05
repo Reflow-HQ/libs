@@ -100,7 +100,7 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
         resetCoupon();
       })
       .catch((e) => {
-        updateDicountError(cart.getErrorText(e));
+        updateDiscountError(cart.getErrorText(e));
       });
   }
 
@@ -119,10 +119,10 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
   }
 
   function resetDiscountError() {
-    updateDicountError("");
+    updateDiscountError("");
   }
 
-  function updateDicountError(errorText = "") {
+  function updateDiscountError(errorText = "") {
     setFormErrors((prevFormErrors) => {
       return {
         ...prevFormErrors,
@@ -186,9 +186,7 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
                   )}
                 </div>
                 <button
-                  className={`ref-button ref-button-success ref-add-code${
-                    discountCode ? "" : " inactive"
-                  }`}
+                  className={`ref-button ref-button-success ref-add-code${discountCode ? "" : " inactive"}`}
                 >
                   {t("apply")}
                 </button>
@@ -240,7 +238,7 @@ export default function Summary({ readOnly = false, onMessage, updateCart }) {
                 <span>
                   {taxRate
                     ? `${taxRate.name} (${taxRate.rate}%)` +
-                      (taxDetails.exemption ? " – " + taxDetails.exemption : "")
+                    (taxDetails.exemption ? " – " + taxDetails.exemption : "")
                     : ""}
                 </span>
                 <span>{cart.formatCurrency(taxes.amount)}</span>

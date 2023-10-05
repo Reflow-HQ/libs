@@ -11,8 +11,8 @@
   "devDependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "@reflowhq/cart-react": "^1.0.0",
-    "@reflowhq/auth-react": "^1.0.0",
+    "@reflowhq/cart-react": "^2.0.0",
+    "@reflowhq/auth-react": "^2.0.0",
     "esbuild": "^0.17.10"
   },
   "keywords": [],
