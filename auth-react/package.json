@@ -23,7 +23,9 @@
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "build": "npx tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "watch": "start-storybook -p 8080",
+    "build-storybook": "build-storybook"
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",

@@ -682,9 +682,6 @@ export default class Cart {
         this.key = result.cartKey;
       }
 
-      // TODO: add query param for quantity
-      // TODO: pass variant to channels
-
       this.updateState({ quantity: result.cartQuantity });
 
       this.trigger("product-added", { productID: id });
