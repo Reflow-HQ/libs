@@ -677,7 +677,7 @@ class Auth {
               });
 
               this.startPageRefocusInterval({
-                stopIntervalClause: this.isPopupWindowClosed.bind(this),
+                stopIntervalClause: () => (this.isPopupWindowClosed() && this.subscription),
                 onRefocus: this.refresh.bind(this)
               });
 
