@@ -149,11 +149,12 @@ This method initiates the [subscription flow](https://reflowhq.com/docs/guide/su
 
 If the user is not signed in when this method is called, they will be prompted to sign in first, and will then proceed to payment.
 
-`options` is an object which must contain a `priceID` key, which you can obtain by using the [Reflow API](https://reflowhq.com/docs/api/).
+`options` is an object which must contain a `priceID` key, which you can obtain by using the [Reflow API](https://reflowhq.com/docs/api/). In the options you can also select which payment provider to be used for handling the subscription (`stripe` or `paddle`).
 
 ```js
 async auth.createSubscription({
   priceID: "123456789",
+  paymentProvider: "stripe"
 });
 ```
 

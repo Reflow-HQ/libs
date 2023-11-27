@@ -31,6 +31,7 @@ class Auth {
     this._paddleSubscribeCheckout = null;
     this._paddleUpdatePaymentCheckout = null;
     this._paddleCheckoutSuccessFlag = false;
+    this._paddleSubscriptionCheckInterval = null;
 
     if (autoBind) {
       this.bind();
@@ -225,6 +226,7 @@ class Auth {
 
     clearInterval(this._checkPopupWindowClosedInterval);
     clearInterval(this._checkPageRefocusInterval);
+    clearInterval(this._paddleSubscriptionCheckInterval);
 
     window.removeEventListener("message", this._messageListener);
 
@@ -457,7 +459,7 @@ class Auth {
     }
 
     url.search = params.toString();
-    this._popupWindow.location = url.toString();
+    this.setPopupWindowURL(url.toString());
 
     this.startPageRefocusInterval({
 
@@ -577,19 +579,33 @@ class Auth {
       return;
     }
 
+    let paymentProvider = data.paymentProvider || 'stripe';
+
     if (!this.isSignedIn()) {
       // Sign in and initiate a subscription in the same window
 
       let signInOptions = {
-        subscribeTo: data.priceID
-      }
-
-      if (data.paymentProvider) {
-        signInOptions.subscribeWith = data.paymentProvider;
+        subscribeTo: data.priceID,
+        subscribeWith: paymentProvider
       }
 
       this.signIn(signInOptions);
       return;
+    }
+
+    if (paymentProvider == 'stripe') {
+
+      // Stripe checkout is displayed in a Stripe-hosted page loaded inside a popup window.
+      // Open the window in an empty state immediately to make sure the browser understands it was opened due to user action.
+
+      this.openPopupWindow({
+        url: null,
+        label: 'reflow-subscription',
+        size: {
+          w: 650,
+          h: 800
+        }
+      });
     }
 
     // Get the data necessary for continuing to checkout.
@@ -635,14 +651,7 @@ class Auth {
 
       // Stripe subscriptions are handled in a popup window that redirects to the checkout url.
 
-      this.openPopupWindow({
-        url: checkoutData.checkoutURL,
-        label: 'reflow-subscription',
-        size: {
-          w: 650,
-          h: 800
-        }
-      });
+      this.setPopupWindowURL(checkoutData.checkoutURL);
 
       this.startPageRefocusInterval({
         stopIntervalClause: this.isPopupWindowClosed.bind(this),
@@ -667,20 +676,28 @@ class Auth {
 
               this._paddleCheckoutSuccessFlag = false;
 
-              this.openPopupWindow({
-                url: `${this.apiBase}/subscription/processing?store_id=${this.storeID}&user_id=${this.user.id}`,
-                label: 'reflow-subscription',
-                size: {
-                  w: 650,
-                  h: 800
+              this.openDialog();
+              this.renderLoadingDialog();
+
+              clearInterval(this._paddleSubscriptionCheckInterval);
+              this._paddleSubscriptionCheckInterval = setInterval(async () => {
+
+                let res = await this.api(`/users/${this.user.id}/subscription/status`, {
+                  method: "GET"
+                });
+
+                if (res.is_subscribed) {
+                  clearInterval(this._paddleSubscriptionCheckInterval);
+                  this.closeDialog();
+                  this.refresh();
                 }
-              });
 
-              this.startPageRefocusInterval({
-                stopIntervalClause: () => (this.isPopupWindowClosed() && this.subscription),
-                onRefocus: this.refresh.bind(this)
-              });
+              }, 1000 * 1); // Check every second
 
+              setTimeout(() => {
+                clearInterval(this._paddleSubscriptionCheckInterval);
+                this.closeDialog();
+              }, 1000 * 60 * 5) // Give up after 5 mins
             }
           }.bind(this)
         });
@@ -718,6 +735,20 @@ class Auth {
       return;
     }
 
+    if (this.subscription.payment_provider && this.subscription.payment_provider == 'stripe') {
+
+      // If the subscription is stripe based, prepare a popup window for the Stripe-hosted management page.
+
+      this.openPopupWindow({
+        url: null,
+        label: 'reflow-subscription',
+        size: {
+          w: 650,
+          h: 800
+        }
+      });
+    }
+
     let response;
 
     try {
@@ -746,17 +777,7 @@ class Auth {
 
     if (response.provider == 'stripe') {
 
-      // TODO: isn't there high chance that the api call takes too long and this doesn't open
-      // because chrome thinks its not caused by user action?
-
-      this.openPopupWindow({
-        url: response.subscriptionManagementURL,
-        label: 'reflow-subscription',
-        size: {
-          w: 650,
-          h: 800
-        }
-      });
+      this.setPopupWindowURL(response.subscriptionManagementURL);
 
       this.startPageRefocusInterval({
         stopIntervalClause: this.isPopupWindowClosed.bind(this),
@@ -814,6 +835,10 @@ class Auth {
 
   }
 
+  setPopupWindowURL(url) {
+    this._popupWindow.location = url;
+  }
+
   closePopupWindow() {
     if (this._popupWindow) {
       this._popupWindow.close();
@@ -869,7 +894,7 @@ class Auth {
 
     if (!this._dialog) {
       this._dialog = document.createElement('dialog');
-      this._dialog.style = "min-width: 800px; border: 1px solid #ccc; font-size: 16px; padding: 25px";
+      this._dialog.classList.add('ref-dialog');
       document.body.append(this._dialog);
       this._dialog.addEventListener('close', () => {
         this.closeDialog();
@@ -889,9 +914,13 @@ class Auth {
     }
   }
 
-  renderPaddleSubscriptionDialog(data) {
+  renderLoadingDialog() {
+    let spinner = document.createElement('div');
+    spinner.innerHTML = `Loading`;
+    this._dialog.append(spinner);
+  }
 
-    // TODO: offer localization here?
+  renderPaddleSubscriptionDialog(data) {
 
     this._dialog.innerHTML = `
 <div style="display:flex; justify-content:space-between;">
@@ -912,11 +941,12 @@ class Auth {
 </div>
 
 <div>
-  <a class="ref-sub-cancel" target="_blank" style="font-size: 1em; color: red; cursor: pointer;">Cancel Subscription</a>
+  <a class="ref-sub-cancel ref-text-danger ref-cursor-pointer ref-fs-md" target="_blank">Cancel Subscription</a>
 </div>
 
 <div>
   <h4 style="font-size: 1.4em;">Billing Information</h4>
+  <p class="ref-sub-billing-payment"><b></b> <span></span></p>
   <p class="ref-sub-billing-name"><b>Name</b> <span></span></p>
   <p class="ref-sub-billing-email"><b>Email</b> <span></span></p>
   <p class="ref-sub-billing-address"><b>Address</b> <span></span></p>
@@ -1071,6 +1101,38 @@ class Auth {
 
           // Refresh the user and rerender the dialog to show the new subscription state
           alert(`New plan: #${newPrice.id} ${newPrice.description}`);
+        }
+
+        let invoiceLink = e.target.closest('.ref-invoice-link');
+        if (invoiceLink) {
+          e.preventDefault();
+
+          try {
+
+            this._isLoading = true;
+
+            let response = await this.api("/auth/user/get-invoice-pdf/" + invoiceLink.dataset.paymentId, {
+              headers: {
+                Authorization: `Bearer ${this.get("key")}`,
+              },
+            });
+
+            this._isLoading = false;
+
+            if (!response.invoice_pdf_url) {
+              throw new Error("Unable to retrieve the auth URL");
+            }
+
+            // Trigger browser download by setting a hidden iframe's src.
+            this._dialog.querySelector('#ref-invoice-download-iframe').src = response.invoice_pdf_url;
+
+          } catch (e) {
+            console.error("Reflow: " + e);
+            if (e.data) console.error(e.data);
+            this._isLoading = false;
+            throw e;
+          }
+
         }
 
       });
@@ -1231,6 +1293,44 @@ class Auth {
 
     // Billing info
 
+    let paymentMethod = this._dialog.querySelector('.ref-sub-billing-payment');
+
+    if (data.billing.payment_method.type == 'card') {
+
+      paymentMethod.firstElementChild.textContent = 'Card';
+
+      let card = data.billing.payment_method.card;
+      paymentMethod.lastElementChild.textContent = `${card.type[0].toUpperCase()}${card.type.substring(1)} ****${card.last4}`;
+
+      let expirationDate = new Date(card.expiry_year, card.expiry_month);
+      let today = new Date();
+      let expires = document.createElement('span');
+
+      let monthDiff = expirationDate.getMonth() - today.getMonth() + 12 * (expirationDate.getFullYear() - today.getFullYear());
+
+      let dateString = expirationDate.toLocaleDateString('en-US', {
+        month: 'short'
+      }) + ' ' + expirationDate.getFullYear().toString().slice(-2);
+
+      if (monthDiff < 0) {
+        expires.textContent = ` (expired on ${dateString})`;
+        expires.classList.add('ref-text-danger');
+      } else if (monthDiff < 6) {
+        expires.textContent = ` (expires on ${dateString})`;
+        expires.classList.add('ref-text-warning');
+      }
+
+      paymentMethod.append(expires);
+
+    } else if (data.billing.payment_method == 'paypal') {
+
+      paymentMethod.firstElementChild.textContent = 'PayPal';
+      // TODO: paypal
+
+    } else {
+      paymentMethod.remove()
+    }
+
     let name = this._dialog.querySelector('.ref-sub-billing-name');
     data.billing.name ? name.lastElementChild.textContent = data.billing.name : name.remove();
 
@@ -1247,40 +1347,36 @@ class Auth {
 
     let paymentsTable = document.createElement("table");
     paymentsTable.style = "width: 100%; text-align: left;";
-    let headerRow = paymentsTable.insertRow();
-    let headers = ["Invoice Number", "Status", "Created", "Total", "Subtotal", "Taxes", "Link"];
-    headers.forEach(headerText => {
-      let th = document.createElement("th");
-      th.textContent = headerText;
-      headerRow.appendChild(th);
-    });
 
     for (const payment of data.recent_payments) {
       let row = paymentsTable.insertRow();
 
       let cell = row.insertCell();
-      cell.textContent = payment.invoice_number;
+      let a = document.createElement('a');
+      a.href = '#';
+      a.dataset.paymentId = payment.id;
+      a.classList.add('ref-invoice-link');
+      a.textContent = payment.created + ' (↪)';
+      cell.append(a);
+
+      // TODO: dont use _formatted
+      cell = row.insertCell();
+      cell.textContent = payment.grand_total_formatted;
 
       cell = row.insertCell();
       cell.textContent = payment.status;
 
       cell = row.insertCell();
-      cell.textContent = payment.created;
-
-      // TODO: dont use _formatted
-      cell = row.insertCell();
-      cell.textContent = payment.total_formatted;
-
-      cell = row.insertCell();
-      cell.textContent = payment.subtotal_formatted;
-
-      cell = row.insertCell();
-      cell.textContent = payment.tax.amountFormatted;
-      cell = row.insertCell();
-      cell.textContent = '?';
+      cell.textContent = payment.purchased_item;
     }
 
     this._dialog.querySelector('.ref-sub-payments').append(paymentsTable);
+
+    let downloadIframe = document.createElement('iframe');
+    downloadIframe.id = 'ref-invoice-download-iframe';
+    downloadIframe.height = 0;
+    downloadIframe.width = 0;
+    this._dialog.querySelector('.ref-sub-payments').append(downloadIframe);
   }
 }
 
