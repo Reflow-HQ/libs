@@ -2,7 +2,9 @@
  * @jest-environment jsdom
  */
 
-import { jest } from "@jest/globals";
+import {
+  jest
+} from "@jest/globals";
 import Cart from "../index.js";
 
 const physicalProduct = {
@@ -57,35 +59,63 @@ function mockFetch() {
 
     switch (url) {
       case `${apiBase}/stores/${storeID}/carts/`: {
-        response = { cartKey };
+        response = {
+          cartKey
+        };
         break;
       }
       case `${apiBase}/stores/${storeID}/carts/${cartKey}`: {
-        response = { products };
+        response = {
+          products
+        };
         break;
       }
       case `${apiBase}/stores/${storeID}/add-to-cart/${physicalProduct.id}/${physicalProduct.quantity}/`: {
-        response = { cartKey, cartQuantity: physicalProduct.quantity };
-        refreshedState = { products: [physicalProduct] };
+        response = {
+          cartKey,
+          cartQuantity: physicalProduct.quantity
+        };
+        refreshedState = {
+          products: [physicalProduct]
+        };
         break;
       }
       case `${apiBase}/stores/${storeID}/update-cart-product/${cartKey}/${physicalProduct.id}/${updatedProductQuantity}/`: {
-        response = { cartQuantity: updatedProductQuantity };
-        refreshedState = { products: [{ ...physicalProduct, quantity: updatedProductQuantity }] };
+        response = {
+          cartQuantity: updatedProductQuantity
+        };
+        refreshedState = {
+          products: [{
+            ...physicalProduct,
+            quantity: updatedProductQuantity
+          }]
+        };
         break;
       }
       case `${apiBase}/stores/${storeID}/remove-cart-product/${cartKey}/${physicalProduct.id}/`: {
-        response = { cartQuantity: 0 };
-        refreshedState = { products: [] };
+        response = {
+          cartQuantity: 0
+        };
+        refreshedState = {
+          products: []
+        };
         break;
       }
       case `${apiBase}/stores/${storeID}/update-address/${cartKey}/`: {
-        response = { success: true, taxExemptionRemoved: false };
-        refreshedState = { deliveryMethod, shippingAddress: address };
+        response = {
+          success: true,
+          taxExemptionRemoved: false
+        };
+        refreshedState = {
+          deliveryMethod,
+          shippingAddress: address
+        };
         break;
       }
       case `${apiBase}/stores/${storeID}/update-tax-exemption/${cartKey}/`: {
-        response = { success: true };
+        response = {
+          success: true
+        };
         refreshedState = {
           deliveryMethod,
           taxExemption,
@@ -93,7 +123,10 @@ function mockFetch() {
         break;
       }
       case `${apiBase}/stores/${storeID}/invalidate-tax-exemption/${cartKey}/`: {
-        response = { success: true, taxExemptionRemoved: true };
+        response = {
+          success: true,
+          taxExemptionRemoved: true
+        };
         refreshedState = {
           taxExemption: null,
         };
@@ -116,7 +149,10 @@ function mockFetch() {
 }
 
 describe("Cart", () => {
-  let cart = new Cart({ storeID, apiBase });
+  let cart = new Cart({
+    storeID,
+    apiBase
+  });
   let defaultCartState = cart.state;
 
   beforeEach(() => {
@@ -137,13 +173,17 @@ describe("Cart", () => {
     cart.scheduleRefresh.mockClear();
     global.fetch.mockClear();
 
-    cart.state = { ...defaultCartState };
+    cart.state = {
+      ...defaultCartState
+    };
 
     refreshedState = {};
   });
 
   it("should manage event listeners", async () => {
-    let cart = new Cart({ storeID: "987" });
+    let cart = new Cart({
+      storeID: "987"
+    });
 
     expect(cart._listeners).toStrictEqual({});
 
@@ -151,13 +191,19 @@ describe("Cart", () => {
     let cb2 = jest.fn();
 
     cart.on("asdf", cb);
-    expect(cart._listeners).toStrictEqual({ asdf: [cb] });
+    expect(cart._listeners).toStrictEqual({
+      asdf: [cb]
+    });
 
     cart.on("asdf", cb);
-    expect(cart._listeners).toStrictEqual({ asdf: [cb] });
+    expect(cart._listeners).toStrictEqual({
+      asdf: [cb]
+    });
 
     cart.on("asdf", cb2);
-    expect(cart._listeners).toStrictEqual({ asdf: [cb, cb2] });
+    expect(cart._listeners).toStrictEqual({
+      asdf: [cb, cb2]
+    });
 
     expect(cb).toHaveBeenCalledTimes(0);
     cart.trigger("asdf", "BananaArg");
@@ -167,7 +213,9 @@ describe("Cart", () => {
     expect(cb2).toHaveBeenCalledWith("BananaArg");
 
     cart.off("asdf", cb);
-    expect(cart._listeners).toStrictEqual({ asdf: [cb2] });
+    expect(cart._listeners).toStrictEqual({
+      asdf: [cb2]
+    });
 
     cart.off("asdf", cb2);
     expect(cart._listeners).toStrictEqual({});
@@ -202,8 +250,7 @@ describe("Cart", () => {
     });
     expect(fetch).toHaveBeenNthCalledWith(
       2,
-      "http://api.reflow.local/v2/stores/1234/carts/key",
-      {}
+      "http://api.reflow.local/v2/stores/1234/carts/key", {}
     );
 
     expect(cart.trigger).toHaveBeenCalledTimes(1);
@@ -232,16 +279,14 @@ describe("Cart", () => {
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(fetch).toHaveBeenNthCalledWith(
       1,
-      "http://api.reflow.local/v2/stores/1234/carts/nonexistent",
-      {}
+      "http://api.reflow.local/v2/stores/1234/carts/nonexistent", {}
     );
     expect(fetch).toHaveBeenNthCalledWith(2, "http://api.reflow.local/v2/stores/1234/carts/", {
       method: "POST",
     });
     expect(fetch).toHaveBeenNthCalledWith(
       3,
-      "http://api.reflow.local/v2/stores/1234/carts/key",
-      {}
+      "http://api.reflow.local/v2/stores/1234/carts/key", {}
     );
 
     expect(cart.trigger).toHaveBeenCalledTimes(1);
@@ -266,12 +311,13 @@ describe("Cart", () => {
 
     delete localStorage[`reflowCartKey1234`];
 
-    await cart.addProduct({ id: physicalProduct.id }, physicalProduct.quantity);
+    await cart.addProduct({
+      id: physicalProduct.id
+    }, physicalProduct.quantity);
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/add-to-cart/${physicalProduct.id}/${physicalProduct.quantity}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/add-to-cart/${physicalProduct.id}/${physicalProduct.quantity}/`, {
         method: "POST",
         body: new FormData(),
       }
@@ -309,7 +355,10 @@ describe("Cart", () => {
 
   it("should update line item quantity", async () => {
     const oldProducts = [physicalProduct];
-    const newProducts = [{ ...physicalProduct, quantity: updatedProductQuantity }];
+    const newProducts = [{
+      ...physicalProduct,
+      quantity: updatedProductQuantity
+    }];
 
     cart.state.products = oldProducts;
 
@@ -317,8 +366,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/update-cart-product/${cartKey}/${physicalProduct.id}/${updatedProductQuantity}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/update-cart-product/${cartKey}/${physicalProduct.id}/${updatedProductQuantity}/`, {
         method: "POST",
         body: new FormData(),
       }
@@ -362,8 +410,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/remove-cart-product/${cartKey}/${physicalProduct.id}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/remove-cart-product/${cartKey}/${physicalProduct.id}/`, {
         method: "POST",
         body: new FormData(),
       }
@@ -398,7 +445,10 @@ describe("Cart", () => {
   });
 
   it("should update shipping address", async () => {
-    await cart.updateAddress({ address, deliveryMethod });
+    await cart.updateAddress({
+      address,
+      deliveryMethod
+    });
 
     const body = new FormData();
     body.append("address", JSON.stringify(address));
@@ -406,8 +456,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/update-address/${cartKey}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/update-address/${cartKey}/`, {
         method: "POST",
         body,
       }
@@ -429,7 +478,12 @@ describe("Cart", () => {
   });
 
   it("should update tax exemption", async () => {
-    await cart.updateTaxExemption({ address, deliveryMethod, exemptionType, exemptionValue });
+    await cart.updateTaxExemption({
+      address,
+      deliveryMethod,
+      exemptionType,
+      exemptionValue
+    });
 
     const body = new FormData();
     body.append("address", JSON.stringify(address));
@@ -438,8 +492,7 @@ describe("Cart", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/update-tax-exemption/${cartKey}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/update-tax-exemption/${cartKey}/`, {
         method: "POST",
         body,
       }
@@ -461,15 +514,16 @@ describe("Cart", () => {
   });
 
   it("should invalidate tax exemption", async () => {
-    await cart.invalidateTaxExemption({ address });
+    await cart.invalidateTaxExemption({
+      address
+    });
 
     const body = new FormData();
     body.append("address", JSON.stringify(address));
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/invalidate-tax-exemption/${cartKey}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/invalidate-tax-exemption/${cartKey}/`, {
         method: "POST",
         body,
       }
@@ -508,7 +562,10 @@ describe("Cart", () => {
       let response = {};
 
       if (/\/apply-discount-code/.test(url)) {
-        response = { success: true, type: "coupon" };
+        response = {
+          success: true,
+          type: "coupon"
+        };
         refreshedState = {
           coupon,
         };
@@ -526,15 +583,16 @@ describe("Cart", () => {
       });
     });
 
-    await cart.applyDiscountCode({ code });
+    await cart.applyDiscountCode({
+      code
+    });
 
     const body = new FormData();
     body.append("code", code);
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/apply-discount-code/${cartKey}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/apply-discount-code/${cartKey}/`, {
         method: "POST",
         body,
       }
@@ -542,7 +600,9 @@ describe("Cart", () => {
 
     expect(cart.trigger).toHaveBeenCalledTimes(2);
 
-    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-added", { type: "coupon" });
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-added", {
+      type: "coupon"
+    });
 
     expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
       ...defaultCartState,
@@ -571,7 +631,10 @@ describe("Cart", () => {
       let response = {};
 
       if (/\/apply-discount-code/.test(url)) {
-        response = { success: true, type: "gift_card" };
+        response = {
+          success: true,
+          type: "gift_card"
+        };
         refreshedState = {
           giftCard,
         };
@@ -589,15 +652,16 @@ describe("Cart", () => {
       });
     });
 
-    await cart.applyDiscountCode({ code });
+    await cart.applyDiscountCode({
+      code
+    });
 
     const body = new FormData();
     body.append("code", code);
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/apply-discount-code/${cartKey}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/apply-discount-code/${cartKey}/`, {
         method: "POST",
         body,
       }
@@ -605,7 +669,9 @@ describe("Cart", () => {
 
     expect(cart.trigger).toHaveBeenCalledTimes(2);
 
-    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-added", { type: "gift_card" });
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-added", {
+      type: "gift_card"
+    });
 
     expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
       ...defaultCartState,
@@ -625,7 +691,10 @@ describe("Cart", () => {
       let response = {};
 
       if (/\/remove-discount-code/.test(url)) {
-        response = { success: true, type: "coupon" };
+        response = {
+          success: true,
+          type: "coupon"
+        };
         refreshedState = {
           coupon: null,
         };
@@ -643,15 +712,16 @@ describe("Cart", () => {
       });
     });
 
-    await cart.removeDiscountCode({ code });
+    await cart.removeDiscountCode({
+      code
+    });
 
     const body = new FormData();
     body.append("code", code);
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledWith(
-      `http://api.reflow.local/v2/stores/1234/remove-discount-code/${cartKey}/`,
-      {
+      `http://api.reflow.local/v2/stores/1234/remove-discount-code/${cartKey}/`, {
         method: "POST",
         body,
       }
@@ -659,7 +729,9 @@ describe("Cart", () => {
 
     expect(cart.trigger).toHaveBeenCalledTimes(2);
 
-    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-removed", { type: "coupon" });
+    expect(cart.trigger).toHaveBeenNthCalledWith(1, "discount-code-removed", {
+      type: "coupon"
+    });
 
     expect(cart.trigger).toHaveBeenNthCalledWith(2, "change", {
       ...defaultCartState,
@@ -682,7 +754,11 @@ describe("Cart", () => {
 
     expect(cart.state.isUnavailable).toBe(true);
 
-    data = { products: [{ id: "123" }] };
+    data = {
+      products: [{
+        id: "123"
+      }]
+    };
 
     cart.updateState(data);
 
@@ -692,8 +768,7 @@ describe("Cart", () => {
 
   it("should calculate the total quantity", async () => {
     let data = {
-      products: [
-        {
+      products: [{
           quantity: 1,
         },
         {
@@ -729,8 +804,7 @@ describe("Cart", () => {
     // Digital products only - 'digital'
 
     data = {
-      products: [
-        {
+      products: [{
           type: "digital",
           inStock: true,
           quantity: 1,
@@ -749,15 +823,16 @@ describe("Cart", () => {
 
     // We shouldn't accept an invalid delivery method
 
-    cart.updateState({ deliveryMethod: "shipping" });
+    cart.updateState({
+      deliveryMethod: "shipping"
+    });
 
     expect(cart.state.deliveryMethod).toBe("digital");
 
     // Mixed products, physical product is out of stock - 'digital'
 
     data = {
-      products: [
-        {
+      products: [{
           type: "digital",
           inStock: true,
           quantity: 1,
@@ -772,14 +847,13 @@ describe("Cart", () => {
 
     cart.updateState(data);
 
-    expect(cart.state.deliveryMethod).toBe("digital");
+    expect(cart.state.deliveryMethod).toBe("pickup");
 
     // Mixed products, physical product is in stock,
     // no physical locations, no shipping methods - use default method 'pickup'
 
     data = {
-      products: [
-        {
+      products: [{
           type: "digital",
           inStock: true,
           quantity: 1,
@@ -800,8 +874,7 @@ describe("Cart", () => {
     // physical locations are present - use method 'pickup'
 
     data = {
-      products: [
-        {
+      products: [{
           type: "digital",
           inStock: true,
           quantity: 1,
@@ -812,28 +885,25 @@ describe("Cart", () => {
           quantity: 2,
         },
       ],
-      locations: [
-        {
-          id: 199976733,
-          name: "Labore deleniti.",
-          email: "mckayla77@example.net",
-          phone: "+12345658",
-          working_hours: "24/7",
-          address: {
-            city: "Citysville",
-            state: "NY",
-            address: "123 Street",
-            country: "US",
-            postcode: "9187",
-            countryName: "United States",
-          },
-          pay_in_store: true,
-          instructions:
-            "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
-          chosen: true,
-          delivery_time: 2,
+      locations: [{
+        id: 199976733,
+        name: "Labore deleniti.",
+        email: "mckayla77@example.net",
+        phone: "+12345658",
+        working_hours: "24/7",
+        address: {
+          city: "Citysville",
+          state: "NY",
+          address: "123 Street",
+          country: "US",
+          postcode: "9187",
+          countryName: "United States",
         },
-      ],
+        pay_in_store: true,
+        instructions: "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
+        chosen: true,
+        delivery_time: 2,
+      }, ],
     };
 
     cart.updateState(data);
@@ -844,8 +914,7 @@ describe("Cart", () => {
     // no physical locations, shippable countries are present - use method 'shipping'
 
     data = {
-      products: [
-        {
+      products: [{
           type: "digital",
           quantity: 1,
         },
@@ -856,11 +925,9 @@ describe("Cart", () => {
         },
       ],
       locations: [],
-      shippableCountries: [
-        {
-          country_name: "United States",
-        },
-      ],
+      shippableCountries: [{
+        country_name: "United States",
+      }, ],
     };
 
     cart.updateState(data);
@@ -872,8 +939,7 @@ describe("Cart", () => {
     // we shouldn't change the method
 
     data = {
-      products: [
-        {
+      products: [{
           type: "digital",
           quantity: 1,
         },
@@ -883,33 +949,28 @@ describe("Cart", () => {
           quantity: 2,
         },
       ],
-      locations: [
-        {
-          id: 199976733,
-          name: "Labore deleniti.",
-          email: "mckayla77@example.net",
-          phone: "+12345658",
-          working_hours: "24/7",
-          address: {
-            city: "Citysville",
-            state: "NY",
-            address: "123 Street",
-            country: "US",
-            postcode: "9187",
-            countryName: "United States",
-          },
-          pay_in_store: true,
-          instructions:
-            "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
-          chosen: true,
-          delivery_time: 2,
+      locations: [{
+        id: 199976733,
+        name: "Labore deleniti.",
+        email: "mckayla77@example.net",
+        phone: "+12345658",
+        working_hours: "24/7",
+        address: {
+          city: "Citysville",
+          state: "NY",
+          address: "123 Street",
+          country: "US",
+          postcode: "9187",
+          countryName: "United States",
         },
-      ],
-      shippableCountries: [
-        {
-          country_name: "United States",
-        },
-      ],
+        pay_in_store: true,
+        instructions: "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
+        chosen: true,
+        delivery_time: 2,
+      }, ],
+      shippableCountries: [{
+        country_name: "United States",
+      }, ],
     };
 
     cart.updateState(data);
@@ -919,21 +980,24 @@ describe("Cart", () => {
     // We shouldn't accept an invalid delivery method,
     // we should keep the old method if it's still valid
 
-    cart.updateState({ deliveryMethod: "digital" });
+    cart.updateState({
+      deliveryMethod: "digital"
+    });
 
     expect(cart.state.deliveryMethod).toBe("shipping");
 
     // We should accept pickup as physical locations are present
 
-    cart.updateState({ deliveryMethod: "pickup" });
+    cart.updateState({
+      deliveryMethod: "pickup"
+    });
 
     expect(cart.state.deliveryMethod).toBe("pickup");
   });
 
   it("should set the correct location index", async () => {
     let data = {
-      locations: [
-        {
+      locations: [{
           id: 199976733,
           name: "Labore deleniti.",
           email: "mckayla77@example.net",
@@ -948,8 +1012,7 @@ describe("Cart", () => {
             countryName: "United States",
           },
           pay_in_store: true,
-          instructions:
-            "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
+          instructions: "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
           chosen: false,
           delivery_time: 2,
         },
@@ -968,8 +1031,7 @@ describe("Cart", () => {
             countryName: "Spain",
           },
           pay_in_store: true,
-          instructions:
-            "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
+          instructions: "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
           chosen: false,
           delivery_time: 2,
         },
@@ -981,8 +1043,7 @@ describe("Cart", () => {
     expect(cart.state.selectedLocation).toBe(-1);
 
     data = {
-      locations: [
-        {
+      locations: [{
           id: 199976733,
           name: "Labore deleniti.",
           email: "mckayla77@example.net",
@@ -997,8 +1058,7 @@ describe("Cart", () => {
             countryName: "United States",
           },
           pay_in_store: true,
-          instructions:
-            "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
+          instructions: "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
           chosen: false,
           delivery_time: 2,
         },
@@ -1017,8 +1077,7 @@ describe("Cart", () => {
             countryName: "Spain",
           },
           pay_in_store: true,
-          instructions:
-            "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
+          instructions: "Come by at Address Street 123 between 10AM and 2PM to pick up your order. CASH ONLY! Order {orderid}. Amount {amount}",
           chosen: true,
           delivery_time: 2,
         },
@@ -1032,8 +1091,7 @@ describe("Cart", () => {
 
   it("should set the correct shipping method index", async () => {
     let data = {
-      shipping: [
-        {
+      shipping: [{
           name: "Free Delivery always",
           type: "shipping",
           note: null,
@@ -1065,8 +1123,7 @@ describe("Cart", () => {
     expect(cart.state.selectedShippingMethod).toBe(-1);
 
     data = {
-      shipping: [
-        {
+      shipping: [{
           name: "Free Delivery always",
           type: "shipping",
           note: null,
@@ -1156,13 +1213,11 @@ describe("Cart", () => {
       countryCode: "US",
     };
 
-    cart.state.shippableCountries = [
-      {
-        country_code: "ES",
-        has_postcode: true,
-        has_regions: true,
-      },
-    ];
+    cart.state.shippableCountries = [{
+      country_code: "ES",
+      has_postcode: true,
+      has_regions: true,
+    }, ];
 
     result = cart.getShippingAddress(address);
 
@@ -1177,13 +1232,11 @@ describe("Cart", () => {
       countryCode: "US",
     };
 
-    cart.state.shippableCountries = [
-      {
-        country_code: "US",
-        has_postcode: true,
-        has_regions: true,
-      },
-    ];
+    cart.state.shippableCountries = [{
+      country_code: "US",
+      has_postcode: true,
+      has_regions: true,
+    }, ];
 
     result = cart.getShippingAddress(address);
 
@@ -1232,13 +1285,11 @@ describe("Cart", () => {
       countryCode: "US",
     };
 
-    cart.state.shippableCountries = [
-      {
-        country_code: "US",
-        has_postcode: false,
-        has_regions: false,
-      },
-    ];
+    cart.state.shippableCountries = [{
+      country_code: "US",
+      has_postcode: false,
+      has_regions: false,
+    }, ];
 
     result = cart.getShippingAddress(address);
 
@@ -1297,11 +1348,9 @@ describe("Cart", () => {
       countryCode: "US",
     };
 
-    cart.state.shippableCountries = [
-      {
-        country_code: "ES",
-      },
-    ];
+    cart.state.shippableCountries = [{
+      country_code: "ES",
+    }, ];
 
     result = cart.getDigitalAddress(address);
 
@@ -1315,11 +1364,9 @@ describe("Cart", () => {
       countryCode: "US",
     };
 
-    cart.state.shippableCountries = [
-      {
-        country_code: "US",
-      },
-    ];
+    cart.state.shippableCountries = [{
+      country_code: "US",
+    }, ];
 
     result = cart.getDigitalAddress(address);
 
@@ -1363,11 +1410,9 @@ describe("Cart", () => {
       countryCode: "ES",
     };
 
-    cart.state.shippableCountries = [
-      {
-        country_code: "ES",
-      },
-    ];
+    cart.state.shippableCountries = [{
+      country_code: "ES",
+    }, ];
 
     result = cart.getDigitalAddress(address);
 

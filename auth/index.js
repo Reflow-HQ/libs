@@ -2,6 +2,10 @@ import {
   initializePaddle,
   Paddle
 } from '@paddle/paddle-js';
+import PopupWindow from '../helpers/PopupWindow';
+import PaddleManageSubscriptionDialog from '../helpers/dialogs/PaddleManageSubscriptionDialog';
+import LoadingDialog from '../helpers/dialogs/LoadingDialog';
+import Api from '../helpers/Api.mjs';
 
 class Auth {
   constructor({
@@ -11,7 +15,6 @@ class Auth {
     testMode = false
   }) {
     this.storeID = storeID;
-    this.apiBase = apiBase || `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
     this.testMode = testMode || false;
 
     this._boundCounter = 0;
@@ -22,37 +25,29 @@ class Auth {
 
     this._listeners = {};
 
+    this._isLoading = false;
+
     this._authToken = null;
 
-    this._popupWindow = null;
-    this._checkPopupWindowClosedInterval = null;
-    this._checkPageRefocusInterval = null;
+    this._api = new Api({
+      storeID,
+      apiBase,
+      testMode
+    })
+
+    this._popupWindow = new PopupWindow({});
+    this._paddleManageSubscriptionDialog = new PaddleManageSubscriptionDialog({
+      auth: this,
+      onClose: this.refresh.bind(this)
+    });
+    this._loadingDialog = new LoadingDialog({});
 
     this._paddleSubscribeCheckout = null;
-    this._paddleUpdatePaymentCheckout = null;
-    this._paddleCheckoutSuccessFlag = false;
     this._paddleSubscriptionCheckInterval = null;
 
     if (autoBind) {
       this.bind();
     }
-  }
-
-  api(endpoint, options) {
-    return fetch(this.apiBase + "/stores/" + this.storeID + endpoint, options).then(
-      async (response) => {
-        let data = await response.json();
-
-        if (!response.ok) {
-          let err = Error(data.error || "HTTP error");
-          err.status = response.status;
-          err.data = data;
-          throw err;
-        }
-
-        return data;
-      }
-    );
   }
 
   get(key, def = null) {
@@ -127,6 +122,10 @@ class Auth {
     }
   }
 
+  isLoading() {
+    return this._isLoading;
+  }
+
   get user() {
     return this.get("user");
   }
@@ -195,11 +194,11 @@ class Auth {
 
     this._messageListener = (e) => {
 
-      if (!this._popupWindow) {
+      if (!this._popupWindow.getWindowInstance()) {
         return;
       }
 
-      if (e.source !== this._popupWindow) {
+      if (e.source !== this._popupWindow.getWindowInstance()) {
         return;
       }
 
@@ -224,9 +223,9 @@ class Auth {
       return;
     }
 
-    clearInterval(this._checkPopupWindowClosedInterval);
-    clearInterval(this._checkPageRefocusInterval);
     clearInterval(this._paddleSubscriptionCheckInterval);
+
+    this._popupWindow.unbind();
 
     window.removeEventListener("message", this._messageListener);
 
@@ -284,7 +283,7 @@ class Auth {
     // Requests the user from the server without caching
 
     try {
-      let result = await this.api("/auth/state", {
+      let result = await this._api.fetch("auth/state", {
         headers: {
           Authorization: `Bearer ${this.get("key")}`,
         },
@@ -341,7 +340,7 @@ class Auth {
         body.set(key, val);
       }
 
-      let result = await this.api("/auth/user", {
+      let result = await this._api.fetch("auth/user", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.get("key")}`,
@@ -410,11 +409,11 @@ class Auth {
 
   async signIn(options = {}) {
 
-    if (this.isSignedIn() || this._isLoading) {
+    if (this.isSignedIn() || this.isLoading()) {
       return;
     }
 
-    this.openPopupWindow({
+    this._popupWindow.open({
       url: null,
       label: 'reflow-signin',
       size: {
@@ -427,21 +426,15 @@ class Auth {
 
     try {
       this._isLoading = true;
-      response = await this.api("/auth/urls");
+      response = await this._api.fetch("auth/urls");
       this._isLoading = false;
 
       if (!response.signinURL) {
         throw new Error("Unable to retrieve the auth URL");
       }
     } catch (e) {
-      console.error("Reflow: " + e);
-      if (e.data) console.error(e.data);
-      if (e.error) console.error(e.error);
-
-      this.closePopupWindow();
-
+      this._popupWindow.close();
       this._isLoading = false;
-
       throw e;
     }
 
@@ -459,11 +452,11 @@ class Auth {
     }
 
     url.search = params.toString();
-    this.setPopupWindowURL(url.toString());
+    this._popupWindow.setURL(url.toString());
 
-    this.startPageRefocusInterval({
+    this._popupWindow.startPageRefocusInterval({
 
-      stopIntervalClause: (() => this.isSignedIn() || this.isPopupWindowClosed()).bind(this),
+      stopIntervalClause: (() => this.isSignedIn() || this._popupWindow.isClosed()).bind(this),
 
       onRefocus: (async () => {
 
@@ -474,11 +467,11 @@ class Auth {
         let status;
 
         try {
-          status = await this.api("/auth/validate-token?auth-token=" + this._authToken, {
+          status = await this._api.fetch("auth/validate-token?auth-token=" + this._authToken, {
             method: "POST",
           });
         } catch (e) {
-          clearInterval(this._checkPageRefocusInterval);
+          this._popupWindow.stopPageRefocusInterval();
           return;
         }
 
@@ -531,16 +524,13 @@ class Auth {
     }
 
     try {
-      await this.api("/auth/signout", {
+      await this._api.fetch("auth/signout", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.get("key")}`,
         },
       });
-    } catch (e) {
-      console.error("Reflow: " + e);
-      if (e.data) console.error(e.data);
-    }
+    } catch (e) {}
 
     // Regardless of the response, delete the local session and signout components
 
@@ -558,24 +548,17 @@ class Auth {
   }
 
   async sendPasswordResetLink() {
-    try {
-      return await this.api("/auth/user/send-reset-password-email", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.get("key")}`,
-        },
-      });
-    } catch (e) {
-      console.error("Reflow: Unable to send reset password link email.");
-      if (e.data) console.error(e.data);
-
-      throw e;
-    }
+    return await this._api.fetch("auth/user/send-reset-password-email", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.get("key")}`,
+      },
+    });
   }
 
   async createSubscription(data) {
 
-    if (this._isLoading) {
+    if (this.isLoading()) {
       return;
     }
 
@@ -598,7 +581,7 @@ class Auth {
       // Stripe checkout is displayed in a Stripe-hosted page loaded inside a popup window.
       // Open the window in an empty state immediately to make sure the browser understands it was opened due to user action.
 
-      this.openPopupWindow({
+      this._popupWindow.open({
         url: null,
         label: 'reflow-subscription',
         size: {
@@ -625,7 +608,7 @@ class Auth {
 
       this._isLoading = true;
 
-      checkoutData = await this.api("/auth/user/subscribe", {
+      checkoutData = await this._api.fetch("auth/user/subscribe", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.get("key")}`,
@@ -636,14 +619,8 @@ class Auth {
       this._isLoading = false;
 
     } catch (e) {
-
-      console.error("Reflow: " + e);
-      if (e.data) console.error(e.data);
-
-      this.closePopupWindow();
-
+      this._popupWindow.close();
       this._isLoading = false;
-
       throw e;
     }
 
@@ -651,10 +628,10 @@ class Auth {
 
       // Stripe subscriptions are handled in a popup window that redirects to the checkout url.
 
-      this.setPopupWindowURL(checkoutData.checkoutURL);
+      this._popupWindow.setURL(checkoutData.checkoutURL);
 
-      this.startPageRefocusInterval({
-        stopIntervalClause: this.isPopupWindowClosed.bind(this),
+      this._popupWindow.startPageRefocusInterval({
+        stopIntervalClause: () => this._popupWindow.isClosed(),
         onRefocus: this.refresh.bind(this)
       });
     }
@@ -668,27 +645,22 @@ class Auth {
           seller: checkoutData.seller_id,
           eventCallback: function (data) {
 
-            if (data.name == "checkout.completed") {
-              this._paddleCheckoutSuccessFlag = true;
-            }
+            if (data.name == "checkout.completed") {}
 
-            if (data.name == "checkout.closed" && this._paddleCheckoutSuccessFlag) {
+            if (data.name == "checkout.closed" && data.data.status == 'completed') {
 
-              this._paddleCheckoutSuccessFlag = false;
-
-              this.openDialog();
-              this.renderLoadingDialog();
+              this._loadingDialog.open();
 
               clearInterval(this._paddleSubscriptionCheckInterval);
               this._paddleSubscriptionCheckInterval = setInterval(async () => {
 
-                let res = await this.api(`/users/${this.user.id}/subscription/status`, {
+                let res = await this._api.fetch(`users/${this.user.id}/subscription/status`, {
                   method: "GET"
                 });
 
                 if (res.is_subscribed) {
                   clearInterval(this._paddleSubscriptionCheckInterval);
-                  this.closeDialog();
+                  this._loadingDialog.close();
                   this.refresh();
                 }
 
@@ -696,7 +668,7 @@ class Auth {
 
               setTimeout(() => {
                 clearInterval(this._paddleSubscriptionCheckInterval);
-                this.closeDialog();
+                this._loadingDialog.close();
               }, 1000 * 60 * 5) // Give up after 5 mins
             }
           }.bind(this)
@@ -730,7 +702,7 @@ class Auth {
   }
 
   async modifySubscription() {
-    if (!this.isSignedIn() || this._isLoading) {
+    if (!this.isSignedIn() || this.isLoading()) {
       console.error("Reflow: Can't modify subscription, user is not signed in");
       return;
     }
@@ -739,7 +711,7 @@ class Auth {
 
       // If the subscription is stripe based, prepare a popup window for the Stripe-hosted management page.
 
-      this.openPopupWindow({
+      this._popupWindow.open({
         url: null,
         label: 'reflow-subscription',
         size: {
@@ -754,7 +726,7 @@ class Auth {
     try {
       this._isLoading = true;
 
-      response = await this.api("/auth/user/manage-subscription", {
+      response = await this._api.fetch("auth/user/manage-subscription", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${this.get("key")}`,
@@ -764,620 +736,26 @@ class Auth {
       this._isLoading = false;
 
     } catch (e) {
-
-      console.error("Reflow: " + e);
-      if (e.data) console.error(e.data);
-
-      this.closePopupWindow();
-
+      this._popupWindow.close();
       this._isLoading = false;
-
       throw e;
     }
 
     if (response.provider == 'stripe') {
 
-      this.setPopupWindowURL(response.subscriptionManagementURL);
+      this._popupWindow.setURL(response.subscriptionManagementURL);
 
-      this.startPageRefocusInterval({
-        stopIntervalClause: this.isPopupWindowClosed.bind(this),
+      this._popupWindow.startPageRefocusInterval({
+        stopIntervalClause: () => this._popupWindow.isClosed(),
         onRefocus: this.refresh.bind(this)
       });
     }
 
     if (response.provider == 'paddle') {
-
-      this.openDialog();
-      this.renderPaddleSubscriptionDialog(response);
+      this._paddleManageSubscriptionDialog.open(response);
     }
   }
 
-  openPopupWindow(options) {
-
-    if (this._popupWindow) {
-      // Already open
-      this._popupWindow.focus();
-      return;
-    }
-
-    const {
-      url,
-      label,
-    } = options;
-
-    const {
-      w,
-      h
-    } = options.size;
-    const y = window.outerHeight / 2 + window.screenY - h / 2;
-    const x = window.outerWidth / 2 + window.screenX - w / 2;
-
-    this._popupWindow = window.open(
-      url || "about:blank",
-      label,
-      `width=${w},height=${h},top=${y},left=${x}`
-    );
-
-    // This interval cleans up the _popupWindow after the popup window is closed.
-
-    clearInterval(this._checkPopupWindowClosedInterval);
-    this._checkPopupWindowClosedInterval = setInterval(() => {
-      try {
-        if (this._popupWindow && this._popupWindow.closed) {
-          this._popupWindow = null;
-        }
-      } catch (e) {}
-
-      if (!this._popupWindow) {
-        clearInterval(this._checkPopupWindowClosedInterval);
-      }
-    }, 500);
-
-  }
-
-  setPopupWindowURL(url) {
-    this._popupWindow.location = url;
-  }
-
-  closePopupWindow() {
-    if (this._popupWindow) {
-      this._popupWindow.close();
-      this._popupWindow = null;
-    }
-  }
-
-  isPopupWindowOpen() {
-    return !!this._popupWindow;
-  }
-
-  isPopupWindowClosed() {
-    return !this._popupWindow;
-  }
-
-  startPageRefocusInterval(options) {
-
-    // Run a callback function when the focus goes back on the main window (regardless if _popupWindow was closed)
-
-    const {
-      stopIntervalClause,
-      onRefocus
-    } = options;
-
-    let hasFocus = document.hasFocus();
-
-    clearInterval(this._checkPageRefocusInterval);
-    this._checkPageRefocusInterval = setInterval(async () => {
-
-      if (!hasFocus && document.hasFocus()) {
-
-        // We've selected something else and then switched back to this page/window.
-
-        onRefocus();
-      }
-
-      if (stopIntervalClause()) {
-
-        // Clear the interval and exit when the provided function returns true.
-
-        clearInterval(this._checkPageRefocusInterval);
-      }
-
-      // This line makes sure the focus has been lost in the first place,
-      // in case hasFocus has been true from the beginning.
-
-      hasFocus = document.hasFocus();
-    }, 250);
-
-  }
-
-  openDialog() {
-
-    if (!this._dialog) {
-      this._dialog = document.createElement('dialog');
-      this._dialog.classList.add('ref-dialog');
-      document.body.append(this._dialog);
-      this._dialog.addEventListener('close', () => {
-        this.closeDialog();
-      });
-    }
-
-    if (!this._dialog.open) {
-      this._dialog.showModal();
-    }
-  }
-
-  closeDialog() {
-    if (this._dialog) {
-      this._dialog.close();
-      this._dialog.remove();
-      this._dialog = null;
-    }
-  }
-
-  renderLoadingDialog() {
-    let spinner = document.createElement('div');
-    spinner.innerHTML = `Loading`;
-    this._dialog.append(spinner);
-  }
-
-  renderPaddleSubscriptionDialog(data) {
-
-    this._dialog.innerHTML = `
-<div style="display:flex; justify-content:space-between;">
-  <h3 style="font-size: 1.6em; margin-top: 0;">Manage Subscription</h3>
-  <span title="Close" style="font-size: 2em; cursor: pointer; line-height: 1;" class="ref-sub-dialog-close">×</span>
-</div>
-
-<div>Status: ${data.subscription.status}</div>
-
-<div>
-  <h4 style="font-size: 1.4em;" class="ref-plans-title">Update Your Plan</h4>
-  <div class="ref-plans"></div>
-  <button style="font-size: 1em;" class="ref-update-plan" disabled>Update Plan</button>
-</div>
-  
-<div>
-  <button style="font-size: 1em; margin: 1em 0;" class="ref-edit-payment">Edit Payment Method</button>
-</div>
-
-<div>
-  <a class="ref-sub-cancel ref-text-danger ref-cursor-pointer ref-fs-md" target="_blank">Cancel Subscription</a>
-</div>
-
-<div>
-  <h4 style="font-size: 1.4em;">Billing Information</h4>
-  <p class="ref-sub-billing-payment"><b></b> <span></span></p>
-  <p class="ref-sub-billing-name"><b>Name</b> <span></span></p>
-  <p class="ref-sub-billing-email"><b>Email</b> <span></span></p>
-  <p class="ref-sub-billing-address"><b>Address</b> <span></span></p>
-  <p class="ref-sub-billing-tax"><b>Tax ID</b> <span></span></p>
-</div>
-
-<div>
-  <h4 style="font-size: 1.4em;">Recent Payments</h4>
-  <div class="ref-sub-payments"></div>
-</div>
-`;
-
-    const close = this._dialog.querySelector('.ref-sub-dialog-close');
-    close.addEventListener('click', (e) => {
-      this.closeDialog();
-    });
-
-    console.log(data);
-
-    // Update plan
-
-    // TODO: don't use _formatted
-
-    let currentPlan = data.subscription.plan;
-    let currentPrice = data.subscription.price;
-    let refPlansContainer = this._dialog.querySelector('.ref-plans');
-
-    if (!data.available_plans.length) {
-
-      // Can't update the plan.
-
-      renderUpdateOption({
-        plan: currentPlan,
-        prices: [currentPrice]
-      }, refPlansContainer, data.subscription);
-
-      this._dialog.querySelector('.ref-update-plan').remove();
-      this._dialog.querySelector('.ref-plans-title').textContent = 'Current Plan';
-
-    } else {
-
-      let isCurrentAvailable = false;
-
-      for (const updateOption of data.available_plans) {
-
-        if (currentPlan.id != updateOption.plan.id) continue;
-
-        for (const price of updateOption.prices) {
-          if (price.id === currentPrice.id) {
-            isCurrentAvailable = true;
-            break;
-          }
-        }
-
-        if (isCurrentAvailable) {
-          break;
-        }
-      }
-
-      if (!isCurrentAvailable) {
-
-        // The current plan is no longer available.
-        // Add the current plan as the first "available" plan. 
-        // It will be selectable but not usable for updates.
-
-        currentPlan.is_disabled = true;
-        currentPrice.is_disabled = true;
-
-        renderUpdateOption({
-          plan: currentPlan,
-          prices: [currentPrice]
-        }, refPlansContainer, data.subscription);
-      }
-
-      for (const updateOption of data.available_plans) {
-        renderUpdateOption(updateOption, refPlansContainer, data.subscription);
-      }
-
-      this._dialog.addEventListener('click', async (e) => {
-
-        if (!this._dialog) return;
-
-        let selectedPrice = this._dialog.querySelector('.ref-price.ref-price-selected');
-        let clickedPrice = e.target.closest('.ref-price');
-
-        if (clickedPrice) {
-
-          selectedPrice && selectedPrice.classList.remove('ref-price-selected');
-
-          clickedPrice.classList.add('ref-price-selected');
-
-          this._dialog.querySelector('.ref-update-plan').disabled = clickedPrice.dataset.is_disabled || clickedPrice.dataset.is_current;
-
-          this._dialog.querySelectorAll('.ref-price-proration-info').forEach(element => {
-            element.style.display = 'none';
-          });
-
-          clickedPrice.querySelector('.ref-price-proration-info') && (clickedPrice.querySelector('.ref-price-proration-info').style.display = 'block');
-        }
-
-        let updatePlanButton = e.target.closest('.ref-update-plan');
-        if (updatePlanButton) {
-
-          if (selectedPrice.dataset.is_disabled || selectedPrice.dataset.is_current || !selectedPrice.dataset.price_id) return;
-
-          if (!this.isSignedIn() || this._isLoading) {
-            console.error("Reflow: Can't modify subscription, user is not signed in");
-            return;
-          }
-
-          let response;
-          let loadingIndicator = document.createElement("span");
-          loadingIndicator.className = "ref-loading-indicator";
-          loadingIndicator.textContent = " Loading...";
-
-          try {
-
-            this._isLoading = true;
-
-            updatePlanButton.append(loadingIndicator);
-
-            let body = new FormData();
-            body.set('price_id', selectedPrice.dataset.price_id);
-
-            response = await this.api("/auth/user/update-plan", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${this.get("key")}`,
-              },
-              body
-            });
-
-            this._isLoading = false;
-            loadingIndicator && loadingIndicator.remove();
-
-          } catch (e) {
-
-            // TODO: how should we handle errors here? add something similar to Cart.onMessage? 
-
-            console.error("Reflow: " + e);
-            if (e.data) console.error(e.data);
-            this._isLoading = false;
-            loadingIndicator && loadingIndicator.remove();
-            throw e;
-          }
-
-          // TODO: how do we handle success here? We can get the update sub from paddle
-          // but that does not guarantee we've received and handled the webhook.
-
-          let paddleSubscriptionAfterUpdate = response.paddle_subscription;
-          let newPrice = paddleSubscriptionAfterUpdate.items[0].price;
-
-          // Refresh the user and rerender the dialog to show the new subscription state
-          alert(`New plan: #${newPrice.id} ${newPrice.description}`);
-        }
-
-        let invoiceLink = e.target.closest('.ref-invoice-link');
-        if (invoiceLink) {
-          e.preventDefault();
-
-          try {
-
-            this._isLoading = true;
-
-            let response = await this.api("/auth/user/get-invoice-pdf/" + invoiceLink.dataset.paymentId, {
-              headers: {
-                Authorization: `Bearer ${this.get("key")}`,
-              },
-            });
-
-            this._isLoading = false;
-
-            if (!response.invoice_pdf_url) {
-              throw new Error("Unable to retrieve the auth URL");
-            }
-
-            // Trigger browser download by setting a hidden iframe's src.
-            this._dialog.querySelector('#ref-invoice-download-iframe').src = response.invoice_pdf_url;
-
-          } catch (e) {
-            console.error("Reflow: " + e);
-            if (e.data) console.error(e.data);
-            this._isLoading = false;
-            throw e;
-          }
-
-        }
-
-      });
-    }
-
-    function renderUpdateOption(updateOption, container, subscription) {
-
-      let currentPrice = subscription.price;
-
-      let planHTML = document.createElement('div');
-      planHTML.innerHTML = `<div style="border: 1px solid #ccc; padding: 1em; margin-bottom: 1.5em;" class="ref-plan">
-        <h5 style="margin-top: 0;">${updateOption.plan.name}</h5>
-        <div class="ref-prices" style="display: flex;"></div>
-      </div>`;
-
-      for (const price of updateOption.prices) {
-        let priceHTML = document.createElement('div');
-        priceHTML.style = "border: 1px solid #ccc; padding: 1em; margin-bottom: 1em; margin-right: 1em; cursor: pointer; max-width: 350px;";
-        priceHTML.dataset.price_id = price.id;
-        priceHTML.className = 'ref-price';
-        priceHTML.innerHTML = `<p>${price.price_formatted + ' / ' + price.billing_period}</p>`;
-
-        if (price.id == currentPrice.id) {
-
-          let currentBadge = document.createElement('span')
-          currentBadge.textContent = 'Current Plan' + (price.is_disabled ? ' (No Longer Available)' : '');
-          currentBadge.style.color = '#fff';
-          currentBadge.style.padding = '.5em';
-          currentBadge.style.borderRadius = '1em';
-          priceHTML.prepend(currentBadge);
-
-          priceHTML.dataset.is_current = true;
-
-          if (price.is_disabled) {
-            priceHTML.style.borderColor = "gray";
-            priceHTML.style.background = "lightgray";
-            priceHTML.dataset.is_disabled = true;
-            currentBadge.style.background = "lightgray";
-          } else {
-            priceHTML.style.color = "blue";
-            priceHTML.style.borderColor = "blue";
-            currentBadge.style.background = "blue";
-          }
-
-        } else {
-
-          let prorationInfo = document.createElement('div');
-          let date, prorationText;
-          prorationInfo.style = 'display: none;'
-          prorationInfo.classList.add('ref-price-proration-info');
-
-          if (data.subscription.status == 'trialing') {
-
-            // Trial will stop. Billing date will be now.
-            date = new Date();
-            prorationText = 'Changing your subscription plan will stop your free trial. You will be billed immediately to reflect the new pricing.';
-
-          } else if (currentPrice.billing_period != price.billing_period || (!currentPrice.price && price.price)) {
-
-            // Changes billing date.
-            date = new Date();
-            prorationText = 'You will be billed immediately to reflect the new pricing.';
-
-          } else {
-
-            // Keeps billing date.
-            date = new Date(data.subscription.next_billing * 1000);
-            prorationText = 'Your next payment will be prorated to account for the updated pricing. The billing schedule will remain the same.';
-          }
-
-          date = date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          });
-          prorationInfo.innerHTML = `<b>Next payment on: ${date}.</b><p>${prorationText}</p>`;
-
-          priceHTML.append(prorationInfo);
-        }
-
-
-        planHTML.querySelector('.ref-prices').append(priceHTML);
-      }
-
-      container.append(planHTML);
-    }
-
-    // Cancel button or displaying the canceled status
-
-    if (data.cancel_url) {
-
-      this._dialog.querySelector('.ref-sub-cancel').addEventListener('click', (e) => {
-
-        this.openPopupWindow({
-          url: data.cancel_url,
-          label: 'reflow-subscription',
-          size: {
-            w: 500,
-            h: 500
-          }
-        });
-
-        this.startPageRefocusInterval({
-          stopIntervalClause: this.isPopupWindowClosed.bind(this),
-          onRefocus: (() => {
-            // Fetch the subscription data and rerender this dialog
-            this.modifySubscription();
-          }).bind(this)
-        });
-
-      });
-    } else if (data.subscription.cancel_at) {
-      let date = new Date(data.subscription.cancel_at * 1000).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      this._dialog.querySelector('.ref-sub-cancel').textContent = 'Your subscription will be canceled on ' + date;
-    } else {
-      this._dialog.querySelector('.ref-sub-cancel').remove();
-    }
-
-    // Update payment
-
-    let transactionID = data.update_payment_transaction_id;
-    let sellerID = data.paddle_seller_id;
-
-    if (!transactionID || !sellerID) {
-      this._dialog.querySelector('.ref-edit-payment').remove();
-    } else {
-      this._dialog.querySelector('.ref-edit-payment').addEventListener('click', async (e) => {
-
-        if (!this._paddleUpdatePaymentCheckout) {
-
-          this._paddleUpdatePaymentCheckout = await initializePaddle({
-            environment: this.testMode ? 'sandbox' : 'production',
-            seller: sellerID,
-            eventCallback: function (data) {
-
-              if (data.name == "checkout.completed") {}
-
-              if (data.name == "checkout.closed") {
-                this.modifySubscription();
-              }
-
-            }.bind(this)
-          });
-        }
-
-        this.closeDialog();
-
-        this._paddleUpdatePaymentCheckout.Checkout.open({
-          transactionId: data.update_payment_transaction_id
-        });
-
-      });
-    }
-
-    // Billing info
-
-    let paymentMethod = this._dialog.querySelector('.ref-sub-billing-payment');
-
-    if (data.billing.payment_method.type == 'card') {
-
-      paymentMethod.firstElementChild.textContent = 'Card';
-
-      let card = data.billing.payment_method.card;
-      paymentMethod.lastElementChild.textContent = `${card.type[0].toUpperCase()}${card.type.substring(1)} ****${card.last4}`;
-
-      let expirationDate = new Date(card.expiry_year, card.expiry_month);
-      let today = new Date();
-      let expires = document.createElement('span');
-
-      let monthDiff = expirationDate.getMonth() - today.getMonth() + 12 * (expirationDate.getFullYear() - today.getFullYear());
-
-      let dateString = expirationDate.toLocaleDateString('en-US', {
-        month: 'short'
-      }) + ' ' + expirationDate.getFullYear().toString().slice(-2);
-
-      if (monthDiff < 0) {
-        expires.textContent = ` (expired on ${dateString})`;
-        expires.classList.add('ref-text-danger');
-      } else if (monthDiff < 6) {
-        expires.textContent = ` (expires on ${dateString})`;
-        expires.classList.add('ref-text-warning');
-      }
-
-      paymentMethod.append(expires);
-
-    } else if (data.billing.payment_method == 'paypal') {
-
-      paymentMethod.firstElementChild.textContent = 'PayPal';
-      // TODO: paypal
-
-    } else {
-      paymentMethod.remove()
-    }
-
-    let name = this._dialog.querySelector('.ref-sub-billing-name');
-    data.billing.name ? name.lastElementChild.textContent = data.billing.name : name.remove();
-
-    let email = this._dialog.querySelector('.ref-sub-billing-email');
-    data.billing.email ? email.lastElementChild.textContent = data.billing.email : email.remove();
-
-    let address = this._dialog.querySelector('.ref-sub-billing-address');
-    data.billing.address ? address.lastElementChild.textContent = `${data.billing.address.line1 || ''} ${data.billing.address.city || ''} ${data.billing.address.country}` : address.remove();
-
-    let tax = this._dialog.querySelector('.ref-sub-billing-tax');
-    data.billing.taxes.tax_ids.length ? tax.lastElementChild.textContent = data.billing.taxes.tax_ids[0].value : tax.remove();
-
-    // Payments
-
-    let paymentsTable = document.createElement("table");
-    paymentsTable.style = "width: 100%; text-align: left;";
-
-    for (const payment of data.recent_payments) {
-      let row = paymentsTable.insertRow();
-
-      let cell = row.insertCell();
-      let a = document.createElement('a');
-      a.href = '#';
-      a.dataset.paymentId = payment.id;
-      a.classList.add('ref-invoice-link');
-      a.textContent = payment.created + ' (↪)';
-      cell.append(a);
-
-      // TODO: dont use _formatted
-      cell = row.insertCell();
-      cell.textContent = payment.grand_total_formatted;
-
-      cell = row.insertCell();
-      cell.textContent = payment.status;
-
-      cell = row.insertCell();
-      cell.textContent = payment.purchased_item;
-    }
-
-    this._dialog.querySelector('.ref-sub-payments').append(paymentsTable);
-
-    let downloadIframe = document.createElement('iframe');
-    downloadIframe.id = 'ref-invoice-download-iframe';
-    downloadIframe.height = 0;
-    downloadIframe.width = 0;
-    this._dialog.querySelector('.ref-sub-payments').append(downloadIframe);
-  }
 }
 
 export default Auth;
