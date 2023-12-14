@@ -122,6 +122,7 @@ export function useSessionSync(options: {
   });
 }
 
+/* Triggers the sign in flow and displays a window with sign in methods */
 export async function signIn(options?: {
   authEndpoint?: string;
   onSuccess?: Function;
@@ -260,6 +261,7 @@ export async function signIn(options?: {
   }
 }
 
+/* Signs out the current user */
 export async function signOut(options?: {
   authEndpoint?: string;
   onSuccess?: Function;
@@ -299,6 +301,8 @@ export async function signOut(options?: {
 
 let subscriptionWindow: Window | null = null;
 
+/* Displays a payment window to the currently signed in user, where they can 
+sign up for the subscription plan at the price given in the priceID argument. */
 export async function createSubscription(options: {
   priceID: number;
   authEndpoint?: string;
@@ -415,6 +419,8 @@ export async function createSubscription(options: {
   }, 250);
 }
 
+/* Opens a window which lets the user change their payment method and billing info, or switch 
+to a different plan if available. */
 export async function modifySubscription(options?: { authEndpoint?: string }) {
   if (!(await isSignedIn())) {
     console.error("Reflow: Can't modify subscription, user is not signed in");
@@ -477,6 +483,7 @@ export async function modifySubscription(options?: { authEndpoint?: string }) {
   }, 500);
 }
 
+/* Returns a boolean indicating whether the user is currently signed in or not */
 export async function isSignedIn(options?: { authEndpoint?: string }): Promise<boolean> {
   let base = apiBase(options?.authEndpoint);
 

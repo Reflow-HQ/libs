@@ -4,7 +4,7 @@ import { User, AuthRefreshChange, Subscription, UpdateUserOptions } from "./auth
 export class ReflowAuth {
   public storeID: number;
   public cookieName: string;
-  public cookieMaxAge: number;
+  public cookieMaxAge: number | undefined;
   public apiBase: string;
   public testMode: boolean;
   protected secret: string;
@@ -13,7 +13,7 @@ export class ReflowAuth {
     storeID,
     secret,
     cookieName = "session",
-    cookieMaxAge = 0,
+    cookieMaxAge,
     apiBase,
     testMode = false,
   }: {
@@ -69,6 +69,9 @@ export class ReflowAuth {
     return !!(await this.subscription());
   }
 
+  /**
+   * Returns the timestamp of the last sync with the Reflow backend
+   */
   public async lastRefresh(): Promise<number | null> {
     return await this.get("_lastRefresh");
   }
@@ -236,9 +239,9 @@ export class ReflowAuth {
    * Sets the isNew flag for the current session. Will create a cookie which
    * expires at the end of the browser session.
    */
-  public async setIsNew() {
+  public async setIsNew(): Promise<void> {
     const cookieStore = cookies();
-    return cookieStore.set(this.cookieName + "-is-new", "1", {
+    cookieStore.set(this.cookieName + "-is-new", "1", {
       httpOnly: true,
     });
   }
@@ -246,7 +249,7 @@ export class ReflowAuth {
   /**
    * Clear the isNew cookie forcefully.
    */
-  public async clearIsNew() {
+  public async clearIsNew(): Promise<void> {
     cookies().set(this.cookieName + "-is-new", "", {
       httpOnly: true,
       maxAge: 0,
