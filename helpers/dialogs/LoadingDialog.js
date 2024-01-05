@@ -21,7 +21,6 @@ class LoadingDialog extends Dialog {
     this._container.style.flexDirection = 'column';
 
     let loading = document.createElement('span');
-    loading.textContent = 'Loading';
     loading.style.marginBottom = '10px';
     this._container.append(loading);
 

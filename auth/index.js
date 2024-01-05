@@ -724,6 +724,7 @@ class Auth {
     let response;
 
     try {
+      this._loadingDialog.open();
       this._isLoading = true;
 
       response = await this._api.fetch("auth/user/manage-subscription", {
@@ -733,11 +734,14 @@ class Auth {
         },
       });
 
+      this._loadingDialog.close();
       this._isLoading = false;
 
     } catch (e) {
       this._popupWindow.close();
+      this._loadingDialog.close();
       this._isLoading = false;
+
       throw e;
     }
 

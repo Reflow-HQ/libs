@@ -29,6 +29,11 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
     this._dialog.addEventListener('click', async (e) => {
 
+      if (e.target.closest('.hyperlink')) {
+        // Don't prevent default normal links
+        return;
+      }
+
       e.preventDefault();
 
       if (this._isLoading) {
@@ -142,37 +147,6 @@ class PaddleManageSubscriptionDialog extends Dialog {
         this.state.price_selected = clicked.price;
 
         this.render();
-      }
-
-      // Invoices
-
-      let invoiceLink = e.target.closest('.ref-invoice-link');
-      if (invoiceLink) {
-
-        try {
-
-          this._isLoading = true;
-
-          let response = await this._auth._api.fetch("auth/user/get-invoice-pdf/" + invoiceLink.dataset.paymentId, {
-            headers: {
-              Authorization: `Bearer ${this._auth.get("key")}`,
-            },
-          });
-
-          this._isLoading = false;
-
-          if (!response.invoice_pdf_url) {
-            throw new Error("Unable to retrieve the auth URL");
-          }
-
-          // Trigger browser download by setting a hidden iframe's src.
-          this._dialog.querySelector('#ref-invoice-download-iframe').src = response.invoice_pdf_url;
-
-        } catch (e) {
-          this._isLoading = false;
-          throw e;
-        }
-
       }
 
       // Cancel subscription
@@ -337,7 +311,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
         mButton.style.width = 'auto';
         mButton.style.padding = '6px 10px';
         mButton.style.background = '#fff';
-        mButton.style.border = '2px solid #aaafb4';
+        mButton.style.border = '1px solid #aaafb4';
         mButton.style.color = '#aaafb4';
         mButton.style.marginRight = '5px';
         planSection.append(mButton);
@@ -429,7 +403,9 @@ class PaddleManageSubscriptionDialog extends Dialog {
       changePlanConfirm.style.marginTop = '3em';
       if (this.state.price_selected.id == this.state.subscription.price.id) {
         changePlanConfirm.disabled = true;
-        changePlanConfirm.style.opacity = '.7';
+        changePlanConfirm.style.opacity = .7;
+        changePlanConfirm.style.background = 'rgb(108 115 119)';
+        changePlanConfirm.style.pointerEvents = 'none';
       }
       planSection.append(changePlanConfirm);
 
@@ -530,7 +506,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
     let paymentMethod = paymentLine.cloneNode();
     paymentMethod.innerHTML = '<b></b><span></span>';
 
-    if (this.state.billing.payment_method.type == 'card') {
+    if (this.state.billing.payment_method && this.state.billing.payment_method.type == 'card') {
 
       paymentMethod.firstElementChild.textContent = 'Card ';
 
@@ -619,15 +595,17 @@ class PaddleManageSubscriptionDialog extends Dialog {
       let cell = row.insertCell();
       cell.style.padding = '0 1.5em .8em 0';
       let a = document.createElement('a');
-      a.href = '#';
-      a.dataset.paymentId = payment.id;
-      a.classList.add('ref-invoice-link');
+      a.classList.add('hyperlink');
+      a.href = this._auth._api.apiBase + "/stores/" + this._auth.storeID + "/auth/get-invoice-pdf/" + payment.id + '?auth_token=' + this._auth.get("key");
+      a.download = 'invoice-' + payment.id;
+      a.target = '_blank';
       a.style.textDecoration = 'none';
       a.style.color = '#383d40';
       a.innerHTML = `
         <span>${this.formatDate(payment.created)} </span>
-        <span style="position: relative; top: 3px;">
-          <svg viewBox="0 0 24 24" width="1.2em" height="1em" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.0002 5H8.2002C7.08009 5 6.51962 5 6.0918 5.21799C5.71547 5.40973 5.40973 5.71547 5.21799 6.0918C5 6.51962 5 7.08009 5 8.2002V15.8002C5 16.9203 5 17.4801 5.21799 17.9079C5.40973 18.2842 5.71547 18.5905 6.0918 18.7822C6.5192 19 7.07899 19 8.19691 19H15.8031C16.921 19 17.48 19 17.9074 18.7822C18.2837 18.5905 18.5905 18.2839 18.7822 17.9076C19 17.4802 19 16.921 19 15.8031V14M20 9V4M20 4H15M20 4L13 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <span style="position: relative; top: 1px;">
+          <svg viewBox="0 0 16 16" width=".8em" height=".8em" fill="currentColor" xmlns="http://www.w3.org/2000/svg">  <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+  <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>
         </span>`;
       cell.append(a);
 
@@ -658,12 +636,6 @@ class PaddleManageSubscriptionDialog extends Dialog {
     }
 
     invoicesSection.append(paymentsTable);
-
-    let downloadIframe = document.createElement('iframe'); // Used for triggering invoice pdf downloads
-    downloadIframe.id = 'ref-invoice-download-iframe';
-    downloadIframe.height = 0;
-    downloadIframe.width = 0;
-    invoicesSection.append(downloadIframe);
   }
 
   renderPriceOption(updateOption) {
@@ -676,11 +648,11 @@ class PaddleManageSubscriptionDialog extends Dialog {
     card.dataset.price_id = price.id;
     card.dataset.billing_period = price.billing_period;
     card.style.display = 'inline-block';
-    card.style.width = '160px';
-    card.style.padding = '20px 0';
+    card.style.width = '200px';
+    card.style.padding = '20px';
     card.style.border = '2px solid transparent';
     card.style.borderRadius = '8px';
-    card.style.marginRight = '20px';
+    card.style.marginRight = '5px';
 
     if (price.id == this.state.subscription.price.id) {
 
@@ -737,8 +709,6 @@ class PaddleManageSubscriptionDialog extends Dialog {
     if (price.id == this.state.price_selected.id) {
 
       card.style.borderColor = price.is_disabled ? "#dee2e6" : "#0d6efd";
-      card.style.padding = '20px';
-      card.style.width = '200px';
 
       button.textContent = 'Selected';
       button.style.color = price.is_disabled ? "#848e97" : "#0d6efd";
@@ -747,9 +717,9 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
       let svg = document.createElement('span');
       svg.style.position = 'relative';
-      svg.style.top = '2px';
+      svg.style.top = '1px';
       svg.style.marginRight = '5px';
-      svg.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 -960 960 960" width="1em" fill="currentColor"><path d="m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>`;
+      svg.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height=".8em" viewBox="0 -960 960 960" width=".8em" fill="currentColor"><path d="m424-296 282-282-56-56-226 226-114-114-56 56 170 170Zm56 216q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>`;
       button.prepend(svg);
     }
 

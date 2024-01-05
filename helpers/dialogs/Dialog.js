@@ -123,18 +123,19 @@ class Dialog {
       close.classList.add('ref-dialog-close');
       close.title = 'Close';
       close.style.fontSize = '22px';
-      close.style.fontWeight = 'bold';
       close.style.width = '1.3em';
       close.style.height = '1.3em';
       close.style.textAlign = 'center';
       close.style.cursor = 'pointer';
-      close.style.lineHeight = '1.3';
+      close.style.lineHeight = '1.6';
       close.style.background = '#ededed';
       close.style.borderRadius = '50%';
       close.style.position = 'absolute';
       close.style.top = '25px';
       close.style.right = '25px';
-      close.textContent = '×';
+      close.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+    </svg>`;
       this._container.appendChild(close);
     }
   }
