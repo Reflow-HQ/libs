@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/auth-next",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Next.js library for login, account management and subscriptions with Reflow",
   "type": "module",
   "exports": {
@@ -56,7 +56,7 @@
   },
   "peerDependencies": {
     "client-only": "^0.0.1",
-    "next": "^13",
+    "next": ">=13",
     "react": "^18",
     "react-dom": "^18"
   },
