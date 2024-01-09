@@ -25,6 +25,7 @@ class PopupWindow {
     const {
       url,
       label,
+      title,
     } = options;
 
     const {
@@ -39,6 +40,64 @@ class PopupWindow {
       label,
       `width=${w},height=${h},top=${y},left=${x}`
     );
+
+    if (this._popupWindow) {
+      this._popupWindow.document.write(
+        `<!DOCTYPE html>
+        <html>
+          <head>
+            <title>${title}</title>
+                <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+    
+    html {
+      color:#333;
+      background:#fff;
+    }
+    
+    .loader {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      margin-left: -24px;
+      margin-top: -40px;
+    
+      width: 48px;
+      height: 48px;
+      border: 5px solid currentColor;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      display: inline-block;
+      animation: rotation 1s linear infinite;
+    }
+    
+    @keyframes rotation {
+      0% {
+          transform: rotate(0deg);
+      }
+      100% {
+          transform: rotate(360deg);
+      }
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      html {
+        background: #141415;
+        color: #fff;
+      }
+    }
+        </style>
+            </head>
+          <body><span class="loader"></span></body>
+        </html>`);
+    }
 
     // This interval cleans up the _popupWindow after the popup window is closed.
 
@@ -87,7 +146,7 @@ class PopupWindow {
 
     let hasFocus = document.hasFocus();
 
-    clearInterval(this._checkPageRefocusInterval);
+    this.stopPageRefocusInterval()
     this._checkPageRefocusInterval = setInterval(async () => {
 
       if (!hasFocus && document.hasFocus()) {
@@ -101,7 +160,7 @@ class PopupWindow {
 
         // Clear the interval and exit when the provided function returns true.
 
-        clearInterval(this._checkPageRefocusInterval);
+        this.stopPageRefocusInterval()
       }
 
       // This line makes sure the focus has been lost in the first place,

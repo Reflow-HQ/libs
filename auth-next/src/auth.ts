@@ -505,6 +505,7 @@ export class ReflowAuth {
 
       let body = new FormData();
       body.set("priceID", String(params.get("priceID")));
+      body.set("paymentProvider", String(params.get("paymentProvider")));
 
       try {
         let response: any = await this.api("/auth/user/subscribe", {
@@ -514,15 +515,7 @@ export class ReflowAuth {
           },
           body,
         });
-
-        if (!response.checkoutURL) {
-          throw new Error("Subscription unsuccessful");
-        }
-
-        return Response.json({
-          success: true,
-          checkoutURL: response.checkoutURL,
-        });
+        return Response.json(response);
       } catch (e: any) {
         return errorResponse(e?.data?.errors?.system ?? e.message);
       }
@@ -535,14 +528,7 @@ export class ReflowAuth {
           },
         });
 
-        if (!response.subscriptionManagementURL) {
-          throw new Error("Subscription management unsuccessful");
-        }
-
-        return Response.json({
-          success: true,
-          subscriptionManagementURL: response.subscriptionManagementURL,
-        });
+        return Response.json(response);
       } catch (e: any) {
         console.error(e);
         return errorResponse(e?.data?.errors?.system ?? e.message);
@@ -559,6 +545,8 @@ export class ReflowAuth {
         }
       }
       return Response.json(result);
+    } else if (params.has("get-subscription")) {
+      return Response.json({ subscription: await this.subscription() });
     }
 
     return errorResponse("Invalid action");

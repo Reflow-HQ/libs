@@ -702,12 +702,18 @@ class Auth {
   }
 
   async modifySubscription() {
-    if (!this.isSignedIn() || this.isLoading()) {
+    if (!this.isSignedIn()) {
       console.error("Reflow: Can't modify subscription, user is not signed in");
       return;
     }
 
-    if (this.subscription.payment_provider && this.subscription.payment_provider == 'stripe') {
+    if (this.isLoading()) {
+      return;
+    }
+
+    let provider = this.subscription.payment_provider || 'stripe';
+
+    if (provider == 'stripe') {
 
       // If the subscription is stripe based, prepare a popup window for the Stripe-hosted management page.
 
@@ -719,12 +725,16 @@ class Auth {
           h: 800
         }
       });
+    } else if (provider == 'paddle') {
+
+      // For paddle subscriptions we show a loading dialog.
+
+      this._loadingDialog.open();
     }
 
     let response;
 
     try {
-      this._loadingDialog.open();
       this._isLoading = true;
 
       response = await this._api.fetch("auth/user/manage-subscription", {

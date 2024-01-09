@@ -1,11 +1,11 @@
 import "client-only";
-import { AuthRefreshChange } from "./auth-types";
+import { AuthRefreshChange, Subscription } from "./auth-types";
 import { useEffect } from "react";
+import PopupWindow from "../../helpers/PopupWindow";
+import PaddleManageSubscriptionDialog from "../../helpers/dialogs/PaddleManageSubscriptionDialog";
+import LoadingDialog from "../../helpers/dialogs/LoadingDialog";
 
-let signInWindow: Window | null;
-let checkWindowClosedInterval: number;
-let subscribeCheckInterval: number;
-let loginCheckInterval: number;
+let popupWindow: PopupWindow = new PopupWindow({});
 let messageListener: EventListener;
 let authToken: string;
 
@@ -129,28 +129,32 @@ export async function signIn(options?: {
   onError?: Function;
   step?: "login" | "register";
   subscribeTo?: number;
+  subscribeWith?: string;
 }) {
   let base = apiBase(options?.authEndpoint);
 
-  if (signInWindow) {
-    // Already open
-    signInWindow.focus();
-    return;
-  }
+  popupWindow.open({
+    url: null,
+    label: "reflow-signin",
+    title: "Signing in..",
+    size: {
+      w: 650,
+      h: 650,
+    },
+  });
 
   let openTimestamp = Date.now();
-  signInWindow = openWindow({ title: "Signing in.." });
 
   if (messageListener) {
     window.removeEventListener("message", messageListener);
   }
 
   messageListener = (e: any) => {
-    if (!signInWindow) {
+    if (!popupWindow.getWindowInstance()) {
       return;
     }
 
-    if (e.source !== signInWindow) {
+    if (e.source !== popupWindow.getWindowInstance()) {
       return;
     }
 
@@ -168,8 +172,7 @@ export async function signIn(options?: {
 
     if (!data.success && data.reason == "already-signed-in") {
       setTimeout(() => {
-        signInWindow?.close();
-        signInWindow = null;
+        popupWindow.close();
       }, Math.max(2500 - (Date.now() - openTimestamp), 0)); // Keep the window visible for at least 2.5 sec
 
       if (options?.onSuccess) {
@@ -192,38 +195,27 @@ export async function signIn(options?: {
       params.append("subscribeTo", String(options?.subscribeTo));
     }
 
-    url.search = params.toString();
-
-    if (signInWindow) {
-      signInWindow.location = url.toString();
+    if (options?.subscribeWith) {
+      params.append("subscribeWith", options.subscribeWith);
     }
 
-    window.clearInterval(checkWindowClosedInterval);
-    checkWindowClosedInterval = window.setInterval(() => {
-      try {
-        if (signInWindow && signInWindow.closed) {
-          signInWindow = null;
+    url.search = params.toString();
+
+    popupWindow.setURL(url.toString());
+
+    popupWindow.startPageRefocusInterval({
+      // TODO: in vanilla here we check if user is signed in using localStorage
+      // the Next.js does that same check with an async request
+      // so its not a good idea to run it on a interval loop
+
+      // stopIntervalClause: async () => (await isSignedIn()) || popupWindow.isClosed(),
+      stopIntervalClause: () => popupWindow.isClosed(),
+
+      onRefocus: async () => {
+        if (!authToken) {
+          return;
         }
-      } catch (e) {}
 
-      if (!signInWindow) {
-        window.clearInterval(checkWindowClosedInterval);
-      }
-    }, 500);
-
-    let hasFocus = document.hasFocus();
-
-    // Todo: rewrite this with a window focus event listener
-
-    window.clearInterval(loginCheckInterval);
-    loginCheckInterval = window.setInterval(async () => {
-      if (!authToken) {
-        return;
-      }
-
-      if (!hasFocus && document.hasFocus()) {
-        // We've switched back to this page/window. Check the login status
-        hasFocus = true;
         let status: any;
 
         try {
@@ -231,11 +223,12 @@ export async function signIn(options?: {
 
           status = await response.json();
         } catch (e) {
-          window.clearInterval(loginCheckInterval);
+          popupWindow.stopPageRefocusInterval();
           return;
         }
+
         if (status.success) {
-          window.clearInterval(loginCheckInterval);
+          popupWindow.stopPageRefocusInterval();
 
           broadcastChannel?.postMessage({ type: "signin" });
 
@@ -245,13 +238,10 @@ export async function signIn(options?: {
             window.location.reload();
           }
         }
-      }
-
-      hasFocus = document.hasFocus();
-    }, 250);
+      },
+    });
   } catch (e) {
-    signInWindow?.close();
-    signInWindow = null;
+    popupWindow.close();
 
     if (options?.onError) {
       options.onError(e);
@@ -299,13 +289,12 @@ export async function signOut(options?: {
   }
 }
 
-let subscriptionWindow: Window | null = null;
-
 /* Displays a payment window to the currently signed in user, where they can 
 sign up for the subscription plan at the price given in the priceID argument. */
 export async function createSubscription(options: {
   priceID: number;
   authEndpoint?: string;
+  paymentProvider?: string;
   onSuccess?: Function;
   onError?: Function;
 }) {
@@ -314,28 +303,47 @@ export async function createSubscription(options: {
   }
 
   let base = apiBase(options?.authEndpoint);
+  let paymentProvider = options?.paymentProvider || "stripe";
 
   if (!(await isSignedIn())) {
     // Sign in and initiate a subscription in the same window
     signIn({
       subscribeTo: options.priceID,
+      subscribeWith: paymentProvider,
     });
     return;
   }
 
-  if (subscriptionWindow) {
-    // Already open
-    subscriptionWindow.focus();
-    return;
+  if (paymentProvider == "stripe") {
+    // Stripe checkout is displayed in a Stripe-hosted page loaded inside a popup window.
+    // Open the window in an empty state immediately to make sure the browser understands it was opened due to user action.
+
+    popupWindow.open({
+      url: null,
+      label: "reflow-subscription",
+      title: "Loading..",
+      size: {
+        w: 650,
+        h: 800,
+      },
+    });
   }
 
-  subscriptionWindow = openWindow({ width: 650, height: 800 });
+  // Get the data necessary for continuing to checkout.
+  // For stripe that is a checkout URL.
+  // For paddle, its seller and price ids.
 
   let response, data;
 
   try {
     working = true;
-    response = await apiCall(base + "?create-subscription=true&priceID=" + options.priceID);
+    response = await apiCall(
+      base +
+        "?create-subscription=true&priceID=" +
+        options.priceID +
+        "&paymentProvider=" +
+        paymentProvider
+    );
     data = await response.json();
     working = false;
   } catch (e: any) {
@@ -345,85 +353,70 @@ export async function createSubscription(options: {
       console.error("Reflow:", e);
     }
 
-    subscriptionWindow?.close();
-    subscriptionWindow = null;
-
+    popupWindow.close();
     working = false;
-
     throw e;
   }
 
-  if (subscriptionWindow) {
-    subscriptionWindow.location = data.checkoutURL;
-  }
+  if (data.provider == "stripe") {
+    // Stripe subscriptions are handled in a popup window that redirects to the checkout url.
 
-  clearInterval(checkWindowClosedInterval);
-  checkWindowClosedInterval = window.setInterval(() => {
-    try {
-      if (subscriptionWindow && subscriptionWindow.closed) {
-        subscriptionWindow = null;
-      }
-    } catch (e) {}
+    popupWindow.setURL(data.checkoutURL);
 
-    if (!subscriptionWindow) {
-      clearInterval(checkWindowClosedInterval);
-    }
-  }, 500);
-
-  let hasFocus = document.hasFocus();
-
-  clearInterval(subscribeCheckInterval);
-  subscribeCheckInterval = window.setInterval(async () => {
-    if (!hasFocus && document.hasFocus()) {
-      // We've switched back to this page/window. Refresh the state.
-      hasFocus = true;
-
-      try {
-        working = true;
-        let response = await apiCall(base + "?refresh=true&force=true");
-        let change: AuthRefreshChange | null = await response.json();
-        if (change?.signout) {
-          broadcastChannel?.postMessage({ type: "signout" });
-          throw new Error("User has been signed out");
-        }
-
-        working = false;
-
-        if (change?.subscription) {
-          clearInterval(subscribeCheckInterval);
-
-          if (options.onSuccess) {
-            broadcastChannel?.postMessage({ type: "subscribe" });
-            options.onSuccess(change);
+    popupWindow.startPageRefocusInterval({
+      stopIntervalClause: () => popupWindow.isClosed(),
+      onRefocus: async () => {
+        try {
+          working = true;
+          let change = await refreshSession();
+          if (change?.signout) {
+            broadcastChannel?.postMessage({ type: "signout" });
+            throw new Error("User has been signed out");
           }
 
-          subscriptionWindow?.close();
-          subscriptionWindow = null;
+          working = false;
+
+          if (change?.subscription) {
+            // TODO: inconsistent behavior of onSuccess.
+            // sometimes when not provided it refreshes the page (signIn function)
+            // sometimes does nothing (here)
+            if (options.onSuccess) {
+              broadcastChannel?.postMessage({ type: "subscribe" });
+              options.onSuccess(change);
+            }
+
+            popupWindow.close();
+          }
+        } catch (e: any) {
+          working = false;
+
+          if (options.onError) {
+            options.onError(e);
+          } else {
+            console.error("Reflow:", e);
+          }
+
+          popupWindow.close();
         }
-      } catch (e: any) {
-        working = false;
-        clearInterval(subscribeCheckInterval);
+      },
+    });
+  }
 
-        if (options.onError) {
-          options.onError(e);
-        } else {
-          console.error("Reflow:", e);
-        }
-
-        subscriptionWindow?.close();
-        subscriptionWindow = null;
-      }
-    }
-
-    hasFocus = document.hasFocus();
-  }, 250);
+  if (paymentProvider == "paddle") {
+  }
 }
 
 /* Opens a window which lets the user change their payment method and billing info, or switch 
 to a different plan if available. */
-export async function modifySubscription(options?: { authEndpoint?: string }) {
-  if (!(await isSignedIn())) {
-    console.error("Reflow: Can't modify subscription, user is not signed in");
+export async function modifySubscription(options?: {
+  authEndpoint?: string;
+  onSuccess?: Function;
+  onError?: Function;
+}) {
+  let subscription = await getSubscription();
+
+  if (!subscription) {
+    console.error("Reflow: User does not have a subscription");
     return;
   }
 
@@ -431,19 +424,20 @@ export async function modifySubscription(options?: { authEndpoint?: string }) {
     return;
   }
 
-  if (subscriptionWindow) {
-    // Already open
-    subscriptionWindow.focus();
-    return;
+  if (subscription.payment_provider == "stripe") {
+    // If the subscription is stripe based, prepare a popup window for the Stripe-hosted management page.
+    popupWindow.open({
+      url: null,
+      label: "reflow-subscription",
+      title: "Loading..",
+      size: {
+        w: 650,
+        h: 800,
+      },
+    });
   }
 
   let base = apiBase(options?.authEndpoint);
-
-  subscriptionWindow = openWindow({
-    width: 650,
-    height: 800,
-    title: "Loading..",
-  });
 
   let response: any;
 
@@ -452,12 +446,15 @@ export async function modifySubscription(options?: { authEndpoint?: string }) {
     response = await apiCall(base + "?manage-subscription=true");
     working = false;
   } catch (e: any) {
-    console.error("Reflow: " + e);
+    if (options?.onError) {
+      options.onError(e);
+    } else {
+      console.error("Reflow: " + e);
+    }
+
     if (e.data) console.error(e.data);
 
-    subscriptionWindow?.close();
-    subscriptionWindow = null;
-
+    popupWindow.close();
     working = false;
 
     throw e;
@@ -465,22 +462,40 @@ export async function modifySubscription(options?: { authEndpoint?: string }) {
 
   let data = await response.json();
 
-  if (subscriptionWindow) {
-    subscriptionWindow.location = data.subscriptionManagementURL;
+  if (data.provider == "stripe") {
+    popupWindow.setURL(data.subscriptionManagementURL);
+
+    popupWindow.startPageRefocusInterval({
+      stopIntervalClause: () => popupWindow.isClosed(),
+      onRefocus: async () => {
+        try {
+          working = true;
+          let change = await refreshSession();
+          if (change?.signout) {
+            broadcastChannel?.postMessage({ type: "signout" });
+            throw new Error("User has been signed out");
+          }
+
+          working = false;
+
+          if (change?.subscription && options?.onSuccess) {
+            // TODO: onSuccess doesn't describe when this is called properly
+            // but onPageRefocusAfterSuccessfulChange is insane
+            options.onSuccess(change);
+          }
+        } catch (e: any) {
+          working = false;
+
+          if (options?.onError) {
+            options.onError(e);
+          } else {
+            console.error("Reflow:", e);
+          }
+        }
+      },
+    });
   }
 
-  clearInterval(checkWindowClosedInterval);
-  checkWindowClosedInterval = window.setInterval(() => {
-    try {
-      if (subscriptionWindow && subscriptionWindow.closed) {
-        subscriptionWindow = null;
-      }
-    } catch (e) {}
-
-    if (!subscriptionWindow) {
-      clearInterval(checkWindowClosedInterval);
-    }
-  }, 500);
 }
 
 /* Returns a boolean indicating whether the user is currently signed in or not */
@@ -493,80 +508,30 @@ export async function isSignedIn(options?: { authEndpoint?: string }): Promise<b
   return data.status;
 }
 
+/* Returns the user's subscription if such exists. Returns null if user not signed in at all */
+export async function getSubscription(options?: {
+  authEndpoint?: string;
+}): Promise<Subscription | null> {
+  let base = apiBase(options?.authEndpoint);
+
+  let response = await apiCall(base + "?get-subscription=true");
+
+  let data = await response.json();
+  return data.subscription;
+}
+
+/* Forces the auth session to refresh. */
+export async function refreshSession(options?: {
+  authEndpoint?: string;
+}): Promise<AuthRefreshChange | null> {
+  let base = apiBase(options?.authEndpoint);
+
+  let response = await apiCall(base + "?refresh=true&force=true");
+
+  return await response.json();
+}
+
 // Helper functions
-
-function openWindow(options?: { width?: number; height?: number; title?: string }) {
-  const { width = 650, height = 650, title = "" } = options || {};
-
-  // Open and center a window relative to the current one.
-  const y = window.outerHeight / 2 + window.screenY - height / 2;
-  const x = window.outerWidth / 2 + window.screenX - width / 2;
-
-  let win = window.open(
-    "about:blank",
-    "reflow-signin",
-    `width=${width},height=${height},top=${y},left=${x}`
-  );
-
-  win?.document.write(
-    `<!DOCTYPE html>
-    <html>
-      <head>
-        <title>${title}</title>
-            <style>
-* {
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  color:#333;
-  background:#fff;
-}
-
-.loader {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  margin-left: -24px;
-  margin-top: -40px;
-
-  width: 48px;
-  height: 48px;
-  border: 5px solid currentColor;
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  display: inline-block;
-  animation: rotation 1s linear infinite;
-}
-
-@keyframes rotation {
-  0% {
-      transform: rotate(0deg);
-  }
-  100% {
-      transform: rotate(360deg);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    background: #141415;
-    color: #fff;
-  }
-}
-    </style>
-        </head>
-      <body><span class="loader"></span></body>
-    </html>`
-  );
-
-  return win;
-}
 
 function apiBase(authEndpoint?: string): string {
   return (authEndpoint ?? "/auth").replace(/[\/\s]+$/, "");
