@@ -1,4 +1,5 @@
 import "client-only";
+import { initializePaddle, PaddleEventData, CheckoutOpenOptions, Paddle } from "@paddle/paddle-js";
 import { AuthRefreshChange, Subscription } from "./auth-types";
 import { useEffect } from "react";
 import PopupWindow from "../../helpers/PopupWindow";
@@ -6,6 +7,12 @@ import PaddleManageSubscriptionDialog from "../../helpers/dialogs/PaddleManageSu
 import LoadingDialog from "../../helpers/dialogs/LoadingDialog";
 
 let popupWindow: PopupWindow = new PopupWindow({});
+let paddleSubscribeCheckout: Paddle | undefined;
+let paddleSubscriptionCheckInterval: number;
+
+let loadingDialog: LoadingDialog;
+let paddleManageSubscriptionDialog: PaddleManageSubscriptionDialog;
+
 let messageListener: EventListener;
 let authToken: string;
 
@@ -232,10 +239,23 @@ export async function signIn(options?: {
 
           broadcastChannel?.postMessage({ type: "signin" });
 
-          if (options?.onSuccess) {
-            options.onSuccess();
+          // TODO: discuss
+
+          if (options?.subscribeTo && options?.subscribeWith == "paddle") {
+            // Directly go to Paddle checkout.
+            createSubscription({
+              priceID: options.subscribeTo,
+              paymentProvider: "paddle",
+            });
+
+            // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
+            // No action is required from the library.
           } else {
-            window.location.reload();
+            if (options?.onSuccess) {
+              options.onSuccess();
+            } else {
+              window.location.reload();
+            }
           }
         }
       },
@@ -302,6 +322,8 @@ export async function createSubscription(options: {
     return;
   }
 
+  initializeDialogs({ authEndpoint: options?.authEndpoint });
+
   let base = apiBase(options?.authEndpoint);
   let paymentProvider = options?.paymentProvider || "stripe";
 
@@ -327,13 +349,15 @@ export async function createSubscription(options: {
         h: 800,
       },
     });
+  } else if (paymentProvider == "paddle") {
+    loadingDialog.open();
   }
 
   // Get the data necessary for continuing to checkout.
   // For stripe that is a checkout URL.
   // For paddle, its seller and price ids.
 
-  let response, data;
+  let response, checkoutData;
 
   try {
     working = true;
@@ -344,8 +368,9 @@ export async function createSubscription(options: {
         "&paymentProvider=" +
         paymentProvider
     );
-    data = await response.json();
+    checkoutData = await response.json();
     working = false;
+    loadingDialog.close();
   } catch (e: any) {
     if (options.onError) {
       options.onError(e);
@@ -354,14 +379,15 @@ export async function createSubscription(options: {
     }
 
     popupWindow.close();
+    loadingDialog.close();
     working = false;
     throw e;
   }
 
-  if (data.provider == "stripe") {
+  if (checkoutData.provider == "stripe") {
     // Stripe subscriptions are handled in a popup window that redirects to the checkout url.
 
-    popupWindow.setURL(data.checkoutURL);
+    popupWindow.setURL(checkoutData.checkoutURL);
 
     popupWindow.startPageRefocusInterval({
       stopIntervalClause: () => popupWindow.isClosed(),
@@ -402,7 +428,84 @@ export async function createSubscription(options: {
     });
   }
 
-  if (paymentProvider == "paddle") {
+  if (checkoutData.provider == "paddle") {
+    if (!paddleSubscribeCheckout) {
+      paddleSubscribeCheckout = await initializePaddle({
+        environment: checkoutData.mode == "test" ? "sandbox" : "production",
+        seller: checkoutData.seller_id,
+        eventCallback: function (ev: PaddleEventData) {
+          if (ev.name == "checkout.closed" && ev.data?.status == "completed") {
+            loadingDialog.open();
+
+            clearInterval(paddleSubscriptionCheckInterval);
+            paddleSubscriptionCheckInterval = window.setInterval(async () => {
+              try {
+                // Note: this flow differs slightly from vanilla auth:
+                // The Reflow api route used for checking subscription status is not the same.
+
+                working = true;
+
+                let change = await refreshSession();
+                if (change?.signout) {
+                  broadcastChannel?.postMessage({ type: "signout" });
+                  throw new Error("User has been signed out");
+                }
+
+                working = false;
+
+                if (change?.subscription) {
+                  if (options.onSuccess) {
+                    broadcastChannel?.postMessage({ type: "subscribe" });
+                    options.onSuccess(change);
+                  }
+
+                  clearInterval(paddleSubscriptionCheckInterval);
+                  loadingDialog.close();
+                }
+              } catch (e: any) {
+                working = false;
+
+                if (options.onError) {
+                  options.onError(e);
+                } else {
+                  console.error("Reflow:", e);
+                }
+              }
+            }, 1000 * 1); // Check every second
+
+            setTimeout(() => {
+              clearInterval(paddleSubscriptionCheckInterval);
+              loadingDialog.close();
+            }, 1000 * 60 * 2); // Give up after 2 mins
+          }
+        },
+      });
+    }
+
+    let checkoutSettings: CheckoutOpenOptions = {
+      settings: {
+        showAddDiscounts: false,
+      },
+      items: [
+        {
+          priceId: checkoutData.paddle_price_id,
+          quantity: 1,
+        },
+      ],
+      customData: {
+        store_id: checkoutData.store.id.toString(),
+        user_id: checkoutData.user.id.toString(),
+        price_id: options.priceID,
+      },
+    };
+
+    if (checkoutData.user.email) {
+      checkoutSettings.customer = {
+        email: checkoutData.user.email,
+      };
+    }
+
+    paddleSubscribeCheckout?.Checkout.open(checkoutSettings);
   }
 }
 
@@ -424,6 +527,8 @@ export async function modifySubscription(options?: {
     return;
   }
 
+  initializeDialogs({ authEndpoint: options?.authEndpoint });
+
   if (subscription.payment_provider == "stripe") {
     // If the subscription is stripe based, prepare a popup window for the Stripe-hosted management page.
     popupWindow.open({
@@ -435,10 +540,12 @@ export async function modifySubscription(options?: {
         h: 800,
       },
     });
+  } else if (subscription.payment_provider == "paddle") {
+    // For paddle subscriptions we show a loading dialog.
+    loadingDialog.open();
   }
 
   let base = apiBase(options?.authEndpoint);
-
   let response: any;
 
   try {
@@ -454,16 +561,18 @@ export async function modifySubscription(options?: {
 
     if (e.data) console.error(e.data);
 
-    popupWindow.close();
     working = false;
+
+    popupWindow.close();
+    loadingDialog.close();
 
     throw e;
   }
 
-  let data = await response.json();
+  let { manageSubscriptionData, authToken } = await response.json();
 
-  if (data.provider == "stripe") {
-    popupWindow.setURL(data.subscriptionManagementURL);
+  if (manageSubscriptionData.provider == "stripe") {
+    popupWindow.setURL(manageSubscriptionData.subscriptionManagementURL);
 
     popupWindow.startPageRefocusInterval({
       stopIntervalClause: () => popupWindow.isClosed(),
@@ -496,6 +605,10 @@ export async function modifySubscription(options?: {
     });
   }
 
+  if (manageSubscriptionData.provider == "paddle") {
+    loadingDialog.close();
+    paddleManageSubscriptionDialog.open({ ...manageSubscriptionData, authToken });
+  }
 }
 
 /* Returns a boolean indicating whether the user is currently signed in or not */
@@ -548,4 +661,30 @@ async function apiCall(url: string): Promise<Response> {
   }
 
   return response;
+}
+
+function initializeDialogs(options: { authEndpoint?: string }) {
+  if (document.querySelector(".reflow-auth-dialog-container")) {
+    // The container is present on the page. Dialogs should be working.
+    return;
+  }
+
+  // Add the dialog container to the page and initialize / reinitialize the dialogs.
+  let dialogContainer = document.createElement("div");
+  dialogContainer.classList.add("reflow-auth-dialog-container");
+  document.body.append(dialogContainer);
+
+  loadingDialog = new LoadingDialog({ container: dialogContainer });
+
+  paddleManageSubscriptionDialog = new PaddleManageSubscriptionDialog({
+    container: dialogContainer,
+    popupWindow,
+    fullResetFunction: modifySubscription,
+    updatePlan: async (priceID: string): Promise<Subscription | null> => {
+      let base = apiBase(options?.authEndpoint);
+      let response = await apiCall(base + "?update-subscription=true&priceID=" + priceID);
+      return await response.json();
+    },
+    onClose: () => {}, // TODO: discuss
+  });
 }

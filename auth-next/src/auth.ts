@@ -521,14 +521,19 @@ export class ReflowAuth {
       }
     } else if (params.has("manage-subscription")) {
       try {
-        let response: any = await this.api("/auth/user/manage-subscription", {
+        let authToken = await this.get("_key");
+
+        let manageSubscriptionData: any = await this.api("/auth/user/manage-subscription", {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${await this.get("_key")}`,
+            Authorization: `Bearer ${authToken}`,
           },
         });
 
-        return Response.json(response);
+        return Response.json({
+          manageSubscriptionData,
+          authToken,
+        });
       } catch (e: any) {
         console.error(e);
         return errorResponse(e?.data?.errors?.system ?? e.message);
@@ -547,6 +552,26 @@ export class ReflowAuth {
       return Response.json(result);
     } else if (params.has("get-subscription")) {
       return Response.json({ subscription: await this.subscription() });
+    } else if (params.has("update-subscription")) {
+      if (!params.has("priceID")) {
+        return errorResponse("Price ID missing");
+      }
+
+      let body = new FormData();
+      body.set("priceID", String(params.get("priceID")));
+
+      try {
+        let response: any = await this.api("/auth/user/update-plan", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${await this.get("_key")}`,
+          },
+          body,
+        });
+        return Response.json(response);
+      } catch (e: any) {
+        return errorResponse(e?.data?.errors?.system ?? e.message);
+      }
     }
 
     return errorResponse("Invalid action");

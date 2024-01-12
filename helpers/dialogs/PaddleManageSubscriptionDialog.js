@@ -6,11 +6,16 @@ import Dialog from './Dialog';
 
 class PaddleManageSubscriptionDialog extends Dialog {
   constructor({
-    auth,
-    onClose
+    container,
+    popupWindow,
+    fullResetFunction,
+    updatePlan,
+    onClose,
   }) {
 
     super({
+      id: 'paddle-manage-subscription-dialog',
+      container,
       width: 740,
       showHeader: true,
       showClose: true,
@@ -18,7 +23,9 @@ class PaddleManageSubscriptionDialog extends Dialog {
       onClose
     })
 
-    this._auth = auth;
+    this._popupWindow = popupWindow
+    this._fullResetFunction = fullResetFunction
+    this._updatePlan = updatePlan
 
     this._paddleUpdatePaymentCheckout = null;
   }
@@ -68,16 +75,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
           try {
 
-            let body = new FormData();
-            body.set('price_id', selected.id);
-
-            let response = await this._auth._api.fetch("auth/user/update-plan", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${this._auth.get("key")}`,
-              },
-              body
-            });
+            let response = await this._updatePlan(selected.id)
 
             if (!response.status || response.status != 'success') {
               throw new Error("Unable to update subscription plan");
@@ -151,11 +149,15 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
       // Cancel subscription
 
+      // TODO: rewriting this to not rely on paddle will improve the user experience
+      // and will save us the janky usage of popupWindow and _fullResetFunction
+
       let cancel = e.target.closest('.ref-cancel-plan');
       if (cancel) {
 
-        this._auth._popupWindow.open({
-          url: cancel.dataset.url,
+        this._popupWindow.open({
+          url: null,
+          title: 'Loading..',
           label: 'reflow-subscription-cancel',
           size: {
             w: 500,
@@ -163,11 +165,13 @@ class PaddleManageSubscriptionDialog extends Dialog {
           }
         });
 
-        this._auth._popupWindow.startPageRefocusInterval({
-          stopIntervalClause: (() => this._auth._popupWindow.isClosed()).bind(this),
+        this._popupWindow.setURL(cancel.dataset.url);
+
+        this._popupWindow.startPageRefocusInterval({
+          stopIntervalClause: (() => this._popupWindow.isClosed()).bind(this),
           onRefocus: (() => {
-            // Fetch the subscription data and rerender this dialog
-            this._auth.modifySubscription();
+            // Fully rerender the dialog.
+            this._fullResetFunction();
           }).bind(this)
         });
       }
@@ -180,20 +184,32 @@ class PaddleManageSubscriptionDialog extends Dialog {
         if (!this._paddleUpdatePaymentCheckout) {
 
           this._paddleUpdatePaymentCheckout = await initializePaddle({
-            environment: this._auth.testMode ? 'sandbox' : 'production',
+            environment: this.state.subscription.livemode ? 'production' : 'sandbox',
             seller: this.state.paddle_seller_id,
-            eventCallback: function (data) {
+            eventCallback: function (ev) {
 
-              if (data.name == "checkout.completed") {
+              if (ev.name == "checkout.completed") {
 
-                if (data.data.payment.method_details.type != 'none') {
-                  this.state.billing.payment_method = data.data.payment.method_details;
+                // TODO: paypal doesn't work in next
+
+                // Paddle returns this data in a very inconsistent manner. 
+                // Try fixing it as much as possible. 
+                if (ev.data.payment.method_details.card) {
+                  this.state.billing.payment_method = {
+                    card: ev.data.payment.method_details.card,
+                    type: 'card'
+                  }
+                } else {
+                  this.state.billing.payment_method = {
+                    card: null,
+                    type: "paypal"
+                  }
                 }
               }
 
-              if (data.name == "checkout.closed") {
+              if (ev.name == "checkout.closed") {
 
-                if (data.checkout.completed) {
+                if (ev.checkout.completed) {
                   this.showToast({
                     type: 'success',
                     title: 'Your payment information was updated',
@@ -506,36 +522,39 @@ class PaddleManageSubscriptionDialog extends Dialog {
     let paymentMethod = paymentLine.cloneNode();
     paymentMethod.innerHTML = '<b></b><span></span>';
 
-    if (this.state.billing.payment_method && this.state.billing.payment_method.type == 'card') {
+    if (this.state.billing.payment_method) {
 
-      paymentMethod.firstElementChild.textContent = 'Card ';
+      if (this.state.billing.payment_method.type == 'card') {
 
-      let card = this.state.billing.payment_method.card;
-      paymentMethod.lastElementChild.textContent = `${card.type[0].toUpperCase()}${card.type.substring(1)} ****${card.last4}`;
+        paymentMethod.firstElementChild.textContent = 'Card ';
 
-      let expirationDate = new Date(card.expiry_year, card.expiry_month);
-      let today = new Date();
-      let monthDiff = expirationDate.getMonth() - today.getMonth() + 12 * (expirationDate.getFullYear() - today.getFullYear());
+        let card = this.state.billing.payment_method.card;
+        paymentMethod.lastElementChild.textContent = `${card.type[0].toUpperCase()}${card.type.substring(1)} ****${card.last4}`;
 
-      let expires = document.createElement('span');
-      let dateString = this.formatDate(expirationDate, {
-        month: 'short'
-      }) + ' ' + expirationDate.getFullYear().toString().slice(-2);
-      if (monthDiff < 0) {
-        expires.textContent = ` (expired on ${dateString})`;
-        expires.style.color = '#ff0051';
-      } else if (monthDiff < 6) {
-        expires.textContent = ` (expires on ${dateString})`;
-        expires.style.color = '#c3c31b';
+        let expirationDate = new Date(card.expiry_year, card.expiry_month);
+        let today = new Date();
+        let monthDiff = expirationDate.getMonth() - today.getMonth() + 12 * (expirationDate.getFullYear() - today.getFullYear());
+
+        let expires = document.createElement('span');
+        let dateString = this.formatDate(expirationDate, {
+          month: 'short'
+        }) + ' ' + expirationDate.getFullYear().toString().slice(-2);
+        if (monthDiff < 0) {
+          expires.textContent = ` (expired on ${dateString})`;
+          expires.style.color = '#ff0051';
+        } else if (monthDiff < 6) {
+          expires.textContent = ` (expires on ${dateString})`;
+          expires.style.color = '#c3c31b';
+        }
+        paymentMethod.append(expires);
+        left.append(paymentMethod);
+
+      } else if (this.state.billing.payment_method.type == 'paypal') {
+
+        paymentMethod.firstElementChild.textContent = 'Payment Method ';
+        paymentMethod.lastElementChild.textContent = 'PayPal';
+        left.append(paymentMethod);
       }
-      paymentMethod.append(expires);
-      left.append(paymentMethod);
-
-    } else if (this.state.billing.payment_method.type == 'paypal') {
-
-      paymentMethod.firstElementChild.textContent = 'Payment Method ';
-      paymentMethod.lastElementChild.textContent = 'PayPal';
-      left.append(paymentMethod);
     }
 
     if (this.state.billing.name) {
@@ -594,20 +613,29 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
       let cell = row.insertCell();
       cell.style.padding = '0 1.5em .8em 0';
-      let a = document.createElement('a');
-      a.classList.add('hyperlink');
-      a.href = this._auth._api.apiBase + "/stores/" + this._auth.storeID + "/auth/get-invoice-pdf/" + payment.id + '?auth_token=' + this._auth.get("key");
-      a.download = 'invoice-' + payment.id;
-      a.target = '_blank';
-      a.style.textDecoration = 'none';
-      a.style.color = '#383d40';
-      a.innerHTML = `
-        <span>${this.formatDate(payment.created)} </span>
-        <span style="position: relative; top: 1px;">
-          <svg viewBox="0 0 16 16" width=".8em" height=".8em" fill="currentColor" xmlns="http://www.w3.org/2000/svg">  <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
-  <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>
-        </span>`;
-      cell.append(a);
+
+      if (payment.invoice_number && payment.total > 0) {
+        let a = document.createElement('a');
+        a.classList.add('hyperlink');
+        // TODO: is this okay in nextjs?
+        a.href = payment.download_url + '?auth_token=' + this.state.authToken;
+        a.download = 'invoice-' + payment.id;
+        a.target = '_blank';
+        a.style.textDecoration = 'none';
+        a.style.color = '#383d40';
+        a.innerHTML = `
+          <span>${this.formatDate(payment.created)} </span>
+          <span style="position: relative; top: 1px;">
+            <svg viewBox="0 0 16 16" width=".8em" height=".8em" fill="currentColor" xmlns="http://www.w3.org/2000/svg">  <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>
+          </span>`;
+        cell.append(a);
+      } else {
+        let span = document.createElement('span');
+        span.style.color = '#383d40';
+        span.textContent = this.formatDate(payment.created)
+        cell.append(span);
+      }
 
       cell = row.insertCell();
       cell.style.padding = '0 1.5em .8em 1.5em';

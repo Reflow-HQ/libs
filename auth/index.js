@@ -36,11 +36,8 @@ class Auth {
     })
 
     this._popupWindow = new PopupWindow({});
-    this._paddleManageSubscriptionDialog = new PaddleManageSubscriptionDialog({
-      auth: this,
-      onClose: this.refresh.bind(this)
-    });
-    this._loadingDialog = new LoadingDialog({});
+    this._paddleManageSubscriptionDialog = null;
+    this._loadingDialog = null;
 
     this._paddleSubscribeCheckout = null;
     this._paddleSubscriptionCheckInterval = null;
@@ -48,6 +45,45 @@ class Auth {
     if (autoBind) {
       this.bind();
     }
+  }
+
+  initializeDialogs() {
+
+    if (document.querySelector(".reflow-auth-dialog-container")) {
+      // The container is present on the page. Dialogs should be working.
+      return;
+    }
+
+    // Add the dialog container to the page and initialize / reinitialize the dialogs.
+    let dialogContainer = document.createElement("div");
+    dialogContainer.classList.add("reflow-auth-dialog-container");
+    document.body.append(dialogContainer);
+
+    this._loadingDialog = new LoadingDialog({
+      container: dialogContainer
+    });
+
+    this._paddleManageSubscriptionDialog = new PaddleManageSubscriptionDialog({
+      container: dialogContainer,
+      popupWindow: this._popupWindow,
+      fullResetFunction: this.modifySubscription.bind(this),
+      updatePlan: async (priceID) => {
+
+        let body = new FormData();
+        body.set('priceID', priceID);
+
+        let response = await this._api.fetch("auth/user/update-plan", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.get("key")}`,
+          },
+          body
+        });
+
+        return response;
+      },
+      onClose: this.refresh.bind(this)
+    });
   }
 
   get(key, def = null) {
@@ -562,6 +598,8 @@ class Auth {
       return;
     }
 
+    this.initializeDialogs();
+
     let paymentProvider = data.paymentProvider || 'stripe';
 
     if (!this.isSignedIn()) {
@@ -644,9 +682,6 @@ class Auth {
           environment: this.testMode ? 'sandbox' : 'production',
           seller: checkoutData.seller_id,
           eventCallback: function (data) {
-
-            if (data.name == "checkout.completed") {}
-
             if (data.name == "checkout.closed" && data.data.status == 'completed') {
 
               this._loadingDialog.open();
@@ -669,7 +704,7 @@ class Auth {
               setTimeout(() => {
                 clearInterval(this._paddleSubscriptionCheckInterval);
                 this._loadingDialog.close();
-              }, 1000 * 60 * 5) // Give up after 5 mins
+              }, 1000 * 60 * 2) // Give up after 2 mins
             }
           }.bind(this)
         });
@@ -710,6 +745,8 @@ class Auth {
     if (this.isLoading()) {
       return;
     }
+
+    this.initializeDialogs();
 
     let provider = this.subscription.payment_provider || 'stripe';
 
@@ -766,7 +803,11 @@ class Auth {
     }
 
     if (response.provider == 'paddle') {
-      this._paddleManageSubscriptionDialog.open(response);
+
+      this._paddleManageSubscriptionDialog.open({
+        ...response,
+        authToken: this.get("key")
+      });
     }
   }
 

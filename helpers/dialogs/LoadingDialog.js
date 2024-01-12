@@ -1,8 +1,12 @@
 import Dialog from './Dialog';
 
 class LoadingDialog extends Dialog {
-  constructor({}) {
+  constructor({
+    container
+  }) {
     super({
+      id: 'loading-dialog',
+      container,
       width: 150,
       height: 150,
       showHeader: false,

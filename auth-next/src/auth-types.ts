@@ -56,6 +56,7 @@ export interface Subscription {
   plan: Plan;
   price: Price;
   payment_provider: string;
+  livemode: boolean;
 }
 
 export interface UpdateUserOptions {
