@@ -455,7 +455,7 @@ export class ReflowAuth {
           "/auth/validate-token?auth-token=" +
             params.get("auth-token") +
             "&nonce=" +
-            (await this.get("_nonce")),
+            encodeURIComponent(await this.get("_nonce")),
           {
             method: "POST",
           }
