@@ -3,7 +3,7 @@ declare class PopupWindow {
     constructor({}: {});
     _popupWindow: Window | null;
     _checkPopupWindowClosedInterval: any;
-    _checkPageRefocusInterval: any;
+    _onParentRefocusCallback: any;
     unbind(): void;
     getWindowInstance(): Window | null;
     open(options: any): void;
@@ -11,7 +11,6 @@ declare class PopupWindow {
     close(): void;
     isOpen(): boolean;
     isClosed(): boolean;
-    startPageRefocusInterval(options: any): void;
-    stopPageRefocusInterval(): void;
+    offParentRefocus(): void;
 }
 //# sourceMappingURL=PopupWindow.d.ts.map

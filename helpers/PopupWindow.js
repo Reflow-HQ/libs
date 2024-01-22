@@ -2,12 +2,11 @@ class PopupWindow {
   constructor({}) {
     this._popupWindow = null;
     this._checkPopupWindowClosedInterval = null;
-    this._checkPageRefocusInterval = null;
+    this._onParentRefocusCallback = null;
   }
 
   unbind() {
     clearInterval(this._checkPopupWindowClosedInterval);
-    clearInterval(this._checkPageRefocusInterval);
   }
 
   getWindowInstance() {
@@ -26,6 +25,7 @@ class PopupWindow {
       url,
       label,
       title,
+      onParentRefocus
     } = options;
 
     const {
@@ -99,6 +99,14 @@ class PopupWindow {
         </html>`);
     }
 
+    // Evoke a callback when the focus is switched back to the parent window that opened the popup.
+    // This callback should make sure to cleanup the event listener by calling either .close or .offParentRefocus.
+
+    if (onParentRefocus) {
+      this._onParentRefocusCallback = onParentRefocus;
+      window.addEventListener("focus", this._onParentRefocusCallback);
+    }
+
     // This interval cleans up the _popupWindow after the popup window is closed.
 
     clearInterval(this._checkPopupWindowClosedInterval);
@@ -125,6 +133,10 @@ class PopupWindow {
       this._popupWindow.close();
       this._popupWindow = null;
     }
+
+    if (this._onParentRefocusCallback) {
+      this.offParentRefocus();
+    }
   }
 
   isOpen() {
@@ -135,46 +147,10 @@ class PopupWindow {
     return !this._popupWindow;
   }
 
-  startPageRefocusInterval(options) {
-
-    // Run a callback function when the focus goes back on the main window (regardless if _popupWindow was closed)
-
-    const {
-      stopIntervalClause,
-      onRefocus
-    } = options;
-
-    let hasFocus = document.hasFocus();
-
-    this.stopPageRefocusInterval()
-    this._checkPageRefocusInterval = setInterval(async () => {
-
-      if (!hasFocus && document.hasFocus()) {
-
-        // We've selected something else and then switched back to this page/window.
-
-        onRefocus();
-      }
-
-      if (stopIntervalClause()) {
-
-        // Clear the interval and exit when the provided function returns true.
-
-        this.stopPageRefocusInterval()
-      }
-
-      // This line makes sure the focus has been lost in the first place,
-      // in case hasFocus has been true from the beginning.
-
-      hasFocus = document.hasFocus();
-    }, 250);
-
+  offParentRefocus() {
+    window.removeEventListener("focus", this._onParentRefocusCallback);
+    this._onParentRefocusCallback = null;
   }
-
-  stopPageRefocusInterval() {
-    clearInterval(this._checkPageRefocusInterval);
-  }
-
 }
 
 export default PopupWindow;

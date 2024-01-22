@@ -1,16 +1,13 @@
 export default PaddleManageSubscriptionDialog;
 declare class PaddleManageSubscriptionDialog extends Dialog {
-    constructor({ container, popupWindow, fullResetFunction, updatePlan, onClose, }: {
+    constructor({ container, updatePlan, cancelSubscription, }: {
         container: any;
-        popupWindow: any;
-        fullResetFunction: any;
         updatePlan: any;
-        onClose: any;
+        cancelSubscription: any;
     });
-    _popupWindow: any;
-    _fullResetFunction: any;
     _updatePlan: any;
-    _paddleUpdatePaymentCheckout: Paddle | null | undefined;
+    _cancelSubscription: any;
+    _paddleUpdatePaymentCheckout: import("@paddle/paddle-js").Paddle | null | undefined;
     _isLoading: boolean | undefined;
     render(data: any): void;
     renderPriceOption(updateOption: any): HTMLDivElement;
@@ -18,5 +15,4 @@ declare class PaddleManageSubscriptionDialog extends Dialog {
     formatDate(date: any, format: any): any;
 }
 import Dialog from './Dialog';
-import { Paddle } from '@paddle/paddle-js';
 //# sourceMappingURL=PaddleManageSubscriptionDialog.d.ts.map

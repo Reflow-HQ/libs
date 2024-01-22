@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 const config = {
   storeID: "199976733",
   apiBase: "http://test-api.reflow.local/v2",
-  testMode: true
+  testMode: true,
 };
 
 // More on default export: https://storybook.js.org/docs/react/writing-stories/introduction#default-export
@@ -15,10 +15,10 @@ export default {
   component: App,
 };
 
-export const App = ({ }) => {
+export const App = ({}) => {
   const auth = useAuth(config);
 
-  const [paymentProvider, setPaymentProvider] = useState('stripe');
+  const [paymentProvider, setPaymentProvider] = useState("stripe");
   const [plans, setPlans] = useState([]);
   const [activeTab, setActiveTab] = useState("month");
 
@@ -31,27 +31,30 @@ export const App = ({ }) => {
 
   return (
     <>
-      {auth.isSignedIn() ? (<button className="danger" onClick={() => auth.signOut()}>Sign Out</button>) : ''}
+      {auth.isSignedIn() ? (
+        <button className="danger" onClick={() => auth.signOut()}>
+          Sign Out
+        </button>
+      ) : (
+        ""
+      )}
       {auth.isSubscribed() ? (
         <div>
           <h1>Thank you for subscribing!</h1>
-          <button onClick={() => auth.modifySubscription()}>
-            Modify Subscription
-          </button>
+          <button onClick={() => auth.modifySubscription()}>Modify Subscription</button>
           <p>
             Plan Name: <b>{auth.subscription.plan.name}</b>
             <br />
             Price:{" "}
             <b>
-              {auth.subscription.price.price_formatted} /
-              {auth.subscription.price.billing_period}
+              {auth.subscription.price.price_formatted} /{auth.subscription.price.billing_period}
             </b>
           </p>
           <h4>RAW Subscription info:</h4>
           <pre>{JSON.stringify(auth.subscription, null, "  ")}</pre>
         </div>
       ) : (
-        <div style={{ maxWidth: 800 + 'px' }}>
+        <div style={{ maxWidth: 800 + "px" }}>
           <div className="tabs">
             <span
               className={paymentProvider === "stripe" ? "active" : ""}
@@ -65,7 +68,7 @@ export const App = ({ }) => {
             >
               Paddle
             </span>
-          </div >
+          </div>
           <div className="tabs">
             <span
               className={activeTab === "month" ? "active" : ""}
@@ -79,17 +82,23 @@ export const App = ({ }) => {
             >
               Yearly
             </span>
-          </div >
+          </div>
           <div className="card-container">
             {plans.map((p) => (
-              <Plan key={p.id} plan={p} activeTab={activeTab} auth={auth} paymentProvider={paymentProvider} />
+              <Plan
+                key={p.id}
+                plan={p}
+                activeTab={activeTab}
+                auth={auth}
+                paymentProvider={paymentProvider}
+              />
             ))}
           </div>
-        </div >
+        </div>
       )}
     </>
   );
-}
+};
 
 export const Plan = ({ plan, activeTab, auth, paymentProvider }) => {
   let chosenPrice = plan.prices[0];
@@ -121,4 +130,4 @@ export const Plan = ({ plan, activeTab, auth, paymentProvider }) => {
       <button onClick={subscribeToPlan}>Subscribe</button>
     </div>
   );
-}
+};

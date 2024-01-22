@@ -1,16 +1,13 @@
 import {
-  initializePaddle,
-  Paddle
+  initializePaddle
 } from '@paddle/paddle-js';
 import Dialog from './Dialog';
 
 class PaddleManageSubscriptionDialog extends Dialog {
   constructor({
     container,
-    popupWindow,
-    fullResetFunction,
     updatePlan,
-    onClose,
+    cancelSubscription,
   }) {
 
     super({
@@ -19,13 +16,11 @@ class PaddleManageSubscriptionDialog extends Dialog {
       width: 740,
       showHeader: true,
       showClose: true,
-      title: 'Manage Subscription',
-      onClose
+      title: 'Manage Subscription'
     })
 
-    this._popupWindow = popupWindow
-    this._fullResetFunction = fullResetFunction
     this._updatePlan = updatePlan
+    this._cancelSubscription = cancelSubscription
 
     this._paddleUpdatePaymentCheckout = null;
   }
@@ -109,7 +104,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
             // Show error toast. Do no rerender.
 
             this.showToast({
-              type: 'success',
+              type: 'error',
               title: 'An error occurred while saving your changes',
               description: 'Please try again'
             })
@@ -149,31 +144,60 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
       // Cancel subscription
 
-      // TODO: rewriting this to not rely on paddle will improve the user experience
-      // and will save us the janky usage of popupWindow and _fullResetFunction
+      let cancelButton = e.target.closest('.ref-cancel-plan');
+      if (cancelButton && !this.state.subscription.cancel_at) {
 
-      let cancel = e.target.closest('.ref-cancel-plan');
-      if (cancel) {
+        if (!window.confirm('Are you sure you want to cancel your subscription?')) {
+          return;
+        }
 
-        this._popupWindow.open({
-          url: null,
-          title: 'Loading..',
-          label: 'reflow-subscription-cancel',
-          size: {
-            w: 500,
-            h: 500
+        let loadingIndicator = document.createElement("span");
+        loadingIndicator.textContent = " Loading...";
+        cancelButton.append(loadingIndicator);
+
+        this._isLoading = true;
+
+        try {
+
+          let response = await this._cancelSubscription();
+
+          if (!response.status || response.status != 'success') {
+            throw new Error("Unable to update subscription");
           }
-        });
 
-        this._popupWindow.setURL(cancel.dataset.url);
+          if (response.cancel_at) {
+            this.state.subscription.cancel_at = response.cancel_at;
 
-        this._popupWindow.startPageRefocusInterval({
-          stopIntervalClause: (() => this._popupWindow.isClosed()).bind(this),
-          onRefocus: (() => {
-            // Fully rerender the dialog.
-            this._fullResetFunction();
-          }).bind(this)
-        });
+            // This disables other action in the dialog, that should not be accessible to canceled subs.
+            this.state.update_payment_transaction_id = null;
+            this.state.available_plans = [];
+          }
+
+          this._isLoading = false;
+          loadingIndicator && loadingIndicator.remove();
+
+          this.showToast({
+            type: 'success',
+            title: 'Your subscription has been cancelled.',
+          });
+
+          this.render();
+
+        } catch (e) {
+
+          this._isLoading = false;
+          loadingIndicator && loadingIndicator.remove();
+
+          // Show error toast. Do no rerender.
+
+          this.showToast({
+            type: 'error',
+            title: 'An error occurred while saving your changes',
+            description: 'Please try again'
+          })
+
+          throw e;
+        }
       }
 
       // Update payment details
@@ -189,8 +213,6 @@ class PaddleManageSubscriptionDialog extends Dialog {
             eventCallback: function (ev) {
 
               if (ev.name == "checkout.completed") {
-
-                // TODO: paypal doesn't work in next
 
                 // Paddle returns this data in a very inconsistent manner. 
                 // Try fixing it as much as possible. 
@@ -237,7 +259,64 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
     super.render(data);
 
-    this._dialog.style.padding = '2.8em 3em'
+    let css = `
+    dialog {
+      padding: 1em 1.2em;
+    }
+
+    .ref-show-md {
+      display:none;
+    }
+
+    .ref-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ref-section > div:first-of-type {
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 650px) {
+      dialog {
+        padding: 2.8em 3em;
+      }
+
+      .ref-show-md {
+        display: unset;
+      }
+
+      .ref-section {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 1000px) {
+      dialog {
+        width: calc(100% - 200px) !important;
+      }
+    }
+
+    @media (max-width: 650px) {
+      dialog {
+        width: calc(100% - 60px) !important;
+      }
+      td.ref-payments-td {
+        padding: 0 .8em 0 0 !important;
+      }
+      td.ref-payments-td:last-of-type {
+        max-width: 100px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+    }
+    `
+
+    let style = document.createElement('style');
+    style.textContent = css;
+    this._shadowDOM.prepend(style);
 
     let button = document.createElement('button')
     button.style.display = 'block';
@@ -441,8 +520,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
       sectionTitle.textContent = 'Current Plan';
 
       let current = document.createElement('div');
-      current.style.display = 'flex';
-      current.style.justifyContent = 'space-between';
+      current.classList.add('ref-section');
       planSection.append(current);
 
       let left = document.createElement('div');
@@ -476,7 +554,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
       left.append(nextPlanAction);
 
-      if (this.state.cancel_url) {
+      if (!this.state.subscription.cancel_at) {
 
         let right = document.createElement('div');
         current.append(right);
@@ -490,7 +568,6 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
         let cancelPlan = button.cloneNode();
         cancelPlan.classList.add('ref-cancel-plan');
-        cancelPlan.dataset.url = this.state.cancel_url;
         cancelPlan.textContent = 'Cancel plan';
         cancelPlan.style.color = '#383d40';
         cancelPlan.style.border = '1px solid rgba(0,0,0,0.2)';
@@ -509,8 +586,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
     paymentSection.append(sectionTitle);
 
     let flex = document.createElement('div');
-    flex.style.display = 'flex';
-    flex.style.justifyContent = 'space-between';
+    flex.classList.add('ref-section');
     paymentSection.append(flex);
 
     let left = document.createElement('div');
@@ -612,19 +688,24 @@ class PaddleManageSubscriptionDialog extends Dialog {
       let row = paymentsTable.insertRow();
 
       let cell = row.insertCell();
+      cell.classList.add('ref-payments-td');
       cell.style.padding = '0 1.5em .8em 0';
 
       if (payment.invoice_number && payment.total > 0) {
         let a = document.createElement('a');
         a.classList.add('hyperlink');
-        // TODO: is this okay in nextjs?
-        a.href = payment.download_url + '?auth_token=' + this.state.authToken;
+        a.href = payment.download_url;
         a.download = 'invoice-' + payment.id;
         a.target = '_blank';
         a.style.textDecoration = 'none';
         a.style.color = '#383d40';
         a.innerHTML = `
-          <span>${this.formatDate(payment.created)} </span>
+          ${this.formatDate(payment.created, {
+            month: 'short',
+            day: 'numeric'
+          })}<span class="ref-show-md">, ${this.formatDate(payment.created, {
+            year: 'numeric',
+          })}</span>
           <span style="position: relative; top: 1px;">
             <svg viewBox="0 0 16 16" width=".8em" height=".8em" fill="currentColor" xmlns="http://www.w3.org/2000/svg">  <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
     <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/></svg>
@@ -638,11 +719,13 @@ class PaddleManageSubscriptionDialog extends Dialog {
       }
 
       cell = row.insertCell();
+      cell.classList.add('ref-payments-td');
       cell.style.padding = '0 1.5em .8em 1.5em';
       cell.style.textAlign = 'center';
       cell.textContent = this.formatAmount(payment.grand_total, payment.currency);
 
       cell = row.insertCell();
+      cell.classList.add('ref-payments-td');
       cell.style.padding = '0 1.5em .8em 1.5em';
       let badge = document.createElement('span');
       badge.style.padding = '5px 10px';
@@ -659,6 +742,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
       cell.append(badge);
 
       cell = row.insertCell();
+      cell.classList.add('ref-payments-td');
       cell.style.padding = '0 0 .8em 1.5em';
       cell.textContent = payment.purchased_item;
     }

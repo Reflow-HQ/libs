@@ -572,6 +572,18 @@ export class ReflowAuth {
       } catch (e: any) {
         return errorResponse(e?.data?.errors?.system ?? e.message);
       }
+    } else if (params.has("cancel-subscription")) {
+      try {
+        let response: any = await this.api("/auth/user/cancel-subscription", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${await this.get("_key")}`,
+          },
+        });
+        return Response.json(response);
+      } catch (e: any) {
+        return errorResponse(e?.data?.errors?.system ?? e.message);
+      }
     }
 
     return errorResponse("Invalid action");
