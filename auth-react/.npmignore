@@ -1,2 +1,4 @@
 examples/
 tests/
+.storybook/
+stories/
