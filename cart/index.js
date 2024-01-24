@@ -1,17 +1,26 @@
 import IntlMessageFormat from "intl-messageformat";
 import debounce from "lodash.debounce";
 import defaultLocalization from "./locales/locale_en-US";
-
+import Api from '../helpers/Api.mjs';
 import validateLocaleJSON from "./helpers/validateLocaleJSON";
 
 // Cart Manager Class
 
 export default class Cart {
-  constructor({ storeID, apiBase, localization, testMode = false }) {
+  constructor({
+    storeID,
+    apiBase,
+    localization,
+    testMode = false
+  }) {
     this.storeID = storeID;
     this.testMode = testMode || false;
-    this.apiBase = apiBase || `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
-    this.apiCache = new Map();
+
+    this._api = new Api({
+      storeID,
+      apiBase,
+      testMode
+    })
 
     this.localization = {
       ...defaultLocalization,
@@ -43,7 +52,9 @@ export default class Cart {
       selectedShippingMethod: -1,
     };
 
-    this.localFormData = new LocalStorageFormData({ storeID });
+    this.localFormData = new LocalStorageFormData({
+      storeID
+    });
 
     this.scheduleRefresh = debounce(this.refresh.bind(this), 250);
 
@@ -59,48 +70,6 @@ export default class Cart {
     }
 
     return new IntlMessageFormat(this.localization[key], this.localization.locale).format(data);
-  }
-
-  api(endpoint, options = {}) {
-    if (typeof endpoint != "string" || !endpoint.trim().length) {
-      return Promise.reject("Reflow: Endpoint Required");
-    }
-
-    endpoint = endpoint.replace(/^\/+/, "");
-
-    const method = options.method?.toUpperCase() || "GET";
-    const body =
-      options.body instanceof Object
-        ? new URLSearchParams(options.body).toString()
-        : typeof options.body === "string"
-        ? options.body
-        : "";
-    const requestKey = endpoint + method + body;
-
-    if (this.apiCache.has(requestKey)) {
-      return this.apiCache.get(requestKey);
-    }
-
-    const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options).then(
-      async (response) => {
-        let data = await response.json();
-
-        this.apiCache.delete(requestKey);
-
-        if (!response.ok) {
-          let err = Error(data.error || "HTTP error");
-          err.status = response.status;
-          err.data = data;
-          throw err;
-        }
-
-        return data;
-      }
-    );
-
-    this.apiCache.set(requestKey, result);
-
-    return result;
   }
 
   on(event, cb) {
@@ -207,9 +176,9 @@ export default class Cart {
     }
 
     if (!this.isDeliveryMethodValid(this.state.deliveryMethod)) {
-      this.state.deliveryMethod = this.isDeliveryMethodValid(oldState.deliveryMethod)
-        ? oldState.deliveryMethod
-        : this.getDefaultDeliveryMethod();
+      this.state.deliveryMethod = this.isDeliveryMethodValid(oldState.deliveryMethod) ?
+        oldState.deliveryMethod :
+        this.getDefaultDeliveryMethod();
     }
 
     if (newState.locations) {
@@ -231,7 +200,7 @@ export default class Cart {
   }
 
   isLoaded() {
-    return !!this.state?.isLoaded;
+    return this.state && this.state.isLoaded;
   }
 
   isEmpty() {
@@ -270,26 +239,38 @@ export default class Cart {
   }
 
   setDeliveryMethod(deliveryMethod) {
-    this.updateState({ deliveryMethod, selectedLocation: -1, selectedShippingMethod: -1 });
+    this.updateState({
+      deliveryMethod,
+      selectedLocation: -1,
+      selectedShippingMethod: -1
+    });
 
     if (deliveryMethod === "shipping" && this.state.shippingAddress) {
-      this.invalidateTaxExemption({ address: this.state.shippingAddress });
+      this.invalidateTaxExemption({
+        address: this.state.shippingAddress
+      });
     } else {
       this.scheduleRefresh();
     }
   }
 
   setSelectedLocation(selectedLocation) {
-    this.updateState({ selectedLocation });
+    this.updateState({
+      selectedLocation
+    });
 
     const location = this.state.locations[selectedLocation];
     if (!location) return;
 
-    this.invalidateTaxExemption({ address: location.address });
+    this.invalidateTaxExemption({
+      address: location.address
+    });
   }
 
   setSelectedShippingMethod(selectedShippingMethod) {
-    this.updateState({ selectedShippingMethod });
+    this.updateState({
+      selectedShippingMethod
+    });
     this.scheduleRefresh();
   }
 
@@ -388,7 +369,7 @@ export default class Cart {
   }
 
   getProducts() {
-    return this.state?.products || [];
+    return this.state && this.state.products ? this.state.products : [];
   }
 
   hasProducts() {
@@ -400,7 +381,7 @@ export default class Cart {
   }
 
   getShippableCountries() {
-    return this.state?.shippableCountries || [];
+    return this.state && this.state.shippableCountries ? this.state.shippableCountries : [];
   }
 
   offersShipping() {
@@ -408,7 +389,7 @@ export default class Cart {
   }
 
   offersLocalPickup() {
-    return !!this.state?.locations?.length;
+    return (this.state && this.state.locations) ? !!this.state.locations.length : false;
   }
 
   getCountryByCode(code) {
@@ -416,7 +397,7 @@ export default class Cart {
   }
 
   getTaxPricingType() {
-    return this.state?.taxes?.details?.pricingType || null;
+    return (this.state && this.state.taxes && this.state.taxes.details) ? this.state.taxes.details.pricingType : false;
   }
 
   canDeliver() {
@@ -442,7 +423,10 @@ export default class Cart {
     // Old format of passing errors from the server
     // ['errors' => ['system' => 'Some error message.']
 
-    let errors = e?.data?.errors || {};
+    let errors = {};
+    if (e.data && e.data.errors) {
+      errors = e.data.errors;
+    }
     let message = errors[subject] || "";
 
     if (e.data.errorCode) {
@@ -483,7 +467,9 @@ export default class Cart {
 
   formatProductPersonalization(personalization = []) {
     return personalization.map((p) => {
-      let personalization = { id: p.id };
+      let personalization = {
+        id: p.id
+      };
 
       if (p.inputText) personalization.inputText = p.inputText;
       if (p.selected) personalization.selected = p.selected;
@@ -502,7 +488,7 @@ export default class Cart {
   }
 
   formatCurrency(money) {
-    const currencyConfig = this.state?.currencyConfig || this.getDefaultCurrencyConfig();
+    const currencyConfig = this.state && this.state.currencyConfig ? this.state.currencyConfig : this.getDefaultCurrencyConfig();
     let fractionDigits = 0;
 
     if (isNaN(money)) {
@@ -529,7 +515,7 @@ export default class Cart {
   }
 
   getPaymentProvidersByType(provider) {
-    return this.state.paymentProviders?.filter((p) => p.provider === provider) || [];
+    return this.state && this.state.paymentProviders ? this.state.paymentProviders.filter((p) => p.provider === provider) : [];
   }
 
   arePaymentProvidersAvailable() {
@@ -550,14 +536,14 @@ export default class Cart {
   }
 
   isStripeSupported() {
-    return this.getPaymentProvider("stripe")?.supported;
+    return this.getPaymentProvider("stripe") && this.getPaymentProvider("stripe").supported;
   }
 
   // Paypal
 
   isPaypalSupported() {
     if (this.hasPhysicalProducts() && !this.offersShipping()) return false;
-    return !!this.getPaymentProvider("paypal")?.supported;
+    return this.getPaymentProvider("paypal") && this.getPaymentProvider("paypal").supported;
   }
 
   onlyPaypalNoDelivery() {
@@ -577,7 +563,9 @@ export default class Cart {
   }
 
   async create() {
-    let result = await this.api("/carts/", { method: "POST" }, false);
+    let result = await this._api.fetch("carts/", {
+      method: "POST"
+    });
     return result.cartKey;
   }
 
@@ -593,7 +581,7 @@ export default class Cart {
       addon = "?" + params.join("&");
     }
 
-    return await this.api("/carts/" + key + addon, {}, false);
+    return await this._api.fetch("carts/" + key + addon);
   }
 
   async refreshState(additionalParams = {}) {
@@ -640,7 +628,11 @@ export default class Cart {
     await this.refreshState(queryParams);
   }
 
-  async addProduct({ id, variantID, personalization = [] }, quantity = 1) {
+  async addProduct({
+    id,
+    variantID,
+    personalization = []
+  }, quantity = 1) {
     try {
       let body = new FormData();
       let files = [];
@@ -663,32 +655,39 @@ export default class Cart {
 
         body.append("personalization", JSON.stringify(personalization));
 
-        for (const { hash, file } of files) {
+        for (const {
+            hash,
+            file
+          } of files) {
           body.append(`personalization_files[${hash}]`, file);
         }
       }
 
-      let result = await this.api(
-        `/add-to-cart/${id}/` +
-          quantity +
-          "/" +
-          (variantID || "") +
-          (this.key ? "?cartKey=" + this.key : ""),
-        { method: "POST", body },
-        false
+      let result = await this._api.fetch(
+        `add-to-cart/${id}/` +
+        quantity +
+        "/" +
+        (variantID || "") +
+        (this.key ? "?cartKey=" + this.key : ""), {
+          method: "POST",
+          body
+        }
       );
 
       if (result.cartKey) {
         this.key = result.cartKey;
       }
 
-      // TODO: add query param for quantity
-      // TODO: pass variant to channels
+      this.updateState({
+        quantity: result.cartQuantity
+      });
 
-      this.updateState({ quantity: result.cartQuantity });
-
-      this.trigger("product-added", { productID: id });
-      this.broadcast("product-added", { productID: id });
+      this.trigger("product-added", {
+        productID: id
+      });
+      this.broadcast("product-added", {
+        productID: id
+      });
 
       this.scheduleRefresh();
 
@@ -711,19 +710,26 @@ export default class Cart {
         body.append("personalization", JSON.stringify(formattedPersonalization));
       }
 
-      let result = await this.api(
+      let result = await this._api.fetch(
         `/update-cart-product/${this.key}/${product.id}/` +
-          quantity +
-          "/" +
-          (product.variant?.id || ""),
-        { method: "POST", body },
-        false
+        quantity +
+        "/" +
+        (product.variant ? product.variant.id : ""), {
+          method: "POST",
+          body
+        }
       );
 
-      this.updateState({ quantity: result.cartQuantity });
+      this.updateState({
+        quantity: result.cartQuantity
+      });
 
-      this.trigger("product-updated", { productID: product.id });
-      this.broadcast("product-updated", { productID: product.id });
+      this.trigger("product-updated", {
+        productID: product.id
+      });
+      this.broadcast("product-updated", {
+        productID: product.id
+      });
 
       this.scheduleRefresh();
 
@@ -746,16 +752,23 @@ export default class Cart {
         body.append("personalization", JSON.stringify(formattedPersonalization));
       }
 
-      let result = await this.api(
-        `/remove-cart-product/${this.key}/${product.id}/` + (product.variant?.id || ""),
-        { method: "POST", body },
-        false
+      let result = await this._api.fetch(
+        `/remove-cart-product/${this.key}/${product.id}/` + (product.variant ? product.variant.id : ""), {
+          method: "POST",
+          body
+        }
       );
 
-      this.updateState({ quantity: result.cartQuantity });
+      this.updateState({
+        quantity: result.cartQuantity
+      });
 
-      this.trigger("product-removed", { productID: product.id });
-      this.broadcast("product-removed", { productID: product.id });
+      this.trigger("product-removed", {
+        productID: product.id
+      });
+      this.broadcast("product-removed", {
+        productID: product.id
+      });
 
       this.scheduleRefresh();
 
@@ -766,7 +779,10 @@ export default class Cart {
     }
   }
 
-  async updateAddress({ address, deliveryMethod }) {
+  async updateAddress({
+    address,
+    deliveryMethod
+  }) {
     // Updates the shipping/digital address and fetches the contents of the Cart with updated
     // tax regions, shipping methods, etc. taking into account the new address.
 
@@ -779,13 +795,11 @@ export default class Cart {
       body.append("address", JSON.stringify(address));
       body.append("delivery_method", deliveryMethod);
 
-      let result = await this.api(
-        `/update-address/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/update-address/${this.key}/`, {
           method: "POST",
           body,
-        },
-        false
+        }
       );
 
       if (result.taxExemptionRemoved) {
@@ -804,7 +818,12 @@ export default class Cart {
     }
   }
 
-  async updateTaxExemption({ address, deliveryMethod, exemptionType, exemptionValue }) {
+  async updateTaxExemption({
+    address,
+    deliveryMethod,
+    exemptionType,
+    exemptionValue
+  }) {
     try {
       let body = new FormData();
 
@@ -812,13 +831,11 @@ export default class Cart {
       body.append("delivery-method", deliveryMethod);
       body.append(exemptionType, exemptionValue);
 
-      let result = await this.api(
-        `/update-tax-exemption/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/update-tax-exemption/${this.key}/`, {
           method: "POST",
           body,
-        },
-        false
+        }
       );
 
       this.trigger("tax-exemption-updated");
@@ -833,18 +850,18 @@ export default class Cart {
     }
   }
 
-  async invalidateTaxExemption({ address }) {
+  async invalidateTaxExemption({
+    address
+  }) {
     try {
       let body = new FormData();
       body.append("address", JSON.stringify(address));
 
-      let result = await this.api(
-        `/invalidate-tax-exemption/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/invalidate-tax-exemption/${this.key}/`, {
           method: "POST",
           body,
-        },
-        false
+        }
       );
 
       if (result.taxExemptionRemoved) {
@@ -862,12 +879,10 @@ export default class Cart {
 
   async removeTaxExemptionFile() {
     try {
-      let result = await this.api(
-        `/remove-tax-exemption-file/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/remove-tax-exemption-file/${this.key}/`, {
           method: "POST",
-        },
-        false
+        }
       );
 
       this.trigger("tax-exemption-removed");
@@ -882,22 +897,26 @@ export default class Cart {
     }
   }
 
-  async applyDiscountCode({ code }) {
+  async applyDiscountCode({
+    code
+  }) {
     try {
       let body = new FormData();
       body.append("code", code);
 
-      let result = await this.api(
-        `/apply-discount-code/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/apply-discount-code/${this.key}/`, {
           method: "POST",
           body,
-        },
-        false
+        }
       );
 
-      this.trigger("discount-code-added", { type: result.type });
-      this.broadcast("discount-code-added", { type: result.type });
+      this.trigger("discount-code-added", {
+        type: result.type
+      });
+      this.broadcast("discount-code-added", {
+        type: result.type
+      });
 
       this.scheduleRefresh();
 
@@ -908,22 +927,26 @@ export default class Cart {
     }
   }
 
-  async removeDiscountCode({ code }) {
+  async removeDiscountCode({
+    code
+  }) {
     try {
       let body = new FormData();
       body.append("code", code);
 
-      let result = await this.api(
-        `/remove-discount-code/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/remove-discount-code/${this.key}/`, {
           method: "POST",
           body,
-        },
-        false
+        }
       );
 
-      this.trigger("discount-code-removed", { type: result.type });
-      this.broadcast("discount-code-removed", { type: result.type });
+      this.trigger("discount-code-removed", {
+        type: result.type
+      });
+      this.broadcast("discount-code-removed", {
+        type: result.type
+      });
 
       this.scheduleRefresh();
 
@@ -942,13 +965,11 @@ export default class Cart {
         body.append(key, value);
       }
 
-      let result = await this.api(
-        `/complete-checkout/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/complete-checkout/${this.key}/`, {
           method: "POST",
           body,
-        },
-        false
+        }
       );
 
       this.trigger("checkout-completed");
@@ -974,16 +995,18 @@ export default class Cart {
       body.append(key, value);
     }
 
-    let result = await this.api(
-      `/create-paypal-order/${this.key}/`,
-      { method: "POST", body },
-      false
+    let result = await this._api.fetch(
+      `/create-paypal-order/${this.key}/`, {
+        method: "POST",
+        body
+      }
     );
 
     if (result.error && result.error == "PAYEE_ACCOUNT_RESTRICTED") {
       throw new Error(
-        "Transaction could not be processed. The PayPal account associated with this store is restricted.",
-        { cause: result.error }
+        "Transaction could not be processed. The PayPal account associated with this store is restricted.", {
+          cause: result.error
+        }
       );
     }
 
@@ -1003,18 +1026,18 @@ export default class Cart {
     return result.orderID;
   }
 
-  async paypalOnApprove({ orderID }, actions) {
+  async paypalOnApprove({
+    orderID
+  }, actions) {
     let body = new FormData();
     body.append("orderID", orderID);
 
     try {
-      let result = await this.api(
-        `/capture-paypal-order/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/capture-paypal-order/${this.key}/`, {
           method: "POST",
           body,
-        },
-        false
+        }
       );
 
       return result;
@@ -1024,20 +1047,22 @@ export default class Cart {
     }
   }
 
-  async updatePaypalShipping({ orderID, address, selectedShippingOption = 0 }) {
+  async updatePaypalShipping({
+    orderID,
+    address,
+    selectedShippingOption = 0
+  }) {
     try {
       let body = new FormData();
       body.append("orderID", orderID);
       body.append("address", JSON.stringify(address));
       body.append("selectedShippingOption", selectedShippingOption);
 
-      let result = await this.api(
-        `/update-paypal-shipping/${this.key}/`,
-        {
+      let result = await this._api.fetch(
+        `/update-paypal-shipping/${this.key}/`, {
           method: "POST",
           body,
-        },
-        false
+        }
       );
 
       return result;
@@ -1051,7 +1076,9 @@ export default class Cart {
 class LocalStorageFormData {
   // Handles localStorage saving and retrieving form data for the Cart component.
 
-  constructor({ storeID }) {
+  constructor({
+    storeID
+  }) {
     this.formDataKey = `reflowFormData${storeID}`;
   }
 

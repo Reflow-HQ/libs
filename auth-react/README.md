@@ -185,15 +185,16 @@ await auth.getToken();
 
 ### `auth.createSubscription( options )`
 
-This method initiates the [subscription flow](https://reflowhq.com/docs/guide/subscriptions-how#subscription-flow). It is called with an ID of the price which the customer is to be subscribed to. This will open a window with a Stripe payment page where the customer can enter their payment details and finalize their subscription.
+This method initiates the [subscription flow](https://reflowhq.com/docs/guide/subscriptions-how#subscription-flow). It is called with an ID of the price which the customer is to be subscribed to. This will open a window with a Stripe or Paddle payment page where the customer can enter their payment details and finalize their subscription.
 
 If the user is not signed in when this method is called, they will be prompted to sign in first, and will then proceed to payment.
 
-`options` is an object which must contain a `priceID` key, which you can obtain by using the [Reflow API](https://reflowhq.com/docs/api/).
+`options` is an object which must contain a `priceID` key, which you can obtain by using the [Reflow API](https://reflowhq.com/docs/api/). In the options you can also select which payment provider to be used for handling the subscription (`stripe` or `paddle`).
 
 ```js
 async auth.createSubscription({
   priceID: "123456789",
+  paymentProvider: "stripe"
 });
 ```
 
@@ -201,7 +202,7 @@ See a [live example](https://codesandbox.io/s/react-reflow-pricing-table-3kdc6l)
 
 ### `auth.modifySubscription()`
 
-This method lets users modify their subscription. When called, it will open a window with a Stripe subscription management page, where the customer can upgrade to another subscription plan, switch between monthly and yearly billing (if you have this configured), and update their payment method and billing info.
+This method lets users modify their subscription. When called, it will open a window where the customer can upgrade to another subscription plan, switch between monthly and yearly billing (if you have this configured), and update their payment method and billing info.
 
 This method only works if the user is signed in and has a subscription.
 
@@ -234,7 +235,7 @@ function MyComponent() {
 }
 ```
 
-While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow store, and payments will be made with PayPal's Sandbox and Stripe's test credit card info.
+While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow store, and payments will be made with Paddle's Sandbox and Stripe's test credit card info.
 
 ## License
 

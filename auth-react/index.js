@@ -11,7 +11,10 @@ function useAuth(config = {}) {
     authInstance = config;
   } else if (config.storeID) {
     if (!authMap.has(config.storeID)) {
-      authMap.set(config.storeID, new Auth({ ...config, autoBind: false }));
+      authMap.set(config.storeID, new Auth({
+        ...config,
+        autoBind: false
+      }));
     }
 
     authInstance = authMap.get(config.storeID);
@@ -50,7 +53,10 @@ function useAuth(config = {}) {
   return authObj;
 }
 
-export { useAuth as default, authMap as _authMap };
+export {
+  useAuth as
+  default, authMap as _authMap
+};
 
 function makeAuthObject(auth) {
   // Wrap the auth in a new object which exposes
