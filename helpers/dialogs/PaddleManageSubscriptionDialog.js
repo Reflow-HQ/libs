@@ -259,7 +259,9 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
     super.render(data);
 
-    let css = `
+    if (!this._shadowDOM.querySelector('style')) {
+
+      let css = `
     dialog {
       padding: 1em 1.2em;
     }
@@ -314,9 +316,10 @@ class PaddleManageSubscriptionDialog extends Dialog {
     }
     `
 
-    let style = document.createElement('style');
-    style.textContent = css;
-    this._shadowDOM.prepend(style);
+      let style = document.createElement('style');
+      style.textContent = css;
+      this._shadowDOM.prepend(style);
+    }
 
     let button = document.createElement('button')
     button.style.display = 'block';
