@@ -36,11 +36,8 @@ class Auth {
     })
 
     this._popupWindow = new PopupWindow({});
-    this._paddleManageSubscriptionDialog = new PaddleManageSubscriptionDialog({
-      auth: this,
-      onClose: this.refresh.bind(this)
-    });
-    this._loadingDialog = new LoadingDialog({});
+    this._paddleManageSubscriptionDialog = null;
+    this._loadingDialog = null;
 
     this._paddleSubscribeCheckout = null;
     this._paddleSubscriptionCheckInterval = null;
@@ -48,6 +45,53 @@ class Auth {
     if (autoBind) {
       this.bind();
     }
+  }
+
+  initializeDialogs() {
+
+    if (document.querySelector(".reflow-auth-dialog-container")) {
+      // The container is present on the page. Dialogs should be working.
+      return;
+    }
+
+    // Add the dialog container to the page and initialize / reinitialize the dialogs.
+    let dialogContainer = document.createElement("div");
+    dialogContainer.classList.add("reflow-auth-dialog-container");
+    document.body.append(dialogContainer);
+
+    this._loadingDialog = new LoadingDialog({
+      container: dialogContainer
+    });
+
+    this._paddleManageSubscriptionDialog = new PaddleManageSubscriptionDialog({
+      container: dialogContainer,
+      updatePlan: async (priceID) => {
+
+        let body = new FormData();
+        body.set('priceID', priceID);
+
+        let response = await this._api.fetch("auth/user/update-plan", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.get("key")}`,
+          },
+          body
+        });
+
+        return response;
+      },
+      cancelSubscription: async () => {
+
+        let response = await this._api.fetch("auth/user/cancel-subscription", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.get("key")}`,
+          },
+        });
+
+        return response;
+      }
+    });
   }
 
   get(key, def = null) {
@@ -419,48 +463,15 @@ class Auth {
       size: {
         w: 650,
         h: 650
-      }
-    });
+      },
+      onParentRefocus: (async () => {
 
-    let response;
+        if (this.isSignedIn()) {
+          this._popupWindow.offParentRefocus()
+          return;
+        }
 
-    try {
-      this._isLoading = true;
-      response = await this._api.fetch("auth/urls");
-      this._isLoading = false;
-
-      if (!response.signinURL) {
-        throw new Error("Unable to retrieve the auth URL");
-      }
-    } catch (e) {
-      this._popupWindow.close();
-      this._isLoading = false;
-      throw e;
-    }
-
-    const url = new URL(response.signinURL);
-    const params = new URLSearchParams(url.search);
-    params.append("origin", window.location.origin);
-    params.append("step", options.step || "login");
-
-    if (options.subscribeTo) {
-      params.append("subscribeTo", Number(options.subscribeTo));
-    }
-
-    if (options.subscribeWith) {
-      params.append("subscribeWith", options.subscribeWith);
-    }
-
-    url.search = params.toString();
-    this._popupWindow.setURL(url.toString());
-
-    this._popupWindow.startPageRefocusInterval({
-
-      stopIntervalClause: (() => this.isSignedIn() || this._popupWindow.isClosed()).bind(this),
-
-      onRefocus: (async () => {
-
-        if (this.isSignedIn() || !this._authToken) {
+        if (!this._authToken) {
           return;
         }
 
@@ -471,7 +482,7 @@ class Auth {
             method: "POST",
           });
         } catch (e) {
-          this._popupWindow.stopPageRefocusInterval();
+          this._popupWindow.offParentRefocus()
           return;
         }
 
@@ -515,7 +526,39 @@ class Auth {
           }
         }
       }).bind(this)
-    })
+    });
+
+    let response;
+
+    try {
+      this._isLoading = true;
+      response = await this._api.fetch("auth/urls");
+      this._isLoading = false;
+
+      if (!response.signinURL) {
+        throw new Error("Unable to retrieve the auth URL");
+      }
+    } catch (e) {
+      this._popupWindow.close();
+      this._isLoading = false;
+      throw e;
+    }
+
+    const url = new URL(response.signinURL);
+    const params = new URLSearchParams(url.search);
+    params.append("origin", window.location.origin);
+    params.append("step", options.step || "login");
+
+    if (options.subscribeTo) {
+      params.append("subscribeTo", Number(options.subscribeTo));
+    }
+
+    if (options.subscribeWith) {
+      params.append("subscribeWith", options.subscribeWith);
+    }
+
+    url.search = params.toString();
+    this._popupWindow.setURL(url.toString());
   }
 
   async signOut() {
@@ -562,6 +605,8 @@ class Auth {
       return;
     }
 
+    this.initializeDialogs();
+
     let paymentProvider = data.paymentProvider || 'stripe';
 
     if (!this.isSignedIn()) {
@@ -587,7 +632,18 @@ class Auth {
         size: {
           w: 650,
           h: 800
-        }
+        },
+        onParentRefocus: (() => {
+
+          this.refresh.bind(this);
+
+          setTimeout(() => {
+            if (this._popupWindow.isClosed()) {
+              this._popupWindow.offParentRefocus();
+            }
+          }, 500);
+
+        }).bind(this)
       });
     }
 
@@ -629,11 +685,6 @@ class Auth {
       // Stripe subscriptions are handled in a popup window that redirects to the checkout url.
 
       this._popupWindow.setURL(checkoutData.checkoutURL);
-
-      this._popupWindow.startPageRefocusInterval({
-        stopIntervalClause: () => this._popupWindow.isClosed(),
-        onRefocus: this.refresh.bind(this)
-      });
     }
 
     if (checkoutData.provider == 'paddle') {
@@ -644,9 +695,6 @@ class Auth {
           environment: this.testMode ? 'sandbox' : 'production',
           seller: checkoutData.seller_id,
           eventCallback: function (data) {
-
-            if (data.name == "checkout.completed") {}
-
             if (data.name == "checkout.closed" && data.data.status == 'completed') {
 
               this._loadingDialog.open();
@@ -669,7 +717,7 @@ class Auth {
               setTimeout(() => {
                 clearInterval(this._paddleSubscriptionCheckInterval);
                 this._loadingDialog.close();
-              }, 1000 * 60 * 5) // Give up after 5 mins
+              }, 1000 * 60 * 2) // Give up after 2 mins
             }
           }.bind(this)
         });
@@ -702,12 +750,22 @@ class Auth {
   }
 
   async modifySubscription() {
-    if (!this.isSignedIn() || this.isLoading()) {
+    if (!this.isSignedIn()) {
       console.error("Reflow: Can't modify subscription, user is not signed in");
       return;
     }
 
-    if (this.subscription.payment_provider && this.subscription.payment_provider == 'stripe') {
+    if (this.isLoading()) {
+      return;
+    }
+
+    this.initializeDialogs();
+
+    let onSuccess = (() => this.refresh()).bind(this);
+
+    let provider = this.subscription.payment_provider || 'stripe';
+
+    if (provider == 'stripe') {
 
       // If the subscription is stripe based, prepare a popup window for the Stripe-hosted management page.
 
@@ -717,14 +775,29 @@ class Auth {
         size: {
           w: 650,
           h: 800
-        }
+        },
+        onParentRefocus: (() => {
+
+          onSuccess();
+
+          setTimeout(() => {
+            if (this._popupWindow.isClosed()) {
+              this._popupWindow.offParentRefocus();
+            }
+          }, 500);
+
+        }).bind(this)
       });
+    } else if (provider == 'paddle') {
+
+      // For paddle subscriptions we show a loading dialog.
+
+      this._loadingDialog.open();
     }
 
     let response;
 
     try {
-      this._loadingDialog.open();
       this._isLoading = true;
 
       response = await this._api.fetch("auth/user/manage-subscription", {
@@ -746,17 +819,11 @@ class Auth {
     }
 
     if (response.provider == 'stripe') {
-
       this._popupWindow.setURL(response.subscriptionManagementURL);
-
-      this._popupWindow.startPageRefocusInterval({
-        stopIntervalClause: () => this._popupWindow.isClosed(),
-        onRefocus: this.refresh.bind(this)
-      });
     }
 
     if (response.provider == 'paddle') {
-      this._paddleManageSubscriptionDialog.open(response);
+      this._paddleManageSubscriptionDialog.open(response, onSuccess);
     }
   }
 

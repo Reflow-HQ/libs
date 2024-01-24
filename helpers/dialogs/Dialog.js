@@ -1,5 +1,7 @@
 class Dialog {
   constructor({
+    id,
+    container,
     width,
     height,
     showHeader,
@@ -7,6 +9,8 @@ class Dialog {
     title,
     onClose
   }) {
+    this.id = id;
+    this.pageContainer = container || document.body;
     this.title = title;
     this.showHeader = showHeader;
     this.showClose = showClose;
@@ -19,6 +23,13 @@ class Dialog {
   }
 
   init() {
+    this._shadowHost = document.createElement('div');
+    this._shadowHost.id = this.id;
+    this.pageContainer.append(this._shadowHost)
+    this._shadowDOM = this._shadowHost.attachShadow({
+      mode: "open"
+    });
+
     this._dialog = document.createElement('dialog');
     this._dialog.classList.add('ref-dialog');
     this._dialog.style.width = this.width + 'px';
@@ -33,7 +44,7 @@ class Dialog {
     this._dialog.style.outline = '0';
     this._dialog.style.fontSize = '16px';
     this._dialog.style.color = '#383d40';
-    document.body.append(this._dialog);
+    this._shadowDOM.append(this._dialog);
 
     this._backdrop = document.createElement('div');
     this._backdrop.classList.add('ref-dialog-backdrop');
@@ -46,7 +57,7 @@ class Dialog {
     this._backdrop.style.backgroundColor = '#edf1f3';
     this._backdrop.style.opacity = '.9';
     this._backdrop.style.zIndex = '9999';
-    document.body.append(this._backdrop);
+    this._shadowDOM.append(this._backdrop);
 
     this._container = document.createElement('div');
     this._dialog.appendChild(this._container);
@@ -89,13 +100,23 @@ class Dialog {
     });
   }
 
-  open(renderData) {
+  open(renderData, onClose) {
+    this._shadowHost = document.getElementById(this.id);
+    if (!this._shadowHost) return;
+    this._dialog = this._shadowHost.shadowRoot.querySelector('dialog');
+    if (!this._dialog) return;
     this.render(renderData);
     this._backdrop.style.display = 'block';
     this._dialog.showModal();
+
+    this._onClose = onClose && onClose instanceof Function ? onClose : null;
   }
 
   close() {
+    this._shadowHost = document.getElementById(this.id);
+    if (!this._shadowHost) return;
+    this._dialog = this._shadowHost.shadowRoot.querySelector('dialog');
+    if (!this._dialog) return;
     this._dialog.close();
   }
 

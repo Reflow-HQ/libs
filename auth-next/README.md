@@ -799,26 +799,29 @@ Takes the following options:
 
 All are optional.
 
-#### `async function createSubscription(options?: {options: {priceID: number;authEndpoint?: string;onSuccess?: Function;onError?: Function;}})`
+#### `async function createSubscription(options?: {options: {priceID: number;authEndpoint?: string;paymentProvider?: string;onSuccess?: Function;onError?: Function;}})`
 
 Displays a payment window to the currently signed in user, where they can sign up for the subscription plan at the price given in the priceID option. See a full example [above](#subscriber-only-access)
 
-| Property     | Type     | Description                                                                                                                                                                                                               |
-| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| priceID      | number   | The id of a plan price object. You can obtain this from the Reflow control panel or the API.                                                                                                                              |
-| authEndpoint | string   | The path on your website where Next.js serves the auth route handler you created in the setup. By default, this is set to "/auth". If you use a non-standard route handler name or location you will need to change this. |
-| onSuccess    | Function | Callback function which is called after a subscription is successfully created.                                                                                                                                           |
-| onError      | Function | Callback function which is called when an error occurs during subscription creation.                                                                                                                                      |
+| Property        | Type     | Description                                                                                                                                                                                                               |
+| --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| priceID         | number   | The id of a plan price object. You can obtain this from the Reflow control panel or the API.                                                                                                                              |
+| authEndpoint    | string   | The path on your website where Next.js serves the auth route handler you created in the setup. By default, this is set to "/auth". If you use a non-standard route handler name or location you will need to change this. |
+| paymentProvider | string   | The payment provider that should be used for handling the subscription, either 'stripe' or 'paddle'.                                                                                                                      |
+| onSuccess       | Function | Callback function which is called after a subscription is successfully created.                                                                                                                                           |
+| onError         | Function | Callback function which is called when an error occurs during subscription creation.                                                                                                                                      |
 
 The priceID option is required, the rest are optional.
 
-#### `async function modifySubscription(options?: { authEndpoint?: string })`
+#### `async function modifySubscription(options?: { authEndpoint?: string;onSuccess?: Function;onError?: Function; })`
 
 Opens a window which lets the user change their payment method and billing info, or switch to a different plan if available. See a full example [above](#subscriber-only-access)
 
-| Property     | Type   | Required | Description                                                                                                                                                                                                               |
-| ------------ | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| authEndpoint | string | Optional | The path on your website where Next.js serves the auth route handler you created in the setup. By default, this is set to "/auth". If you use a non-standard route handler name or location you will need to change this. |
+| Property     | Type     | Required | Description                                                                                                                                                                                                               |
+| ------------ | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| authEndpoint | string   | Optional | The path on your website where Next.js serves the auth route handler you created in the setup. By default, this is set to "/auth". If you use a non-standard route handler name or location you will need to change this. |
+| onSuccess    | Function | Optional | Callback function which is called after the subscription changes are applied and the management dialog is closed.                                                                                                         |
+| onError      | Function | Optional | Callback function which is called when an error occurs during subscription management.                                                                                                                                    |
 
 #### `async function isSignedIn(options?: { authEndpoint?: string })`
 

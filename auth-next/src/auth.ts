@@ -455,7 +455,7 @@ export class ReflowAuth {
           "/auth/validate-token?auth-token=" +
             params.get("auth-token") +
             "&nonce=" +
-            (await this.get("_nonce")),
+            encodeURIComponent(await this.get("_nonce")),
           {
             method: "POST",
           }
@@ -505,6 +505,7 @@ export class ReflowAuth {
 
       let body = new FormData();
       body.set("priceID", String(params.get("priceID")));
+      body.set("paymentProvider", String(params.get("paymentProvider")));
 
       try {
         let response: any = await this.api("/auth/user/subscribe", {
@@ -514,34 +515,24 @@ export class ReflowAuth {
           },
           body,
         });
-
-        if (!response.checkoutURL) {
-          throw new Error("Subscription unsuccessful");
-        }
-
-        return Response.json({
-          success: true,
-          checkoutURL: response.checkoutURL,
-        });
+        return Response.json(response);
       } catch (e: any) {
         return errorResponse(e?.data?.errors?.system ?? e.message);
       }
     } else if (params.has("manage-subscription")) {
       try {
-        let response: any = await this.api("/auth/user/manage-subscription", {
+        let authToken = await this.get("_key");
+
+        let manageSubscriptionData: any = await this.api("/auth/user/manage-subscription", {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${await this.get("_key")}`,
+            Authorization: `Bearer ${authToken}`,
           },
         });
 
-        if (!response.subscriptionManagementURL) {
-          throw new Error("Subscription management unsuccessful");
-        }
-
         return Response.json({
-          success: true,
-          subscriptionManagementURL: response.subscriptionManagementURL,
+          manageSubscriptionData,
+          authToken,
         });
       } catch (e: any) {
         console.error(e);
@@ -559,6 +550,40 @@ export class ReflowAuth {
         }
       }
       return Response.json(result);
+    } else if (params.has("get-subscription")) {
+      return Response.json({ subscription: await this.subscription() });
+    } else if (params.has("update-subscription")) {
+      if (!params.has("priceID")) {
+        return errorResponse("Price ID missing");
+      }
+
+      let body = new FormData();
+      body.set("priceID", String(params.get("priceID")));
+
+      try {
+        let response: any = await this.api("/auth/user/update-plan", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${await this.get("_key")}`,
+          },
+          body,
+        });
+        return Response.json(response);
+      } catch (e: any) {
+        return errorResponse(e?.data?.errors?.system ?? e.message);
+      }
+    } else if (params.has("cancel-subscription")) {
+      try {
+        let response: any = await this.api("/auth/user/cancel-subscription", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${await this.get("_key")}`,
+          },
+        });
+        return Response.json(response);
+      } catch (e: any) {
+        return errorResponse(e?.data?.errors?.system ?? e.message);
+      }
     }
 
     return errorResponse("Invalid action");
