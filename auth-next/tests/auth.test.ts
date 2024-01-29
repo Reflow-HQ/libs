@@ -16,7 +16,9 @@ function getAuth(): ReflowAuth {
 }
 
 jest.mock("next/headers");
-globalThis.crypto = require("crypto").webcrypto;
+if (!globalThis.hasOwnProperty("crypto")) {
+  globalThis.crypto = require("crypto").webcrypto;
+}
 
 let cookieValue: Record<string, any> = {};
 
