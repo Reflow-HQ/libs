@@ -21,7 +21,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node build.cjs",
     "test": "jest",
     "npm-package-test": "cd tests && ./npm.test.sh",
     "prepublishOnly": "npm run build"
@@ -56,6 +56,7 @@
     "typescript": "^5"
   },
   "peerDependencies": {
+    "@paddle/paddle-js": "^0.5.5",
     "client-only": "^0.0.1",
     "next": ">=13",
     "react": "^18",

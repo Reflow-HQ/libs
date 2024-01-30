@@ -9,7 +9,6 @@ declare class PaddleManageSubscriptionDialog extends Dialog {
     _cancelSubscription: any;
     _paddleUpdatePaymentCheckout: import("@paddle/paddle-js").Paddle | null | undefined;
     _isLoading: boolean | undefined;
-    render(data: any): void;
     renderPriceOption(updateOption: any): HTMLDivElement;
     formatAmount(amount: any, currency: any): string;
     formatDate(date: any, format: any): any;

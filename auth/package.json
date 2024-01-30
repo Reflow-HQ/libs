@@ -2,7 +2,6 @@
   "name": "@reflowhq/auth",
   "version": "2.1.0",
   "description": "Authentication library for login and account management with Reflow",
-  "exports": "./index.js",
   "type": "module",
   "directories": {
     "test": "tests"
@@ -20,7 +19,8 @@
   "license": "MIT",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "npm-package-test": "cd tests && ./npm.test.sh"
+    "npm-package-test": "cd tests && ./npm.test.sh",
+    "build": "node build.cjs"
   },
   "devDependencies": {
     "jest": "^29.4.3",
@@ -36,6 +36,10 @@
   },
   "homepage": "https://github.com/reflow-hq/libs#readme",
   "dependencies": {
-    "@paddle/paddle-js": "^0.5.1"
-  }
+    "@paddle/paddle-js": "^0.5.5"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ]
 }

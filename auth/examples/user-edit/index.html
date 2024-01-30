@@ -4,13 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
     <title>Auth Example</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootswatch@5.2.3/dist/zephyr/bootstrap.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.2.3/dist/zephyr/bootstrap.min.css" />
 
     <script type="module">
-      import Auth from "../../index.js";
+      import Auth from "../../dist/index.js";
 
       let auth = new Auth({ storeID: 267418190 });
 
@@ -122,8 +119,9 @@
         the Reflow Auth library.
       </p>
       <div class="alert alert-warning" role="alert">
-        <span
-          ><strong>Note</strong> to test this example, serve the <code>auth</code> folder on
+        <span><strong>Note</strong> to test this example, first run <code>npm run build</code> from the <code>auth</code>
+          folder.
+          <br> Then serve the <code>auth</code> folder on
           localhost:8080 using a local web server, then
           <a href="http://localhost:8080/examples/user-edit/index.html">open this page</a> (If the
           link doesn't work you haven't started the webserver correctly) and click the button below.
