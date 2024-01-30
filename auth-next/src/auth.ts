@@ -287,7 +287,7 @@ export class ReflowAuth {
 
   protected async encrypt(value: string): Promise<string> {
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const alg = { name: "AES-GCM", iv: iv };
+    const alg = { name: "AES-GCM", iv: new Uint8Array(iv) };
 
     const valueEncoded = new TextEncoder().encode(value);
     const secretEncoded = new TextEncoder().encode(this.secret);
@@ -302,13 +302,17 @@ export class ReflowAuth {
   protected async decrypt(value: string): Promise<string> {
     const [data, iv] = value.split(".");
 
-    const alg = { name: "AES-GCM", iv: this.base64ToArrayBuffer(iv) };
+    const alg = { name: "AES-GCM", iv: new Uint8Array(this.base64ToArrayBuffer(iv)) };
     const secretEncoded = new TextEncoder().encode(this.secret);
     const secretHash = await crypto.subtle.digest("SHA-256", secretEncoded);
 
     const decryptKey = await crypto.subtle.importKey("raw", secretHash, alg, false, ["decrypt"]);
 
-    const decrypted = await crypto.subtle.decrypt(alg, decryptKey, this.base64ToArrayBuffer(data));
+    const decrypted = await crypto.subtle.decrypt(
+      alg,
+      decryptKey,
+      new Uint8Array(this.base64ToArrayBuffer(data))
+    );
 
     return new TextDecoder().decode(decrypted);
   }
