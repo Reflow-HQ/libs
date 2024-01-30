@@ -19,7 +19,7 @@
   "license": "MIT",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "build": "node build.cjs && npx tsc"
+    "build": "node build.cjs"
   },
   "devDependencies": {
     "jest": "^29.4.3",
