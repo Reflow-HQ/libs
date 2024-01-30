@@ -20,6 +20,7 @@
   },
   "scripts": {
     "test": "jest",
+    "npm-package-test": "cd tests && ./npm.test.sh",
     "watch": "start-storybook -p 8080",
     "build-storybook": "build-storybook",
     "build": "node build.js && npx tsc",

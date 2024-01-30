@@ -2,7 +2,6 @@
   "name": "@reflowhq/cart",
   "version": "2.0.5",
   "description": "Shopping Cart management library for Reflow",
-  "exports": "./index.js",
   "type": "module",
   "directories": {
     "test": "tests"
@@ -21,7 +20,9 @@
     "lodash.debounce": "^4.0.8"
   },
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "npm-package-test": "cd tests && ./npm.test.sh",
+    "build": "node build.cjs"
   },
   "devDependencies": {
     "jest": "^29.4.3",
@@ -35,5 +36,9 @@
   "bugs": {
     "url": "https://github.com/reflow-hq/libs/issues"
   },
-  "homepage": "https://github.com/reflow-hq/libs#readme"
+  "homepage": "https://github.com/reflow-hq/libs#readme",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ]
 }

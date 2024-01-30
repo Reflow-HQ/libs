@@ -19,7 +19,8 @@
   "author": "Reflow HQ",
   "license": "MIT",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "npm-package-test": "cd tests && ./npm.test.sh"
   },
   "devDependencies": {
     "jest": "^29.4.3",

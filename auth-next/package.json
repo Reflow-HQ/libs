@@ -23,6 +23,7 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
+    "npm-package-test": "cd tests && ./npm.test.sh",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

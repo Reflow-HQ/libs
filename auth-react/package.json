@@ -22,6 +22,7 @@
   "license": "MIT",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "npm-package-test": "cd tests && ./npm.test.sh",
     "build": "npx tsc",
     "prepublishOnly": "npm run build",
     "watch": "start-storybook -p 8080",
