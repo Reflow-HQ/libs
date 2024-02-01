@@ -1,7 +1,7 @@
 import {
   initializePaddle
 } from '@paddle/paddle-js';
-import Dialog from './Dialog';
+import Dialog from './Dialog.mjs';
 
 class PaddleManageSubscriptionDialog extends Dialog {
   constructor({

@@ -2,10 +2,17 @@
  * @jest-environment jsdom
  */
 
-import { jest } from "@jest/globals";
+import {
+  jest
+} from "@jest/globals";
 import Auth from "@reflowhq/auth";
-import useAuth, { _authMap } from "../index.js";
-import { renderHook, act } from "@testing-library/react";
+import useAuth, {
+  _authMap
+} from "../index.js";
+import {
+  renderHook,
+  act
+} from "@testing-library/react";
 
 describe("Auth", () => {
   beforeEach(() => {
@@ -18,7 +25,11 @@ describe("Auth", () => {
       renderHook(() => useAuth());
     }).toThrow("storeID config option is required");
 
-    const { result } = renderHook(() => useAuth({ storeID: 1234 }));
+    const {
+      result
+    } = renderHook(() => useAuth({
+      storeID: 1234
+    }));
 
     expect(Object.keys(result.current)).toStrictEqual([
       "user",
@@ -60,9 +71,17 @@ describe("Auth", () => {
 
     window.localStorage.reflowAuth123456 = JSON.stringify(data);
 
-    const { result, unmount } = renderHook(() => useAuth({ storeID: 123456 }));
+    const {
+      result,
+      unmount
+    } = renderHook(() => useAuth({
+      storeID: 123456
+    }));
 
-    expect(result.current.user).toStrictEqual({ name: "J Doe", email: "aa@example.com" });
+    expect(result.current.user).toStrictEqual({
+      name: "J Doe",
+      email: "aa@example.com"
+    });
     expect(result.current.isSignedIn()).toBe(true);
     expect(_authMap.size).toBe(1);
 
@@ -82,7 +101,11 @@ describe("Auth", () => {
     auth.unbind = jest.fn();
     auth.onSignin = jest.fn();
 
-    const { result, rerender, unmount } = renderHook(() => useAuth(auth));
+    const {
+      result,
+      rerender,
+      unmount
+    } = renderHook(() => useAuth(auth));
 
     expect(result.current.isSignedIn()).toBe(false);
     expect(result.current.user).toBe(null);
@@ -126,14 +149,27 @@ describe("Auth", () => {
   });
 
   it("should reuse auth instances", async () => {
-    const { result, unmount: unmount } = renderHook(() => useAuth({ storeID: 777123 }));
+    const {
+      result,
+      unmount: unmount
+    } = renderHook(() => useAuth({
+      storeID: 777123
+    }));
     expect(result.current.isSignedIn()).toBe(false);
     expect(_authMap.size).toBe(1);
 
-    const { unmount: unmount2 } = renderHook(() => useAuth({ storeID: 777123 }));
+    const {
+      unmount: unmount2
+    } = renderHook(() => useAuth({
+      storeID: 777123
+    }));
     expect(_authMap.size).toBe(1);
 
-    const { unmount: unmount3 } = renderHook(() => useAuth({ storeID: 12345678 }));
+    const {
+      unmount: unmount3
+    } = renderHook(() => useAuth({
+      storeID: 12345678
+    }));
     expect(_authMap.size).toBe(2);
 
     unmount();
@@ -150,14 +186,27 @@ describe("Auth", () => {
   });
 
   it("should reuse auth instances", async () => {
-    const { result, unmount: unmount } = renderHook(() => useAuth({ storeID: 777123 }));
+    const {
+      result,
+      unmount: unmount
+    } = renderHook(() => useAuth({
+      storeID: 777123
+    }));
     expect(result.current.isSignedIn()).toBe(false);
     expect(_authMap.size).toBe(1);
 
-    const { unmount: unmount2 } = renderHook(() => useAuth({ storeID: 777123 }));
+    const {
+      unmount: unmount2
+    } = renderHook(() => useAuth({
+      storeID: 777123
+    }));
     expect(_authMap.size).toBe(1);
 
-    const { unmount: unmount3 } = renderHook(() => useAuth({ storeID: 12345678 }));
+    const {
+      unmount: unmount3
+    } = renderHook(() => useAuth({
+      storeID: 12345678
+    }));
     expect(_authMap.size).toBe(2);
 
     unmount();

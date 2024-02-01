@@ -1,4 +1,4 @@
-import Dialog from './Dialog';
+import Dialog from './Dialog.mjs';
 
 class LoadingDialog extends Dialog {
   constructor({

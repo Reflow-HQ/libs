@@ -2,9 +2,9 @@ import "client-only";
 import { initializePaddle, PaddleEventData, CheckoutOpenOptions, Paddle } from "@paddle/paddle-js";
 import { AuthRefreshChange, Subscription } from "./auth-types";
 import { useEffect } from "react";
-import PopupWindow from "../../helpers/PopupWindow";
-import PaddleManageSubscriptionDialog from "../../helpers/dialogs/PaddleManageSubscriptionDialog";
-import LoadingDialog from "../../helpers/dialogs/LoadingDialog";
+import PopupWindow from "../../helpers/PopupWindow.mjs";
+import PaddleManageSubscriptionDialog from "../../helpers/dialogs/PaddleManageSubscriptionDialog.mjs";
+import LoadingDialog from "../../helpers/dialogs/LoadingDialog.mjs";
 
 let popupWindow: PopupWindow = new PopupWindow({});
 let paddleSubscribeCheckout: Paddle | undefined;
@@ -409,7 +409,6 @@ export async function createSubscription(options: {
     );
     checkoutData = await response.json();
     working = false;
-    loadingDialog.close();
   } catch (e: any) {
     if (options.onError) {
       options.onError(e);
@@ -509,6 +508,7 @@ export async function createSubscription(options: {
       };
     }
 
+    loadingDialog.close();
     paddleSubscribeCheckout?.Checkout.open(checkoutSettings);
   }
 }
@@ -611,7 +611,7 @@ export async function modifySubscription(options?: {
     throw e;
   }
 
-  let { manageSubscriptionData, authToken } = await response.json();
+  let manageSubscriptionData = await response.json();
 
   if (manageSubscriptionData.provider == "stripe") {
     popupWindow.setURL(manageSubscriptionData.subscriptionManagementURL);

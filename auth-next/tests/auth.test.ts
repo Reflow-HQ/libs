@@ -457,20 +457,31 @@ describe("Reflow Auth Server", () => {
         ok: true,
         json: () =>
           Promise.resolve({
+            status: "success",
+            provider: "stripe",
+            mode: "live",
             checkoutURL: "https://example.com",
           }),
       })
     );
 
     response = await auth.handleRequest(
-      new Request("https://adfasdf/something?create-subscription=1&priceID=1337")
+      new Request(
+        "https://adfasdf/something?create-subscription=1&priceID=1337&paymentProvider=stripe"
+      )
     );
 
     json = await response.json();
-    expect(json).toEqual({ success: true, checkoutURL: "https://example.com" });
+    expect(json).toEqual({
+      status: "success",
+      provider: "stripe",
+      mode: "live",
+      checkoutURL: "https://example.com",
+    });
 
     let body = new FormData();
     body.set("priceID", "1337");
+    body.set("paymentProvider", "stripe");
 
     expect(fetch).toHaveBeenCalledWith(
       "http://api.reflow.local/v2/stores/199976733/auth/user/subscribe",
@@ -491,6 +502,8 @@ describe("Reflow Auth Server", () => {
         ok: true,
         json: () =>
           Promise.resolve({
+            status: "success",
+            provider: "stripe",
             subscriptionManagementURL: "https://example.com",
           }),
       })
@@ -502,7 +515,8 @@ describe("Reflow Auth Server", () => {
 
     json = await response.json();
     expect(json).toEqual({
-      success: true,
+      status: "success",
+      provider: "stripe",
       subscriptionManagementURL: "https://example.com",
     });
 
@@ -510,6 +524,108 @@ describe("Reflow Auth Server", () => {
       "http://api.reflow.local/v2/stores/199976733/auth/user/manage-subscription",
       {
         method: "GET",
+        headers: {
+          Authorization: "Bearer sess.123",
+        },
+      }
+    );
+
+    // Get subscription test
+
+    // @ts-ignore
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            subscription: {
+              price: 123,
+            },
+          }),
+      })
+    );
+
+    response = await auth.handleRequest(
+      new Request("https://adfasdf/something?get-subscription=1")
+    );
+
+    json = await response.json();
+    expect(json).toEqual({
+      subscription: {
+        price: 123,
+      },
+    });
+
+    // Update (paddle) subscription test
+
+    // @ts-ignore
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            status: "success",
+            plan: { object: "plan" },
+            price: { object: "price" },
+            paddle_subscription: { is: "paddle-api-result" },
+          }),
+      })
+    );
+
+    response = await auth.handleRequest(
+      new Request("https://adfasdf/something?update-subscription=1&priceID=123")
+    );
+
+    json = await response.json();
+    expect(json).toEqual({
+      status: "success",
+      plan: { object: "plan" },
+      price: { object: "price" },
+      paddle_subscription: { is: "paddle-api-result" },
+    });
+
+    let updatePlanBody = new FormData();
+    updatePlanBody.set("priceID", "123");
+
+    expect(fetch).toHaveBeenCalledWith(
+      "http://api.reflow.local/v2/stores/199976733/auth/user/update-plan",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer sess.123",
+        },
+        body: updatePlanBody,
+      }
+    );
+
+    // Cancel (paddle) subscription test
+
+    // @ts-ignore
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            status: "success",
+            cancel_at: "123456789",
+          }),
+      })
+    );
+
+    response = await auth.handleRequest(
+      new Request("https://adfasdf/something?cancel-subscription=1")
+    );
+
+    json = await response.json();
+    expect(json).toEqual({
+      status: "success",
+      cancel_at: "123456789",
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "http://api.reflow.local/v2/stores/199976733/auth/user/cancel-subscription",
+      {
+        method: "POST",
         headers: {
           Authorization: "Bearer sess.123",
         },

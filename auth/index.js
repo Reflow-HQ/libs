@@ -1,10 +1,9 @@
 import {
   initializePaddle,
-  Paddle
 } from '@paddle/paddle-js';
-import PopupWindow from '../helpers/PopupWindow';
-import PaddleManageSubscriptionDialog from '../helpers/dialogs/PaddleManageSubscriptionDialog';
-import LoadingDialog from '../helpers/dialogs/LoadingDialog';
+import PopupWindow from '../helpers/PopupWindow.mjs';
+import PaddleManageSubscriptionDialog from '../helpers/dialogs/PaddleManageSubscriptionDialog.mjs';
+import LoadingDialog from '../helpers/dialogs/LoadingDialog.mjs';
 import Api from '../helpers/Api.mjs';
 
 class Auth {

@@ -13,6 +13,12 @@ import {
   sessionListeners,
 } from "../src/auth-client";
 
+import LoadingDialog from "../../helpers/dialogs/LoadingDialog.mjs";
+let loadingDialogMock = {
+  open: jest.spyOn(LoadingDialog.prototype, "open").mockImplementation(() => {}),
+  close: jest.spyOn(LoadingDialog.prototype, "close").mockImplementation(() => {}),
+};
+
 import { renderHook, act } from "@testing-library/react";
 
 // Tests
@@ -57,20 +63,16 @@ describe("Reflow Auth Client", () => {
     // @ts-ignore
     global.setInterval = jest.fn((cb) => intervals.push(cb));
 
-    let focusFlag = true;
-    Object.defineProperty(global.document, "hasFocus", {
-      value: function () {
-        return (focusFlag = !focusFlag);
-      },
-      writable: true,
-      configurable: true,
-      enumerable: true,
-    });
-
     let onSuccess = jest.fn(() => {});
     let onError = jest.fn(() => {});
 
     await signIn({ onSuccess, onError, subscribeTo: 12345 });
+
+    expect(global.addEventListener).toHaveBeenCalledTimes(2);
+    expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
+    expect(global.addEventListener).toBeCalledWith("message", expect.any(Function));
+    expect(global.removeEventListener).toHaveBeenCalledTimes(0);
+    expect(global.clearInterval).toHaveBeenCalledTimes(1);
 
     expect(global.open).toHaveBeenCalledTimes(1);
     expect(global.open).toHaveBeenCalledWith(
@@ -83,20 +85,14 @@ describe("Reflow Auth Client", () => {
       "https://banana123.com/?origin=http%3A%2F%2Flocalhost&nonceHash=pizza&step=login&subscribeTo=12345"
     );
 
-    expect(global.addEventListener).toHaveBeenCalledTimes(1);
-    expect(global.removeEventListener).toHaveBeenCalledTimes(0);
-    expect(global.clearInterval).toHaveBeenCalledTimes(2);
-
     // Fake a received postMessage
     listeners.message({
       source: signInWindow,
       data: { authToken: "token777" },
     });
 
-    expect(intervals.length).toEqual(2);
-    // Simulate a call of the interval.
-    // @ts-ignore
-    await intervals.pop()();
+    // Fake refocusing the main document after opening popup
+    await listeners.focus();
 
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onError).toHaveBeenCalledTimes(0);
@@ -150,9 +146,15 @@ describe("Reflow Auth Client", () => {
     });
   });
 
-  test("createSubscription", async () => {
+  test("createSubscriptionStripe", async () => {
     let onSuccess = jest.fn(() => {});
     let onError = jest.fn(() => {});
+
+    let listeners: Record<string, any> = {};
+    // @ts-ignore
+    global.addEventListener = jest.fn((type: string, cb: Function) => {
+      listeners[type] = cb;
+    });
 
     // @ts-ignore
     global.fetch = jest.fn((url: string) => {
@@ -164,7 +166,10 @@ describe("Reflow Auth Client", () => {
         };
       } else if (url.includes("?create-subscription=true&priceID=1337")) {
         response = {
+          status: "success",
+          provider: "stripe",
           checkoutURL: "https://example.com/payment-page",
+          mode: "live",
         };
       } else if (url.includes("?refresh=true&force=true")) {
         response = {
@@ -192,36 +197,26 @@ describe("Reflow Auth Client", () => {
     // @ts-ignore
     global.setInterval = jest.fn((cb) => intervals.push(cb));
 
-    let focusFlag = true;
-    Object.defineProperty(global.document, "hasFocus", {
-      value: function () {
-        return (focusFlag = !focusFlag);
-      },
-      writable: true,
-      configurable: true,
-      enumerable: true,
-    });
-
     await createSubscription({
       priceID: 1337,
       onSuccess,
       onError,
     });
 
-    // Simulate a call of the interval.
-    // @ts-ignore
-    await intervals.pop()();
-
+    expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
     expect(global.open).toHaveBeenCalledTimes(1);
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
-      "reflow-signin",
+      "reflow-subscription",
       "width=650,height=800,top=-16,left=187"
     );
 
     expect(subWindow.location).toEqual("https://example.com/payment-page");
 
-    expect(global.clearInterval).toHaveBeenCalledTimes(3);
+    expect(global.clearInterval).toHaveBeenCalledTimes(1);
+
+    // Simulate document focus after opening the popup
+    await listeners.focus();
 
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onSuccess).toHaveBeenCalledWith({ subscription: true });
@@ -229,6 +224,15 @@ describe("Reflow Auth Client", () => {
   });
 
   test("modifySubscription", async () => {
+    let onSuccess = jest.fn(() => {});
+    let onError = jest.fn(() => {});
+
+    let listeners: Record<string, any> = {};
+    // @ts-ignore
+    global.addEventListener = jest.fn((type: string, cb: Function) => {
+      listeners[type] = cb;
+    });
+
     // @ts-ignore
     global.fetch = jest.fn((url: string) => {
       let response = {};
@@ -240,6 +244,17 @@ describe("Reflow Auth Client", () => {
       } else if (url.includes("?manage-subscription=true")) {
         response = {
           subscriptionManagementURL: "https://example.com/manage",
+          provider: "stripe",
+        };
+      } else if (url.includes("?get-subscription=true")) {
+        response = {
+          subscription: {
+            payment_provider: "stripe",
+          },
+        };
+      } else if (url.includes("?refresh=true&force=true")) {
+        response = {
+          subscription: true,
         };
       }
 
@@ -254,16 +269,81 @@ describe("Reflow Auth Client", () => {
     // @ts-ignore
     global.open = jest.fn(() => subWindow);
 
-    await modifySubscription();
+    await modifySubscription({ onSuccess, onError });
 
+    expect(global.addEventListener).toHaveBeenCalledTimes(1);
+    expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
     expect(global.open).toHaveBeenCalledTimes(1);
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
-      "reflow-signin",
+      "reflow-subscription",
       "width=650,height=800,top=-16,left=187"
     );
-
     expect(subWindow.location).toEqual("https://example.com/manage");
+
+    // Fake refocusing the main document after opening popup
+    await listeners.focus();
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledWith();
+    expect(onError).toHaveBeenCalledTimes(0);
+  });
+
+  test("createSubscriptionPaddle", async () => {
+    let onSuccess = jest.fn(() => {});
+    let onError = jest.fn(() => {});
+
+    let listeners: Record<string, any> = {};
+    // @ts-ignore
+    global.addEventListener = jest.fn((type: string, cb: Function) => {
+      listeners[type] = cb;
+    });
+
+    // @ts-ignore
+    global.fetch = jest.fn((url: string) => {
+      let response = {};
+
+      if (url.includes("?is-signed-in=true")) {
+        response = {
+          status: true,
+        };
+      } else if (url.includes("?create-subscription=true&priceID=1337&paymentProvider=paddle")) {
+        response = {
+          status: "success",
+          provider: "paddle",
+          paddle_price_id: "123",
+          seller_id: "paddle_id_123",
+          store: { object: "store" },
+          user: { object: "user" },
+          mode: "live",
+        };
+      } else if (url.includes("?refresh=true&force=true")) {
+        response = {
+          subscription: true,
+        };
+      }
+
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(response),
+      });
+    });
+
+    await createSubscription({
+      priceID: 1337,
+      paymentProvider: "paddle",
+      onSuccess,
+      onError,
+    });
+
+    // @ts-ignore
+    expect(loadingDialogMock.open).toHaveBeenCalledTimes(1);
+    expect(loadingDialogMock.close).toHaveBeenCalledTimes(1);
+    // expect(initializePaddle).toHaveBeenCalledTimes(1);
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledWith({ subscription: true });
+    expect(onError).toHaveBeenCalledTimes(0);
   });
 
   test("useSessionSync", async () => {

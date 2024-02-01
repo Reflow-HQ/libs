@@ -15,7 +15,7 @@ class PopupWindow {
 
   open(options) {
 
-    if (this._popupWindow) {
+    if (this._popupWindow && this._popupWindow.focus) {
       // Already open
       this._popupWindow.focus();
       return;

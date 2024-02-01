@@ -22,7 +22,9 @@
   ],
   "scripts": {
     "build": "tsc && node build.cjs",
-    "test": "jest",
+    "test": "npm run test-server && npm run test-client",
+    "test-server": "jest auth.test.ts --config=jest-server.config.cjs",
+    "test-client": "NODE_OPTIONS=--experimental-vm-modules jest auth-client.test.ts --config=jest-client.config.cjs",
     "npm-package-test": "cd tests && ./npm.test.sh",
     "prepublishOnly": "npm run build"
   },

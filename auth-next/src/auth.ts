@@ -525,19 +525,14 @@ export class ReflowAuth {
       }
     } else if (params.has("manage-subscription")) {
       try {
-        let authToken = await this.get("_key");
-
         let manageSubscriptionData: any = await this.api("/auth/user/manage-subscription", {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${await this.get("_key")}`,
           },
         });
 
-        return Response.json({
-          manageSubscriptionData,
-          authToken,
-        });
+        return Response.json(manageSubscriptionData);
       } catch (e: any) {
         console.error(e);
         return errorResponse(e?.data?.errors?.system ?? e.message);
