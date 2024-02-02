@@ -16,6 +16,8 @@ class Dialog {
     this.showClose = showClose;
     this.width = width;
     this.height = height;
+    this.state = {};
+    this.eventListeners = new Map();
 
     this._onClose = onClose && onClose instanceof Function ? onClose : null;
 
@@ -76,22 +78,25 @@ class Dialog {
     this._dialog.appendChild(this._toast);
     this._toastTimeout = null;
 
-    this._state = {};
-
     this.addEventListeners();
   }
 
+  recordEventListener(classKey, event, fn) {
+    this.eventListeners.set(classKey + '.' + event, fn);
+    this._dialog.addEventListener(event, fn);
+  }
+
   addEventListeners() {
-    this._dialog.addEventListener('close', () => {
+    this.recordEventListener('dialog', 'close', async (e) => {
 
       this._backdrop.style.display = 'none';
 
       if (this._onClose) {
-        this._onClose();
+        await this._onClose();
       }
     });
 
-    this._dialog.addEventListener('click', (e) => {
+    this.recordEventListener('dialog', 'click', (e) => {
 
       let close = e.target.closest('.ref-dialog-close');
       if (close) {

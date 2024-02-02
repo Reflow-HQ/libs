@@ -3,7 +3,25 @@
  */
 
 import { jest } from "@jest/globals";
-import {
+
+let paddleCheckoutEventCallbackMock: Function;
+let paddleCheckoutOpenMock = jest.fn();
+let initializePaddleMock = jest.fn((options: { eventCallback: Function }) => {
+  paddleCheckoutEventCallbackMock = options.eventCallback;
+
+  return {
+    Checkout: {
+      open: paddleCheckoutOpenMock,
+    },
+  };
+});
+jest.unstable_mockModule("@paddle/paddle-js", async () => ({
+  __esModule: true,
+  initializePaddle: initializePaddleMock,
+}));
+
+const authClient = await import("../src/auth-client");
+const {
   signIn,
   signOut,
   isSignedIn,
@@ -11,7 +29,11 @@ import {
   modifySubscription,
   useSessionSync,
   sessionListeners,
-} from "../src/auth-client";
+} = authClient;
+
+HTMLDialogElement.prototype.show = jest.fn();
+HTMLDialogElement.prototype.showModal = jest.fn();
+HTMLDialogElement.prototype.close = jest.fn();
 
 import LoadingDialog from "../../helpers/dialogs/LoadingDialog.mjs";
 let loadingDialogMock = {
@@ -19,7 +41,20 @@ let loadingDialogMock = {
   close: jest.spyOn(LoadingDialog.prototype, "close").mockImplementation(() => {}),
 };
 
+import PaddleManageSubscriptionDialog from "../../helpers/dialogs/PaddleManageSubscriptionDialog.mjs";
+let paddleManageSubscriptionDialogMock = {
+  open: jest.spyOn(PaddleManageSubscriptionDialog.prototype, "open"),
+  recordEventListener: jest
+    .spyOn(PaddleManageSubscriptionDialog.prototype, "recordEventListener")
+    .mockImplementation(() => {}),
+};
+
 import { renderHook, act } from "@testing-library/react";
+
+afterEach(() => {
+  loadingDialogMock.open.mockClear();
+  loadingDialogMock.close.mockClear();
+});
 
 // Tests
 
@@ -223,7 +258,7 @@ describe("Reflow Auth Client", () => {
     expect(onError).toHaveBeenCalledTimes(0);
   });
 
-  test("modifySubscription", async () => {
+  test("modifySubscriptionStripe", async () => {
     let onSuccess = jest.fn(() => {});
     let onError = jest.fn(() => {});
 
@@ -299,6 +334,11 @@ describe("Reflow Auth Client", () => {
       listeners[type] = cb;
     });
 
+    let intervals: Function[] = [];
+    // @ts-ignore
+    global.setInterval = jest.fn((cb) => intervals.push(cb));
+    global.clearInterval = jest.fn(() => {});
+
     // @ts-ignore
     global.fetch = jest.fn((url: string) => {
       let response = {};
@@ -313,8 +353,8 @@ describe("Reflow Auth Client", () => {
           provider: "paddle",
           paddle_price_id: "123",
           seller_id: "paddle_id_123",
-          store: { object: "store" },
-          user: { object: "user" },
+          store: { object: "store", id: "123456" },
+          user: { object: "user", id: "123456" },
           mode: "live",
         };
       } else if (url.includes("?refresh=true&force=true")) {
@@ -336,13 +376,203 @@ describe("Reflow Auth Client", () => {
       onError,
     });
 
-    // @ts-ignore
     expect(loadingDialogMock.open).toHaveBeenCalledTimes(1);
+    expect(initializePaddleMock).toHaveBeenCalledTimes(1);
     expect(loadingDialogMock.close).toHaveBeenCalledTimes(1);
-    // expect(initializePaddle).toHaveBeenCalledTimes(1);
+    expect(paddleCheckoutOpenMock).toHaveBeenCalledTimes(1);
 
+    // Mock a paddle event call
+
+    paddleCheckoutEventCallbackMock({
+      name: "checkout.closed",
+      data: { status: "completed" },
+    });
+
+    expect(loadingDialogMock.open).toHaveBeenCalledTimes(2);
+    expect(global.clearInterval).toHaveBeenCalledTimes(1);
+    expect(intervals.length).toEqual(1);
+
+    // Simulate a call of the subscription status check interval,
+    // which in turn should trigger the onSuccess callback.
+    // @ts-ignore
+    await intervals.pop()();
+    expect(global.setInterval).toHaveBeenCalledTimes(1);
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onSuccess).toHaveBeenCalledWith({ subscription: true });
+    expect(onError).toHaveBeenCalledTimes(0);
+    expect(loadingDialogMock.close).toHaveBeenCalledTimes(2);
+  });
+
+  test("modifySubscriptionPaddle", async () => {
+    let onSuccess = jest.fn(() => {});
+    let onError = jest.fn(() => {});
+
+    let listeners: Record<string, any> = {};
+    // @ts-ignore
+    global.addEventListener = jest.fn((type: string, cb: Function) => {
+      listeners[type] = cb;
+    });
+
+    const oldPrice = {
+      id: "1111",
+      object: "price",
+      price: 1111,
+      currency: {
+        zero_decimal: false,
+        code: "USD",
+      },
+      billing_period: "month",
+    };
+    const newPrice = {
+      id: "2222",
+      object: "price",
+      price: 2222,
+      currency: {
+        zero_decimal: false,
+        code: "USD",
+      },
+      billing_period: "month",
+    };
+
+    // @ts-ignore
+    global.fetch = jest.fn((url: string) => {
+      let response = {};
+
+      if (url.includes("?is-signed-in=true")) {
+        response = {
+          status: true,
+        };
+      } else if (url.includes("?manage-subscription=true")) {
+        response = {
+          status: "success",
+          provider: "paddle",
+          paddle_seller_id: 1234,
+          subscription: {
+            object: "subscription",
+            plan: {
+              object: "plan",
+              name: "Current Plan",
+            },
+            price: oldPrice,
+          },
+          update_payment_transaction_id: "transaction1234",
+          available_plans: [
+            {
+              plan: {
+                object: "plan",
+                name: "Other Plan",
+              },
+              prices: [newPrice],
+            },
+          ],
+          recent_payments: [],
+          billing: {},
+        };
+      } else if (url.includes("?get-subscription=true")) {
+        response = {
+          subscription: {
+            payment_provider: "paddle",
+          },
+        };
+      } else if (url.includes("?refresh=true&force=true")) {
+        response = {
+          subscription: true,
+        };
+      } else if (url.includes("?update-subscription=true")) {
+        response = {
+          status: "success",
+          plan: {
+            object: "plan",
+            name: "Other Plan",
+          },
+          price: newPrice,
+        };
+      } else if (url.includes("?cancel-subscription=true")) {
+        response = {
+          status: "success",
+          cancel_at: "123456789",
+        };
+      }
+
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(response),
+      });
+    });
+
+    await modifySubscription({ onSuccess, onError });
+
+    expect(loadingDialogMock.open).toHaveBeenCalledTimes(1);
+    expect(loadingDialogMock.close).toHaveBeenCalledTimes(1);
+    expect(paddleManageSubscriptionDialogMock.open).toHaveBeenCalledTimes(1);
+    expect(paddleManageSubscriptionDialogMock.recordEventListener).toHaveBeenCalledTimes(3);
+
+    let eventListenerCall = paddleManageSubscriptionDialogMock.recordEventListener.mock.calls.find(
+      // @ts-ignore
+      (call) => call[0] == "paddle-manage-subscription-dialog" && call[1] == "click"
+    );
+    // @ts-ignore
+    const eventHandler: Function = eventListenerCall[2];
+
+    // Test update plan
+
+    let clickedSelector = ".ref-change-plan";
+    let clickedDataset = {};
+    const mockEvent = {
+      preventDefault: jest.fn(),
+      target: {
+        closest: jest.fn((selector) => {
+          if (selector !== clickedSelector) return false;
+
+          return {
+            dataset: clickedDataset,
+            append: jest.fn(),
+          };
+        }),
+      },
+    };
+    await eventHandler(mockEvent);
+
+    clickedSelector = ".ref-price-update-option";
+    clickedDataset = {
+      billing_period: "month",
+      price_id: newPrice.id,
+    };
+    await eventHandler(mockEvent);
+
+    clickedSelector = ".ref-change-plan-update";
+    clickedDataset = {};
+    await eventHandler(mockEvent);
+    expect(fetch).toHaveBeenLastCalledWith(
+      "/auth?update-subscription=true&priceID=" + newPrice.id,
+      {
+        method: "POST",
+        credentials: "include",
+      }
+    );
+
+    // Test cancel
+
+    global.confirm = jest.fn(() => true);
+    clickedSelector = ".ref-cancel-plan";
+    await eventHandler(mockEvent);
+    expect(fetch).toHaveBeenLastCalledWith("/auth?cancel-subscription=true", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    // Test closing the dialog, it should trigger teh onSuccess callback
+
+    eventListenerCall = paddleManageSubscriptionDialogMock.recordEventListener.mock.calls.find(
+      // @ts-ignore
+      (call) => call[0] == "dialog" && call[1] == "close"
+    );
+    // @ts-ignore
+    const closeEventHandler: Function = eventListenerCall[2];
+    await closeEventHandler();
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledWith();
     expect(onError).toHaveBeenCalledTimes(0);
   });
 

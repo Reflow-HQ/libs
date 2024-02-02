@@ -29,7 +29,7 @@ class PaddleManageSubscriptionDialog extends Dialog {
 
     super.addEventListeners();
 
-    this._dialog.addEventListener('click', async (e) => {
+    this.recordEventListener('paddle-manage-subscription-dialog', 'click', async (e) => {
 
       if (e.target.closest('.hyperlink')) {
         // Don't prevent default normal links

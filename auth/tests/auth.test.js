@@ -151,7 +151,12 @@ describe("Auth", () => {
       });
     });
 
-    let signInWindow = {};
+    let signInWindow = {
+      document: {
+        write: jest.fn(() => {})
+      },
+      location: ""
+    };
 
     global.open = jest.fn(() => signInWindow);
 
