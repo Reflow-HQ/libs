@@ -1,0 +1,6 @@
+examples/
+tests/
+.storybook/
+stories/
+*.sh
+jest-*

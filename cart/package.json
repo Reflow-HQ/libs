@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/cart",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Shopping Cart management library for Reflow",
   "type": "module",
   "directories": {
@@ -22,7 +22,8 @@
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "npm-package-test": "cd tests && ./npm.test.sh",
-    "build": "node build.cjs"
+    "build": "node build.cjs",
+    "prepublishOnly": "../prepublish.sh"
   },
   "devDependencies": {
     "jest": "^29.4.3",

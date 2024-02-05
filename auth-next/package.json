@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/auth-next",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Next.js library for login, account management and subscriptions with Reflow",
   "type": "module",
   "exports": {
@@ -26,7 +26,7 @@
     "test-server": "jest auth.test.ts --config=jest-server.config.cjs",
     "test-client": "NODE_OPTIONS=--experimental-vm-modules jest auth-client.test.ts --config=jest-client.config.cjs",
     "npm-package-test": "cd tests && ./npm.test.sh",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "../prepublish.sh"
   },
   "keywords": [
     "authentication",
@@ -57,8 +57,10 @@
     "ts-jest": "^29.1.1",
     "typescript": "^5"
   },
+  "dependencies": {
+    "@paddle/paddle-js": "^0.5.5"
+  },
   "peerDependencies": {
-    "@paddle/paddle-js": "^0.5.5",
     "client-only": "^0.0.1",
     "next": ">=13",
     "react": "^18",

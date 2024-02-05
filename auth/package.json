@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/auth",
-  "version": "2.1.0",
+  "version": "2.1.2",
   "description": "Authentication library for login and account management with Reflow",
   "type": "module",
   "directories": {
@@ -20,7 +20,8 @@
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "npm-package-test": "cd tests && ./npm.test.sh",
-    "build": "node build.cjs"
+    "build": "node build.cjs",
+    "prepublishOnly": "../prepublish.sh"
   },
   "devDependencies": {
     "jest": "^29.4.3",

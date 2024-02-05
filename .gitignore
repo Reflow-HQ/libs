@@ -3,3 +3,5 @@ build/
 dist/
 npm-debug.log*
 **/npm-test-app/
+tsconfig.tsbuildinfo
+*.gz
