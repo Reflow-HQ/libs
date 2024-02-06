@@ -80,11 +80,6 @@ The bridge between these two is the `app/auth/route.ts` file you created above. 
 
 A fully featured example application can be seen on https://github.com/Reflow-HQ/auth-next-example
 
-**Examples (click to expand):**
-
-<details>
-<summary>Displaying user data</summary>
-
 ### Displaying user data
 
 Let's display a message with the logged in user's name and email. This is handled entirely on the server.
@@ -111,11 +106,6 @@ export default async function Page() {
 ```
 
 First we import the `auth.ts` file we created earlier in order to use the `getAuth()` function and obtain an auth instance. Then we retrieve the logged-in user's data. You can see all available data on the User object [in the Docs section](#async-user-promiseuser--null).
-
-</details>
-
-<details>
-<summary>User Sign-in</summary>
 
 ### User Sign-in
 
@@ -158,11 +148,6 @@ export default async function Page() {
   return <LoginButton />;
 }
 ```
-
-</details>
-
-<details>
-<summary>User Sign-out</summary>
 
 ### User Sign-out
 
@@ -207,11 +192,6 @@ export default async function Page() {
   return <LoginButton />;
 }
 ```
-
-</details>
-
-<details>
-<summary>Subscriber-only access</summary>
 
 ### Subscriber-only access
 
@@ -289,10 +269,6 @@ Notes
 
 - We won't be covering it in this readme, but you can also let users change their plan or cancel their subscription with the `modifySubscription` client functions [example](https://github.com/Reflow-HQ/auth-next-example/blob/master/app/page.tsx)).
 - The `Subscription` object contains feature flags that you define in your Plan creation screen in Reflow. If you build your Next app around them, you can use these flags to create new plans with unique limits, or override the features/limits for a specific subscriber from Reflow's store management UI.
-</details>
-
-<details>
-<summary>Session Storage and Retrieval</summary>
 
 ### Session Storage and Retrieval
 
@@ -390,8 +366,6 @@ export default async function Page() {
   );
 }
 ```
-
-</details>
 
 ## Docs
 
