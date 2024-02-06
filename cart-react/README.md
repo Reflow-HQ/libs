@@ -38,7 +38,7 @@ The `config` can have the following keys:
 | `storeID`      | _string_ | _Yes_    | The `id` of your Reflow store.                                        |
 | `localization` | _object_ | _No_     | An object consisting of key/value pairs. [Learn more](#localization). |
 
-The `cart` object the hook returns contains the current [cart state](#cart-state) and a lot of useful [funtions](#reflow-api).
+The `cart` object the hook returns contains the current [cart state](#cart-state) and a lot of useful [functions](#reflow-api).
 
 ### `<CartView/>`
 
@@ -134,7 +134,7 @@ function App() {
 | `cart`                | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                                                     |
 | `product`             | _object_   | _Yes_    |                                                                                                                                                               |
 | `buttonText`          | _string_   | _No_     | Redefines the "Add to Cart" button text, if set.                                                                                                              |
-| `showQuantity`        | _boolean_  | _No_     | Whether the component should display the auntity widget.                                                                                                      |
+| `showQuantity`        | _boolean_  | _No_     | Whether the component should display the quantity widget.                                                                                                     |
 | `showPersonalization` | _boolean_  | _No_     | Whether the component should display the product personalization options.                                                                                     |
 | `onMessage`           | _function_ | _No_     | Called when the component produces any messages that should be shown to the customer. Returns a `message` object with `type`, `title` and `description` keys. |
 | `onVariantSelect`     | _function_ | _No_     | Called when a different variant is selected for purchase. Returns a `variant` object containing all properties of the newly selected variant.                          |
@@ -397,11 +397,11 @@ console.log(result);
 | ------------------- | -------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `success-url`       | _Yes_    | _URL_                                                         | The URL the user should be redirected to after a successful checkout.                         |
 | `cancel-url`        | _Yes_    | _URL_                                                         | The URL where the customer will be redirected after a failed or cancelled payment.            |
-| `payment-method`    | _Yes_    | `'stripe'`, `'custom'`, `'pay-in-store'`, `'zero-value-cart'` | The URL where the customer will be redirected after a failed or cancelled payment.            |
+| `payment-method`    | _Yes_    | `'stripe'`, `'custom'`, `'pay-in-store'`, `'zero-value-cart'` | The payment method that will be used for completing the checkout.                             |
 | `payment-id`        | _No\*_   | _string_                                                      | The `id` of the payment method. \* Required if the payment method is `'custom'`.              |
-| `email`             |          | _string_                                                      |                                                                                               |
-| `phone`             |          | _string_                                                      |                                                                                               |
-| `customer-name`     |          | _string_                                                      |                                                                                               |
+| `email`             | _Yes_    | _string_                                                      |                                                                                               |
+| `phone`             | _No_     | _string_                                                      |                                                                                               |
+| `customer-name`     | _No_     | _string_                                                      |                                                                                               |
 | `delivery-method`   | _Yes_    | `'shipping'`, `'pickup'`, `'digital'`                         |                                                                                               |
 | `store-location`    | _No\*_   | _number_                                                      | The index of the selected pickup location. \* Required if the delivery method is `'pickup'`   |
 | `shipping-method`   | _No\*_   | _number_                                                      | The index of the selected shipping method. \* Required if the delivery method is `'shipping'` |
