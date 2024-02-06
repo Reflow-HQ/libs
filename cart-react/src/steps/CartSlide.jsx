@@ -155,6 +155,7 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
           onMessage={onMessage}
           style={{
             height: 42,
+            disableMaxWidth: true,
           }}
         />
       </div>
