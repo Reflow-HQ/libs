@@ -312,6 +312,7 @@ export default function CheckoutForm({
             onMessage={onMessage}
             style={{
               height: 55,
+              disableMaxWidth: true,
             }}
           />
         ))}
