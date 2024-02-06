@@ -274,11 +274,11 @@ console.log(result);
 | ------------------- | -------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `success-url`       | _Yes_    | _URL_                                                         | The URL the user should be redirected to after a successful checkout.                         |
 | `cancel-url`        | _Yes_    | _URL_                                                         | The URL where the customer will be redirected after a failed or cancelled payment.            |
-| `payment-method`    | _Yes_    | `'stripe'`, `'custom'`, `'pay-in-store'`, `'zero-value-cart'` | The URL where the customer will be redirected after a failed or cancelled payment.            |
+| `payment-method`    | _Yes_    | `'stripe'`, `'custom'`, `'pay-in-store'`, `'zero-value-cart'` | The payment method that will be used for completing the checkout.                             |
 | `payment-id`        | _No\*_   | _string_                                                      | The `id` of the payment method. \* Required if the payment method is `'custom'`.              |
-| `email`             |          | _string_                                                      |                                                                                               |
-| `phone`             |          | _string_                                                      |                                                                                               |
-| `customer-name`     |          | _string_                                                      |                                                                                               |
+| `email`             | _Yes_    | _string_                                                      |                                                                                               |
+| `phone`             | _No_     | _string_                                                      |                                                                                               |
+| `customer-name`     | _No_     | _string_                                                      |                                                                                               |
 | `delivery-method`   | _Yes_    | `'shipping'`, `'pickup'`, `'digital'`                         |                                                                                               |
 | `store-location`    | _No\*_   | _number_                                                      | The index of the selected pickup location. \* Required if the delivery method is `'pickup'`   |
 | `shipping-method`   | _No\*_   | _number_                                                      | The index of the selected shipping method. \* Required if the delivery method is `'shipping'` |
