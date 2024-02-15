@@ -137,8 +137,15 @@
   text-align: center;
 }
 
+.reflow-auth-button .ref-auth-button-signed {
+  display: flex;
+  place-content: center;
+}
+
 .reflow-auth-button .ref-profile-info {
   text-decoration: none;
+  display: flex;
+  place-items: center;
 }
 
 .reflow-auth-button .ref-profile-info .ref-profile-name {
