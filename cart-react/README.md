@@ -33,10 +33,11 @@ function App() {
 
 The `config` can have the following keys:
 
-| Prop           | Type     | Required | Description                                                           |
-| -------------- | -------- | -------- | --------------------------------------------------------------------- |
-| `storeID`      | _string_ | _Yes_    | The `id` of your Reflow store.                                        |
-| `localization` | _object_ | _No_     | An object consisting of key/value pairs. [Learn more](#localization). |
+| Prop           | Type      | Required | Description                                                                    |
+| -------------- | --------- | -------- | ------------------------------------------------------------------------------ |
+| `storeID`      | _string_  | _Yes_    | The `id` of your Reflow store.                                                 |
+| `localization` | _object_  | _No_     | An object consisting of key/value pairs. [Learn more](#localization).          |
+| `testMode`     | _boolean_ | _No_     | Determines whether the cart should run in test mode. [Learn more](#test-mode). |
 
 The `cart` object the hook returns contains the current [cart state](#cart-state) and a lot of useful [functions](#reflow-api).
 
@@ -76,13 +77,13 @@ function App() {
 
 #### Props
 
-| Prop          | Type       | Required | Description                                                                                                                                                   |
-| ------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cart`        | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                                                     |
-| `auth`        | _object_   | _No_     | The result of calling the `useAuth` hook from `@reflowhq/auth-react`.                                                                                         |
-| `successURL`  | _string_   | _No_     | The URL where the customer will be redirected after a successful payment.                                                                                     |
-| `cancelURL`   | _string_   | _No_     | The URL where the customer will be redirected after a failed or canceled payment.                                                                             |
-| `onMessage`   | _function_ | _No_     | Called when the component produces any messages that should be shown to the customer. Returns a `message` object with `type`, `title` and `description` keys. |
+| Prop         | Type       | Required | Description                                                                                                                                                   |
+| ------------ | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cart`       | _object_   | _Yes_    | The result of calling the `useCart` hook.                                                                                                                     |
+| `auth`       | _object_   | _No_     | The result of calling the `useAuth` hook from `@reflowhq/auth-react`.                                                                                         |
+| `successURL` | _string_   | _No_     | The URL where the customer will be redirected after a successful payment.                                                                                     |
+| `cancelURL`  | _string_   | _No_     | The URL where the customer will be redirected after a failed or canceled payment.                                                                             |
+| `onMessage`  | _function_ | _No_     | Called when the component produces any messages that should be shown to the customer. Returns a `message` object with `type`, `title` and `description` keys. |
 
 You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/cart-react/examples) directory.
 
@@ -137,7 +138,7 @@ function App() {
 | `showQuantity`        | _boolean_  | _No_     | Whether the component should display the quantity widget.                                                                                                     |
 | `showPersonalization` | _boolean_  | _No_     | Whether the component should display the product personalization options.                                                                                     |
 | `onMessage`           | _function_ | _No_     | Called when the component produces any messages that should be shown to the customer. Returns a `message` object with `type`, `title` and `description` keys. |
-| `onVariantSelect`     | _function_ | _No_     | Called when a different variant is selected for purchase. Returns a `variant` object containing all properties of the newly selected variant.                          |
+| `onVariantSelect`     | _function_ | _No_     | Called when a different variant is selected for purchase. Returns a `variant` object containing all properties of the newly selected variant.                 |
 
 You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/cart-react/examples) directory.
 
