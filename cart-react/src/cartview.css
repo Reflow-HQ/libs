@@ -3,7 +3,7 @@
   --ref-gray-100: var(--bs-gray-100, #f8f9fa);
   --ref-gray-300: var(--bs-gray-300, #dee2e6);
   --ref-gray-700: var(--bs-gray-700, #848e97);
-  --ref-gray: var(--bs-gray-600, #b2b8bf);
+  --ref-gray: var(--bs-gray-600, #868e96);
   --ref-darkgray: var(--bs-gray-800, #495057);
   --ref-black: var(--bs-black, var(--black, #000));
   --ref-primary: var(--bs-primary, var(--primary, #0d6efd));
@@ -11,6 +11,11 @@
   --ref-danger: var(--bs-danger, var(--danger, #ff0051));
   --ref-warning: var(--bs-warning, var(--warning, #f7e296));
   --ref-body-color: var(--bs-body-color, #212529);
+  --ref-body-bg: var(--bs-body-bg, #fff);
+  --ref-secondary-color: var(--bs-secondary-color, var(--ref-gray-700));
+  --ref-secondary-bg: var(--bs-secondary-bg, var(--ref-gray-300));
+  --ref-tertiary-color: var(--bs-tertiary-color, var(--ref-darkgray));
+  --ref-tertiary-bg: var(--bs-tertiary-bg, var(--ref-gray-100));
 
   --ref-border-radius: 0.3rem;
 
@@ -19,11 +24,16 @@
   --ref-gutter-lg: 2em;
   --ref-gutter: var(--ref-gutter-md);
 
+  --ref-input-bg: var(--ref-body-bg);
   --ref-input-padding: 0.5rem;
   --ref-input-padding-sm: 0.5rem;
 
   --ref-btn-padding: 0.5rem 1.5rem;
   --ref-btn-border-radius: var(--ref-border-radius);
+
+  --ref-message-bg: var(--ref-tertiary-bg);
+  --ref-list-bg: var(--ref-tertiary-bg);
+  --ref-dropdown-bg: var(--bs-body-bg, var(--ref-white));
 }
 
 .text-primary {
@@ -32,7 +42,7 @@
 }
 
 .ref-message {
-  background-color: var(--ref-gray-100);
+  background-color: var(--ref-message-bg);
   padding: 10px;
   text-align: center;
 }
@@ -87,8 +97,8 @@
 }
 
 .ref-button.inactive {
-  background-color: var(--ref-gray-300);
-  border-color: var(--ref-gray-300);
+  background-color: var(--ref-secondary-bg);
+  border-color: var(--ref-secondary-bg);
   pointer-events: none;
 }
 
@@ -98,7 +108,7 @@
   border: 1px solid var(--ref-gray-300);
   border-radius: var(--ref-border-radius);
   box-shadow: 2px 2px rgb(0 0 0 / 2%);
-  background: var(--ref-white);
+  background: var(--ref-input-bg);
   font: inherit;
   color: inherit;
 }
@@ -171,7 +181,7 @@
 /* Summary */
 
 .ref-summary {
-  background: var(--ref-gray-100);
+  background: var(--ref-tertiary-bg);
   padding: var(--ref-gutter-lg);
 }
 
@@ -538,7 +548,7 @@
 }
 
 .ref-links a {
-  color: var(--ref-darkgray);
+  color: var(--ref-tertiary-color);
   font-size: 0.8em;
   text-decoration: none;
   margin-right: 10px;
@@ -652,7 +662,7 @@
   border: 1px solid var(--ref-gray-300);
   border-radius: var(--ref-border-radius);
   box-shadow: 2px 2px rgb(0 0 0 / 2%);
-  background: var(--ref-white);
+  background: var(--ref-body-bg);
 }
 
 .ref-discount-code .ref-discount-code-input-clear {
@@ -914,7 +924,7 @@
   font-size: 0.9em;
   cursor: pointer;
   margin-bottom: 6px;
-  color: var(--ref-gray-700);
+  color: var(--ref-secondary-color);
 }
 
 .ref-field-collapsible .ref-collapse,
@@ -1007,7 +1017,7 @@
 
 .ref-payment-method-instructions {
   border: 1px solid var(--ref-gray-300);
-  background: var(--ref-white);
+  background: var(--ref-body-bg);
   border-radius: var(--ref-border-radius);
   padding: 15px;
   margin-bottom: 20px;
@@ -1021,7 +1031,7 @@
 /* Delivery card with tabs  */
 
 .ref-delivery-card {
-  background: var(--ref-white);
+  background: var(--ref-body-bg);
   border: 1px solid var(--ref-gray-300);
   border-radius: 12px;
   margin-bottom: 50px;
@@ -1119,7 +1129,7 @@
 }
 
 .ref-billing-container .ref-button {
-  background: var(--ref-white);
+  background: var(--ref-body-bg);
   color: var(--ref-primary);
   border: 1px solid var(--ref-primary);
   font-size: 0.9rem;
