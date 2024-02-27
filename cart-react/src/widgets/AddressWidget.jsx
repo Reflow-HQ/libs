@@ -109,7 +109,7 @@ export default function AddressWidget({
           <div className="ref-row ref-row-region">
             {showState && (
               <label>
-                <span>{country.region_title}</span>
+                <span>{t(country.region_title)}</span>
                 <select
                   className="ref-form-control ref-field-details-region"
                   name={getFieldID("state")}
@@ -117,7 +117,7 @@ export default function AddressWidget({
                   required
                   onChange={(e) => onChange("state", e.target.value)}
                 >
-                  <option value="">{country.region_title}</option>
+                  <option value="">{t(country.region_title)}</option>
                   {Object.entries(country.regions).map(([rCode, rName]) => (
                     <option key={rCode} value={rCode}>
                       {t(
@@ -132,7 +132,11 @@ export default function AddressWidget({
             )}
             {showPostcode && (
               <label>
-                <span>{country.postcode_title || "Postal Code" || t("postcode")}</span>
+                <span>
+                  {t(
+                    country.postcode_title ? country.postcode_title.replace(" ", "_") : "postcode"
+                  )}
+                </span>
                 <input
                   type="text"
                   className="ref-form-control ref-field-details-postcode"
