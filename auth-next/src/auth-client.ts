@@ -669,7 +669,8 @@ async function apiCall(url: string): Promise<Response> {
   });
 
   if (!response.ok) {
-    throw new Error("Network response was not ok");
+    let body = await response.json();
+    throw new Error(body.error || "Network response was not ok");
   }
 
   return response;
