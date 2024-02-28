@@ -39,7 +39,10 @@ export default class Api {
           }
 
           if (!response.ok) {
-            let err = Error(data.error || "HTTP error");
+            let message = "HTTP error";
+            if (data.error) message = data.error;
+            if (data.errors?.system) message = data.errors.system;
+            let err = Error(message);
             err.status = response.status;
             err.data = data;
             throw err;
