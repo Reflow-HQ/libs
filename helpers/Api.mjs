@@ -1,10 +1,5 @@
 export default class Api {
-
-  constructor({
-    storeID,
-    apiBase,
-    testMode = false,
-  }) {
+  constructor({ storeID, apiBase, testMode = false }) {
     this.storeID = storeID;
     this.apiBase = apiBase || `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
     this.testMode = testMode || false;
@@ -13,9 +8,7 @@ export default class Api {
   }
 
   fetch(endpoint, options = {}, cacheEnabled = false) {
-
     try {
-
       if (typeof endpoint != "string" || !endpoint.trim().length) {
         return Promise.reject("Reflow: Endpoint Required");
       }
@@ -24,11 +17,12 @@ export default class Api {
 
       const method = options.method ? options.method.toUpperCase() : "GET";
 
-      const body = options.body instanceof Object ?
-        new URLSearchParams(options.body).toString() :
-        typeof options.body === "string" ?
-        options.body :
-        "";
+      const body =
+        options.body instanceof Object
+          ? new URLSearchParams(options.body).toString()
+          : typeof options.body === "string"
+          ? options.body
+          : "";
 
       const requestKey = endpoint + method + body;
 
@@ -45,7 +39,10 @@ export default class Api {
           }
 
           if (!response.ok) {
-            let err = Error(data.error || "HTTP error");
+            let message = "HTTP error";
+            if (data.error) message = data.error;
+            if (data.errors?.system) message = data.errors.system;
+            let err = Error(message);
             err.status = response.status;
             err.data = data;
             throw err;
@@ -60,15 +57,12 @@ export default class Api {
       }
 
       return result;
-
     } catch (e) {
-
       console.error("Reflow: " + e);
       if (e.data) console.error(e.data);
       if (e.error) console.error(e.error);
 
       throw e;
     }
-
   }
 }
