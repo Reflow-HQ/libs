@@ -1,10 +1,5 @@
-const {
-  build
-} = require("esbuild");
-const {
-  devDependencies,
-  peerDependencies
-} = require("./package.json");
+const { build } = require("esbuild");
+const { devDependencies, peerDependencies } = require("./package.json");
 
 build({
   entryPoints: ["./src/auth-client.ts"],
