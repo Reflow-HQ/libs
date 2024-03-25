@@ -8,6 +8,7 @@ export class ReflowAuth {
   public apiBase: string;
   public testMode: boolean;
   protected secret: string;
+  protected onSignIn?: (user: User) => Promise<boolean | undefined>;
 
   constructor({
     storeID,
@@ -16,6 +17,7 @@ export class ReflowAuth {
     cookieMaxAge,
     apiBase,
     testMode = false,
+    onSignIn,
   }: {
     storeID: number;
     secret: string;
@@ -23,6 +25,7 @@ export class ReflowAuth {
     cookieMaxAge?: number;
     apiBase?: string;
     testMode?: boolean;
+    onSignIn?: (user: User) => Promise<boolean | undefined>;
   }) {
     if (!storeID) {
       throw new Error("storeID is required");
@@ -39,6 +42,8 @@ export class ReflowAuth {
 
     this.testMode = testMode;
     this.apiBase = apiBase || `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
+
+    this.onSignIn = onSignIn;
   }
 
   protected api(endpoint: string, options?: object): Promise<object> {
@@ -467,6 +472,14 @@ export class ReflowAuth {
 
         if (!status.valid) {
           return Response.json({ success: false });
+        }
+
+        if (this.onSignIn) {
+          const result = await this.onSignIn(status.user);
+
+          if (result === false) {
+            return errorResponse("Something went wrong");
+          }
         }
 
         await this.set([
