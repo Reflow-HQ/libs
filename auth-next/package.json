@@ -11,6 +11,10 @@
     "./client": {
       "types": "./dist/auth-client.d.ts",
       "import": "./dist/auth-client.js"
+    },
+    "./types": {
+      "types": "./dist/auth-types.d.ts",
+      "import": "./dist/auth-types.js"
     }
   },
   "directories": {

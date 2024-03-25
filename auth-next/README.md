@@ -149,6 +149,29 @@ export default async function Page() {
 }
 ```
 
+#### Advanced options
+
+You can intercept the sign in process by passing an `onSignIn` callback when creating a `ReflowAuth` instance:
+
+```typescript
+import "server-only";
+import { ReflowAuth } from "@reflowhq/auth-next";
+import type { User } from "@reflowhq/auth-next/types";
+
+export default function getAuth(): ReflowAuth {
+  return new ReflowAuth({
+    storeID: 123456,
+    secret: "REPLACE_ME_WITH_A_32_CHAR_SECRET",
+    onSignIn: async (user: User) => {
+      // Do stuff
+      return true;
+    },
+  });
+}
+```
+
+This can come in handy of you wish to do something every time a user signs in or if you need to prevent the sign in altogether. To prevent the user from logging in you can just return `false` in your `onSignIn` callback.
+
 ### User Sign-out
 
 By analogy to the above example, we will create a LogoutButton component (full example [here](https://github.com/Reflow-HQ/auth-next-example/blob/master/app/components/LogoutButton.tsx)).
