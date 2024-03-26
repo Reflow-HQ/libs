@@ -12,6 +12,7 @@ function getAuth(): ReflowAuth {
     cookieName: sessionCookieName,
     cookieMaxAge: 14 * 24 * 60 * 60,
     apiBase: "http://api.reflow.local/v2",
+    beforeSignin: async () => true,
   });
 }
 
@@ -385,6 +386,34 @@ describe("Reflow Auth Server", () => {
           }),
       })
     );
+
+    /* beforeSignin test */
+
+    /* Failed callback */
+
+    const beforeSignin = jest.spyOn(auth as any, "beforeSignin");
+    beforeSignin.mockImplementation(async () => false);
+
+    response = await auth.handleRequest(
+      new Request("https://adfasdf/something?check=1&auth-token=panda")
+    );
+
+    json = await response.json();
+    expect(json).toEqual({ error: "Something went wrong", success: false });
+
+    expect(await auth.all()).toEqual({ _nonce: "banana123" });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "http://api.reflow.local/v2/stores/199976733/auth/validate-token?auth-token=panda&nonce=banana123",
+      { method: "POST" }
+    );
+
+    /* Successful callback */
+
+    beforeSignin.mockImplementation(async () => true);
+
+    await auth.clear();
+    await auth.set("_nonce", "banana123");
 
     response = await auth.handleRequest(
       new Request("https://adfasdf/something?check=1&auth-token=panda")

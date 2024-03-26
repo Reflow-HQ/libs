@@ -149,6 +149,33 @@ export default async function Page() {
 }
 ```
 
+#### Intercepting sign in
+
+You can intercept the sign in process by passing an `beforeSignin` callback when creating a `ReflowAuth` instance:
+
+```typescript
+import "server-only";
+import { ReflowAuth } from "@reflowhq/auth-next";
+import type { User } from "@reflowhq/auth-next/types";
+
+export default function getAuth(): ReflowAuth {
+  return new ReflowAuth({
+    storeID: 123456,
+    secret: "REPLACE_ME_WITH_A_32_CHAR_SECRET",
+    beforeSignin: async (user: User) => {
+      // Create database records, validate permissions, send emails etc..
+      // Return true to allow the user to sign in
+      return true;
+
+      // To prevent the sign-in:
+      // return false;
+    },
+  });
+}
+```
+
+The `beforeSignin` callback takes a [User object](#async-user-promiseuser--null) as a parameter. The callback is useful for performing actions every time a user signs in or if you need to prevent the sign in altogether. To prevent the user from logging in you can just return `false` in your `beforeSignin` callback.
+
 ### User Sign-out
 
 By analogy to the above example, we will create a LogoutButton component (full example [here](https://github.com/Reflow-HQ/auth-next-example/blob/master/app/components/LogoutButton.tsx)).
@@ -389,13 +416,14 @@ export default function getAuth(): ReflowAuth {
 
 The constructor supports the following options. The first two are required and must always be provided.
 
-| Parameter    | Required | Type    | Default Value | Description                                                                                                                                                                            |
-| ------------ | -------- | ------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| storeID      | yes      | number  | -             | The ID of your Reflow store. You can find it in your Reflow store management page.                                                                                                     |
-| secret       | yes      | string  | -             | A 32 character unique string. It is used to encrypt the session cookie where the auth data is stored. Ideally you should keep this in an .env file that is not committed in your repo. |
-| cookieName   | no       | string  | "session"     | The name of the session cookie stored in the browser with the http-only flag. By default the name is "session".                                                                        |
-| cookieMaxAge | no       | number  | -             | The lifetime of the session in seconds. By default it is cleared when the browser window is closed.                                                                                    |
-| testMode     | no       | boolean | false         | Indicates whether the library should use [Reflow's test mode](https://reflowhq.com/docs/guide/test-mode/). Useful for testing in development.                                          |
+| Parameter    | Required | Type     | Default Value | Description                                                                                                                                                                                                                                                                             |
+| ------------ | -------- | -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| storeID      | yes      | number   | -             | The ID of your Reflow store. You can find it in your Reflow store management page.                                                                                                                                                                                                      |
+| secret       | yes      | string   | -             | A 32 character unique string. It is used to encrypt the session cookie where the auth data is stored. Ideally you should keep this in an .env file that is not committed in your repo.                                                                                                  |
+| cookieName   | no       | string   | "session"     | The name of the session cookie stored in the browser with the http-only flag. By default the name is "session".                                                                                                                                                                         |
+| cookieMaxAge | no       | number   | -             | The lifetime of the session in seconds. By default it is cleared when the browser window is closed.                                                                                                                                                                                     |
+| beforeSignin | no       | function | -             | Async callback function which is called before a successful login with the user object as a parameter ([example](#intercepting-sign-in)). Useful for performing an action before every login. Return `true` from the function to allow the login to proceed, and `false` to prevent it. |
+| testMode     | no       | boolean  | false         | Indicates whether the library should use [Reflow's test mode](https://reflowhq.com/docs/guide/test-mode/). Useful for testing in development.                                                                                                                                           |
 
 #### Methods
 
