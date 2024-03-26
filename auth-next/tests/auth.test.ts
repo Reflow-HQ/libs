@@ -12,7 +12,7 @@ function getAuth(): ReflowAuth {
     cookieName: sessionCookieName,
     cookieMaxAge: 14 * 24 * 60 * 60,
     apiBase: "http://api.reflow.local/v2",
-    onSignIn: async () => true,
+    beforeSignin: async () => true,
   });
 }
 
@@ -387,12 +387,12 @@ describe("Reflow Auth Server", () => {
       })
     );
 
-    /* onSignIn test */
+    /* beforeSignin test */
 
     /* Failed callback */
 
-    const onSignIn = jest.spyOn(auth as any, "onSignIn");
-    onSignIn.mockImplementation(async () => false);
+    const beforeSignin = jest.spyOn(auth as any, "beforeSignin");
+    beforeSignin.mockImplementation(async () => false);
 
     response = await auth.handleRequest(
       new Request("https://adfasdf/something?check=1&auth-token=panda")
@@ -410,7 +410,7 @@ describe("Reflow Auth Server", () => {
 
     /* Successful callback */
 
-    onSignIn.mockImplementation(async () => true);
+    beforeSignin.mockImplementation(async () => true);
 
     await auth.clear();
     await auth.set("_nonce", "banana123");
