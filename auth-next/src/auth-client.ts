@@ -145,8 +145,8 @@ export async function signIn(options?: {
     label: "reflow-signin",
     title: "Signing in..",
     size: {
-      w: 650,
-      h: 650,
+      w: 590,
+      h: 590,
     },
     onParentRefocus: async () => {
       if (!authToken) {
