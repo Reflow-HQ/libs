@@ -231,8 +231,7 @@ export class ReflowAuth {
   }
 
   /**
-   * Updates the user information stored at Reflow. You can use it
-   * to update the name, email, photo and meta data of the user.
+   * Deletes the logged in user's account
    */
   public async deleteUser(): Promise<{ success: boolean }> {
     if (!(await this.isSignedIn())) {
