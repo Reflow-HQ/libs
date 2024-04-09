@@ -3,10 +3,11 @@ class PopupWindow {
     this._popupWindow = null;
     this._checkPopupWindowClosedInterval = null;
     this._onParentRefocusCallback = null;
+    this._url = null;
   }
 
   unbind() {
-    clearInterval(this._checkPopupWindowClosedInterval);
+    this.cleanup();
   }
 
   getWindowInstance() {
@@ -110,24 +111,37 @@ class PopupWindow {
       } catch (e) {}
 
       if (!this._popupWindow) {
-        clearInterval(this._checkPopupWindowClosedInterval);
+        this.cleanup();
       }
     }, 500);
   }
 
   setURL(url) {
+    if (url == this._url) {
+      return;
+    }
+
+    this._url = url;
     this._popupWindow.location = url;
   }
 
   close() {
     if (this._popupWindow) {
       this._popupWindow.close();
-      this._popupWindow = null;
     }
+
+    this.cleanup();
 
     if (this._onParentRefocusCallback) {
       this.offParentRefocus();
     }
+  }
+
+  cleanup() {
+    this._popupWindow = null;
+    this._url = null;
+
+    clearInterval(this._checkPopupWindowClosedInterval);
   }
 
   isOpen() {
