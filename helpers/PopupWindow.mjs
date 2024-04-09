@@ -14,24 +14,15 @@ class PopupWindow {
   }
 
   open(options) {
-
     if (this._popupWindow && this._popupWindow.focus) {
       // Already open
       this._popupWindow.focus();
       return;
     }
 
-    const {
-      url,
-      label,
-      title,
-      onParentRefocus
-    } = options;
+    const { url, label, title, onParentRefocus } = options;
 
-    const {
-      w,
-      h
-    } = options.size;
+    const { w, h } = options.size;
     const y = window.outerHeight / 2 + window.screenY - h / 2;
     const x = window.outerWidth / 2 + window.screenX - w / 2;
 
@@ -96,7 +87,8 @@ class PopupWindow {
         </style>
             </head>
           <body><span class="loader"></span></body>
-        </html>`);
+        </html>`
+      );
     }
 
     // Evoke a callback when the focus is switched back to the parent window that opened the popup.
@@ -121,7 +113,6 @@ class PopupWindow {
         clearInterval(this._checkPopupWindowClosedInterval);
       }
     }, 500);
-
   }
 
   setURL(url) {
