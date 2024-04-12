@@ -3,10 +3,11 @@ class PopupWindow {
     this._popupWindow = null;
     this._checkPopupWindowClosedInterval = null;
     this._onParentRefocusCallback = null;
+    this._url = null;
   }
 
   unbind() {
-    clearInterval(this._checkPopupWindowClosedInterval);
+    this.cleanup();
   }
 
   getWindowInstance() {
@@ -14,24 +15,15 @@ class PopupWindow {
   }
 
   open(options) {
-
     if (this._popupWindow && this._popupWindow.focus) {
       // Already open
       this._popupWindow.focus();
       return;
     }
 
-    const {
-      url,
-      label,
-      title,
-      onParentRefocus
-    } = options;
+    const { url, label, title, onParentRefocus } = options;
 
-    const {
-      w,
-      h
-    } = options.size;
+    const { w, h } = options.size;
     const y = window.outerHeight / 2 + window.screenY - h / 2;
     const x = window.outerWidth / 2 + window.screenX - w / 2;
 
@@ -96,7 +88,8 @@ class PopupWindow {
         </style>
             </head>
           <body><span class="loader"></span></body>
-        </html>`);
+        </html>`
+      );
     }
 
     // Evoke a callback when the focus is switched back to the parent window that opened the popup.
@@ -118,25 +111,37 @@ class PopupWindow {
       } catch (e) {}
 
       if (!this._popupWindow) {
-        clearInterval(this._checkPopupWindowClosedInterval);
+        this.cleanup();
       }
     }, 500);
-
   }
 
   setURL(url) {
+    if (url == this._url) {
+      return;
+    }
+
+    this._url = url;
     this._popupWindow.location = url;
   }
 
   close() {
     if (this._popupWindow) {
       this._popupWindow.close();
-      this._popupWindow = null;
     }
+
+    this.cleanup();
 
     if (this._onParentRefocusCallback) {
       this.offParentRefocus();
     }
+  }
+
+  cleanup() {
+    this._popupWindow = null;
+    this._url = null;
+
+    clearInterval(this._checkPopupWindowClosedInterval);
   }
 
   isOpen() {
