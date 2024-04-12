@@ -2,15 +2,13 @@
  * @jest-environment jsdom
  */
 
-import {
-  jest
-} from "@jest/globals";
+import { jest } from "@jest/globals";
 import Auth from "../index.js";
 
 describe("Auth", () => {
   let auth = new Auth({
     storeID: "1234",
-    apiBase: "http://api.reflow.local/v2"
+    apiBase: "http://api.reflow.local/v2",
   });
 
   beforeEach(() => {
@@ -27,11 +25,11 @@ describe("Auth", () => {
 
   it("should get and set", async () => {
     let auth2 = new Auth({
-      storeID: "777"
+      storeID: "777",
     });
 
     auth2.set({
-      test123: "789"
+      test123: "789",
     });
 
     expect(JSON.parse(window.localStorage.reflowAuth777)).toStrictEqual(auth2.get());
@@ -50,7 +48,7 @@ describe("Auth", () => {
 
   it("should manage event listeners", async () => {
     let auth = new Auth({
-      storeID: "987"
+      storeID: "987",
     });
 
     expect(auth._listeners).toStrictEqual({});
@@ -60,17 +58,17 @@ describe("Auth", () => {
 
     auth.on("asdf", cb);
     expect(auth._listeners).toStrictEqual({
-      asdf: [cb]
+      asdf: [cb],
     });
 
     auth.on("asdf", cb);
     expect(auth._listeners).toStrictEqual({
-      asdf: [cb]
+      asdf: [cb],
     });
 
     auth.on("asdf", cb2);
     expect(auth._listeners).toStrictEqual({
-      asdf: [cb, cb2]
+      asdf: [cb, cb2],
     });
 
     expect(cb).toHaveBeenCalledTimes(0);
@@ -82,7 +80,7 @@ describe("Auth", () => {
 
     auth.off("asdf", cb);
     expect(auth._listeners).toStrictEqual({
-      asdf: [cb2]
+      asdf: [cb2],
     });
 
     auth.off("asdf", cb2);
@@ -130,7 +128,7 @@ describe("Auth", () => {
 
       if (url.includes("/auth/urls")) {
         response = {
-          signinURL: "https://banana123.com/"
+          signinURL: "https://banana123.com/",
         };
       } else if (url.includes("/auth/validate-token")) {
         response = {
@@ -139,7 +137,7 @@ describe("Auth", () => {
           session: "sess123",
           user: {
             name: "Name Here",
-            photo: "Image Here"
+            photo: "Image Here",
           },
         };
       }
@@ -153,16 +151,16 @@ describe("Auth", () => {
 
     let signInWindow = {
       document: {
-        write: jest.fn(() => {})
+        write: jest.fn(() => {}),
       },
-      location: ""
+      location: "",
     };
 
     global.open = jest.fn(() => signInWindow);
 
     let auth = new Auth({
       storeID: "2345",
-      apiBase: "http://api.reflow.local/v2"
+      apiBase: "http://api.reflow.local/v2",
     });
     expect(auth.isSignedIn()).toBe(false);
     expect(auth._popupWindow.isOpen()).toBe(false);
@@ -174,7 +172,7 @@ describe("Auth", () => {
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-signin",
-      "width=650,height=650,top=59,left=187"
+      "width=590,height=590,top=89,left=217"
     );
 
     expect(auth._popupWindow.getWindowInstance()).toEqual(signInWindow);
@@ -212,7 +210,7 @@ describe("Auth", () => {
     });
     expect(auth.trigger).toHaveBeenCalledTimes(2);
     expect(auth.trigger).toHaveBeenCalledWith("signout", {
-      error: "user_not_found"
+      error: "user_not_found",
     });
     expect(auth.trigger).toHaveBeenCalledWith("change");
 
@@ -232,12 +230,13 @@ describe("Auth", () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({
-          user: {
-            name: "Mr. Name From Server"
-          },
-          token: "asdf123"
-        }),
+        json: () =>
+          Promise.resolve({
+            user: {
+              name: "Mr. Name From Server",
+            },
+            token: "asdf123",
+          }),
       })
     );
 
@@ -246,7 +245,7 @@ describe("Auth", () => {
     const user = auth.user;
 
     expect(user).toEqual({
-      name: "Mr. Name From Server"
+      name: "Mr. Name From Server",
     });
     expect(auth.user.name).toBe("Mr. Name From Server");
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -285,12 +284,12 @@ describe("Auth", () => {
     const result = await auth.updateUser({
       name,
       email,
-      meta
+      meta,
     });
     expect(result.user).toEqual({
       name,
       email,
-      meta
+      meta,
     });
     expect(result.success).toEqual(true);
     expect(auth.user.name).toBe(name);
@@ -308,7 +307,7 @@ describe("Auth", () => {
 
     let newEmail = "new.email@example.com";
     let newUserData = {
-      ...oldUser
+      ...oldUser,
     };
 
     global.fetch = jest.fn((url) => {
@@ -350,12 +349,12 @@ describe("Auth", () => {
     // We should set an event listener in order to check for changes to the profile.
 
     const result = await auth.updateUser({
-      email: newEmail
+      email: newEmail,
     });
     expect(result.user).toEqual({
       name: oldUser.name,
       email: oldUser.email,
-      meta: oldUser.meta
+      meta: oldUser.meta,
     });
     expect(result.success).toEqual(true);
     expect(auth.user.name).toBe(oldUser.name);
@@ -380,7 +379,7 @@ describe("Auth", () => {
     newEmail = "new.email2@example.com";
 
     await auth.updateUser({
-      email: newEmail
+      email: newEmail,
     });
     expect(auth.user.email).toBe(oldUser.email);
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -445,7 +444,7 @@ describe("Auth", () => {
         json: () =>
           Promise.resolve({
             errors: {
-              name: ["The name must be at least 2 characters."]
+              name: ["The name must be at least 2 characters."],
             },
             message: "The given data was invalid.",
           }),
@@ -479,7 +478,7 @@ describe("Auth", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(auth.trigger).toHaveBeenCalledTimes(2);
     expect(auth.trigger).toHaveBeenCalledWith("signout", {
-      error: false
+      error: false,
     });
     expect(auth.trigger).toHaveBeenCalledWith("change");
 
@@ -494,7 +493,7 @@ describe("Auth", () => {
 
   it("should obtain tokens", async () => {
     let auth = new Auth({
-      storeID: "000111"
+      storeID: "000111",
     });
 
     let data = {
@@ -514,17 +513,22 @@ describe("Auth", () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({
-          token: "asdf000"
-        }),
+        json: () =>
+          Promise.resolve({
+            token: "asdf000",
+          }),
       })
     );
 
     // Pseudo JWT with a payload
     data.token =
-      "abc." + btoa(JSON.stringify({
-        exp: Math.floor(Date.now() / 1000) + 60
-      })) + ".abc";
+      "abc." +
+      btoa(
+        JSON.stringify({
+          exp: Math.floor(Date.now() / 1000) + 60,
+        })
+      ) +
+      ".abc";
     auth.set(data);
 
     expect(await auth.getToken()).toEqual(data.token);
@@ -532,9 +536,13 @@ describe("Auth", () => {
 
     // Expired token. Should trigger an HTTP Request
     data.token =
-      "abc." + btoa(JSON.stringify({
-        exp: Math.floor(Date.now() / 1000) + 59
-      })) + ".abc";
+      "abc." +
+      btoa(
+        JSON.stringify({
+          exp: Math.floor(Date.now() / 1000) + 59,
+        })
+      ) +
+      ".abc";
     auth.set(data);
 
     expect(await auth.getToken()).toEqual("asdf000");
@@ -543,10 +551,10 @@ describe("Auth", () => {
 
   it("should support multiple instances", async () => {
     let auth3 = new Auth({
-      storeID: "333"
+      storeID: "333",
     });
     let auth4 = new Auth({
-      storeID: "444"
+      storeID: "444",
     });
 
     expect(auth3.isSignedIn()).toBe(false);
@@ -591,7 +599,7 @@ describe("Auth", () => {
     jest.spyOn(global, "addEventListener");
 
     let auth5 = new Auth({
-      storeID: "555"
+      storeID: "555",
     });
 
     expect(removeEventListener).toHaveBeenCalledTimes(0);
@@ -601,7 +609,7 @@ describe("Auth", () => {
 
     let auth6 = new Auth({
       storeID: "5556",
-      autoBind: false
+      autoBind: false,
     });
 
     expect(removeEventListener).toHaveBeenCalledTimes(0);

@@ -113,7 +113,7 @@ describe("Reflow Auth Client", () => {
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-signin",
-      "width=650,height=650,top=59,left=187"
+      "width=590,height=590,top=89,left=217"
     );
 
     expect(signInWindow.location).toEqual(

@@ -448,8 +448,8 @@ class Auth {
       url: null,
       label: "reflow-signin",
       size: {
-        w: 650,
-        h: 650,
+        w: 590,
+        h: 590,
       },
       onParentRefocus: (async () => {
         if (this.isSignedIn()) {
