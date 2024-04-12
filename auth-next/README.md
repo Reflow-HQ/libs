@@ -661,6 +661,25 @@ console.log(result);
 
 **IMPORTANT**. Note that this method modifies the auth session cookie. This means that it can't be used in server components, since they are rendered after cookies are delivered to the browser. You can only call this method in server actions and route handlers.
 
+##### `async deleteUser(): Promise<{success: boolean}>`
+
+This method deletes the current user's account and information stored at Reflow. You can use it implement account deletion functionality in your apps. The method won't allow the user to delete their account if they have an active subscription.
+
+The method returns an object with a boolean `success` property.
+
+```typescript
+// Note, works only in server actions and route handlers, not in server components.
+const result = await auth.deleteUser();
+console.log(result);
+/*
+{
+    success: true
+}
+*/
+```
+
+**IMPORTANT**. Note that this method modifies the auth session cookie. This means that it can't be used in server components, since they are rendered after cookies are delivered to the browser. You can only call this method in server actions and route handlers.
+
 ##### `async isNew(): Promise<boolean>`
 
 Returns whether the user is newly registered. You can use this status to determine whether to display getting started guides or walkthroughs. The isNew flag is stored in a cookie which expires at the end of the browser session.
