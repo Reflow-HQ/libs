@@ -785,4 +785,34 @@ describe("Reflow Auth Server", () => {
       pendingEmailVerification: true,
     });
   });
+
+  test("deleteUser", async () => {
+    await auth.clear();
+    await auth.set("_key", "sess.123");
+    await auth.set("_user", userData);
+
+    // @ts-ignore
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ success: true }),
+      })
+    );
+
+    let response = await auth.deleteUser();
+
+    expect(response).toEqual({
+      success: true,
+    });
+
+    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/stores/199976733/auth/user", {
+      method: "DELETE",
+      headers: {
+        Authorization: "Bearer sess.123",
+      },
+    });
+
+    expect(await auth.isSignedIn()).toEqual(false);
+    expect(await auth.user()).toBeNull();
+  });
 });

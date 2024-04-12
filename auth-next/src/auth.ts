@@ -231,6 +231,31 @@ export class ReflowAuth {
   }
 
   /**
+   * Deletes the logged in user's account
+   */
+  public async deleteUser(): Promise<{ success: boolean }> {
+    if (!(await this.isSignedIn())) {
+      return { success: false };
+    }
+
+    try {
+      let result: any = await this.api("/auth/user", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${await this.get("_key")}`,
+        },
+      });
+    } catch (e) {
+      return { success: false };
+    }
+
+    await this.clearSystem();
+    await this.clearIsNew();
+
+    return { success: true };
+  }
+
+  /**
    * Returns whether the user is newly registered. You can use this status to
    * determine whether to display getting started guides or walkthroughs. The isNew
    * flag is stored in a cookie which expires at the end of the browser session.
