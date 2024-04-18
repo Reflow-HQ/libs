@@ -7,7 +7,7 @@ import Auth from "../index.js";
 
 describe("Auth", () => {
   let auth = new Auth({
-    storeID: "1234",
+    projectID: "1234",
     apiBase: "http://api.reflow.local/v2",
   });
 
@@ -25,7 +25,7 @@ describe("Auth", () => {
 
   it("should get and set", async () => {
     let auth2 = new Auth({
-      storeID: "777",
+      projectID: "777",
     });
 
     auth2.set({
@@ -48,7 +48,7 @@ describe("Auth", () => {
 
   it("should manage event listeners", async () => {
     let auth = new Auth({
-      storeID: "987",
+      projectID: "987",
     });
 
     expect(auth._listeners).toStrictEqual({});
@@ -159,7 +159,7 @@ describe("Auth", () => {
     global.open = jest.fn(() => signInWindow);
 
     let auth = new Auth({
-      storeID: "2345",
+      projectID: "2345",
       apiBase: "http://api.reflow.local/v2",
     });
     expect(auth.isSignedIn()).toBe(false);
@@ -203,7 +203,7 @@ describe("Auth", () => {
 
     expect(auth.isSignedIn()).toBe(false);
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/stores/1234/auth/state", {
+    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/projects/1234/auth/state", {
       headers: {
         Authorization: `Bearer key123`,
       },
@@ -249,7 +249,7 @@ describe("Auth", () => {
     });
     expect(auth.user.name).toBe("Mr. Name From Server");
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/stores/1234/auth/state", {
+    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/projects/1234/auth/state", {
       headers: {
         Authorization: `Bearer key123`,
       },
@@ -493,7 +493,7 @@ describe("Auth", () => {
 
   it("should obtain tokens", async () => {
     let auth = new Auth({
-      storeID: "000111",
+      projectID: "000111",
     });
 
     let data = {
@@ -551,10 +551,10 @@ describe("Auth", () => {
 
   it("should support multiple instances", async () => {
     let auth3 = new Auth({
-      storeID: "333",
+      projectID: "333",
     });
     let auth4 = new Auth({
-      storeID: "444",
+      projectID: "444",
     });
 
     expect(auth3.isSignedIn()).toBe(false);
@@ -599,7 +599,7 @@ describe("Auth", () => {
     jest.spyOn(global, "addEventListener");
 
     let auth5 = new Auth({
-      storeID: "555",
+      projectID: "555",
     });
 
     expect(removeEventListener).toHaveBeenCalledTimes(0);
@@ -608,7 +608,7 @@ describe("Auth", () => {
     expect(auth5._listeners).toStrictEqual({});
 
     let auth6 = new Auth({
-      storeID: "5556",
+      projectID: "5556",
       autoBind: false,
     });
 
@@ -680,5 +680,19 @@ describe("Auth", () => {
     expect(auth5.isBound()).toBe(false);
 
     jest.useRealTimers();
+  });
+
+  it("should work with deprecated storeID alias", async () => {
+    let authStore = new Auth({
+      storeID: "240418",
+    });
+
+    authStore.set({
+      testData: "any",
+    });
+
+    expect(authStore.get()).toStrictEqual({
+      testData: "any",
+    });
   });
 });

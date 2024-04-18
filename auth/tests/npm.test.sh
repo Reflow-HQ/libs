@@ -15,7 +15,7 @@ npm init es6 -y --prefix=npm-test-app
 npm i "../.$packname"
 rm "../.$packname"
 
-echo "import Auth from '@reflowhq/auth';console.log(new Auth({ storeID: '<your storeid here>' }));console.log('-----------');console.log('| Success |');console.log('-----------');" > index.js
+echo "import Auth from '@reflowhq/auth';console.log(new Auth({ projectID: '<your project id here>' }));console.log('-----------');console.log('| Success |');console.log('-----------');" > index.js
 
 echo "const {
   build

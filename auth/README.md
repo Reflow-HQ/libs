@@ -256,7 +256,7 @@ To enable test mode, just add `testMode: true` to the config object:
 ```js
 import Auth from "@reflowhq/auth";
 
-window.auth = new Auth({ storeID: "<your storeid here>", testMode: true });
+window.auth = new Auth({ projectID: "<your project id here>", testMode: true });
 ```
 
 While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow project, and payments will be made with Paddle's Sandbox and Stripe's test credit card info.

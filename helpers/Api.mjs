@@ -1,6 +1,6 @@
 export default class Api {
-  constructor({ storeID, apiBase, testMode = false }) {
-    this.storeID = storeID;
+  constructor({ projectID, apiBase, testMode = false }) {
+    this.projectID = projectID;
     this.apiBase = apiBase || `https://${testMode ? "test-" : ""}api.reflowhq.com/v2`;
     this.testMode = testMode || false;
 
@@ -30,7 +30,7 @@ export default class Api {
         return this.apiCache.get(requestKey);
       }
 
-      const result = fetch(this.apiBase + "/stores/" + this.storeID + "/" + endpoint, options).then(
+      const result = fetch(this.apiBase + "/projects/" + this.projectID + "/" + endpoint, options).then(
         async (response) => {
           let data = await response.json();
 
