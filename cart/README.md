@@ -10,12 +10,12 @@ npm install @reflowhq/cart
 
 ## Usage
 
-This library is meant to run in the browser. The recommended way to use it is to create an instance and assign it to the window object so that it is available globally. You can find your storeID on your Reflow admin page.
+This library is meant to run in the browser. The recommended way to use it is to create an instance and assign it to the window object so that it is available globally. You can find your projectID on your Reflow admin page.
 
 ```js
 import Cart from "@reflowhq/cart";
 
-window.cart = new Cart({ storeID: "<your storeid here>" });
+window.cart = new Cart({ projectID: "<your project id here>" });
 ```
 
 ## API
@@ -294,7 +294,7 @@ To translate this toolkit, you need to pass a localization object in the config 
 import localization from "./localization.json";
 
 const cart = new Cart({
-  storeID: "1234",
+  projectID: "1234",
   localization,
 });
 ```
@@ -396,7 +396,7 @@ To enable test mode, just add `testMode: true` to the config object:
 ```js
 import Cart from "@reflowhq/cart";
 
-window.cart = new Cart({ storeID: "<your storeid here>", testMode: true });
+window.cart = new Cart({ projectID: "<your project id here>", testMode: true });
 ```
 
 While testMode is active, orders will be recorded in the "Test mode" section of your Reflow project, and payments will be made with PayPal's Sandbox and Stripe's test credit card info.
