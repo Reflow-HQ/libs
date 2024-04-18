@@ -12,7 +12,7 @@ npm install @reflowhq/cart-react
 
 ## Usage
 
-This library is meant to run in the browser. Just import the hook and pass your storeID, which you can obtain from Reflow's website:
+This library is meant to run in the browser. Just import the hook and pass your projectID, which can be found in the Reflow dashboard [settings page](https://reflowhq.com/project/settings):
 
 ### `useCart(config)`
 
@@ -21,7 +21,7 @@ import { useCart } from "@reflowhq/cart-react";
 import localization from "./localization.json";
 
 const config = {
-  storeID: "1234",
+  projectID: "1234",
   localization,
 };
 
@@ -51,7 +51,7 @@ import useAuth from "@reflowhq/auth-react";
 import "@reflowhq/cart-react/dist/style.css";
 
 const config = {
-  storeID: "1234",
+  projectID: "1234",
 };
 
 function App() {
@@ -97,7 +97,7 @@ import { AddToCart, useCart } from "@reflowhq/cart-react";
 import "@reflowhq/cart-react/dist/style.css";
 
 const config = {
-  storeID: "1234",
+  projectID: "1234",
 };
 
 function App() {
@@ -105,7 +105,7 @@ function App() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    fetch(`https://api.reflowhq.com/v2/stores/${config.storeID}/products/`)
+    fetch(`https://api.reflowhq.com/v2/projects/${config.projectID}/products/`)
       .then((response) => response.json())
       .then((r) => setProducts(r.data))
       .catch((error) => console.error(error));
@@ -418,7 +418,7 @@ To translate this toolkit, you need to pass a localization object to the `useCar
 import localization from "./localization.json";
 
 const cart = useCart({
-  storeID: "1234",
+  projectID: "1234",
   localization,
 });
 ```
@@ -521,7 +521,7 @@ To enable test mode, just add `testMode: true` to the config object:
 import { useCart } from "@reflowhq/cart-react";
 
 const config = {
-  storeID: "1234",
+  projectID: "1234",
   testMode: true,
 };
 

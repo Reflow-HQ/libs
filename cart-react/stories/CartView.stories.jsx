@@ -12,7 +12,7 @@ export default {
 };
 
 const config = {
-  storeID: "199976733",
+  projectID: "199976733",
   apiBase: "http://api.reflow.local/v2",
 };
 

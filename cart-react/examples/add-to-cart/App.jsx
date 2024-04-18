@@ -4,7 +4,7 @@ import "@reflowhq/cart-react/dist/style.css";
 import Product from "./Product";
 
 const config = {
-  storeID: "267418190",
+  projectID: "267418190",
 };
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    fetch(`https://api.reflowhq.com/v2/stores/${config.storeID}/products/`)
+    fetch(`https://api.reflowhq.com/v2/projects/${config.projectID}/products/`)
       .then((response) => response.json())
       .then((r) => setProducts(r.data))
       .catch((error) => console.error(error));
