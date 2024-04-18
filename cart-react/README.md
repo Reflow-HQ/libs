@@ -35,7 +35,7 @@ The `config` can have the following keys:
 
 | Prop           | Type      | Required | Description                                                                    |
 | -------------- | --------- | -------- | ------------------------------------------------------------------------------ |
-| `storeID`      | _string_  | _Yes_    | The `id` of your Reflow store.                                                 |
+| `projectID`    | _string_  | _Yes_    | The `id` of your Reflow project.                                               |
 | `localization` | _object_  | _No_     | An object consisting of key/value pairs. [Learn more](#localization).          |
 | `testMode`     | _boolean_ | _No_     | Determines whether the cart should run in test mode. [Learn more](#test-mode). |
 
@@ -169,7 +169,7 @@ console.log(cart);
 | `isUnavailable`      | _boolean_ | _True_ if there were issues while fetching the cart.                                                                          |
 | `vacationMode`       | _object_  | Includes a boolean status and a message if the store is in vacation mode.                                                     |
 | `products`           | _array_   | The line items currently in the shopping cart.                                                                                |
-| `footerLinks`        | _array_   | An array of the links to terms of service/privacy/refund policy that are configured in the Reflow store's settings.           |
+| `footerLinks`        | _array_   | An array of the links to terms of service/privacy/refund policy that are configured in the Reflow project's settings.         |
 | `signInProviders`    | _array_   | An array of the configured payment providers e.g. "facebook", "google", etc.                                                  |
 | `paymentProviders`   | _array_   | An array of objects describing the configured payment providers e.g. Paypal, Stripe, etc.                                     |
 | `currency`           | _string_  | The cart currency.                                                                                                            |
@@ -407,7 +407,7 @@ console.log(result);
 | `store-location`    | _No\*_   | _number_                                                      | The index of the selected pickup location. \* Required if the delivery method is `'pickup'`   |
 | `shipping-method`   | _No\*_   | _number_                                                      | The index of the selected shipping method. \* Required if the delivery method is `'shipping'` |
 | `note-to-seller`    | _No_     | _string_                                                      |                                                                                               |
-| `auth-account-id`   | _No_     | _number_                                                      | The user `id`. \* If the store provides sign in methods and a user is logged in.              |
+| `auth-account-id`   | _No_     | _number_                                                      | The user `id`. \* If Reflow user auth is enabled and a user is signed in in.                  |
 | `auth-save-address` | _No_     | _boolean_                                                     |                                                                                               |
 
 ## Localization
@@ -507,13 +507,13 @@ We recommend [downloading our example file](https://reflowhq.com/locale_regions_
 
 ### Local Currency
 
-Reflow supports a wide array of currencies that can be used for everything in your store, including product prices and shipping costs. You can change the currency of your store from the [general settings](https://reflowhq.com/store/settings) page.
+Reflow supports a wide array of currencies that can be used for everything in your store, including product prices and shipping costs. You can change the currency of your project from the [general settings](https://reflowhq.com/project/settings) page.
 
 For a full list of available currencies visit the [Currency Support docs](https://reflowhq.com/docs/guide/currency-support).
 
 ## Test Mode
 
-With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your store integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
+With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
 
 To enable test mode, just add `testMode: true` to the config object:
 
@@ -531,7 +531,7 @@ function App() {
 }
 ```
 
-While testMode is active, orders will be recorded in the "Test mode" section of your Reflow store, and payments will be made with PayPal's Sandbox and Stripe's test credit card info.
+While testMode is active, orders will be recorded in the "Test mode" section of your Reflow project, and payments will be made with PayPal's Sandbox and Stripe's test credit card info.
 
 ## License
 

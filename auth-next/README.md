@@ -40,14 +40,14 @@ export default function getAuth(): ReflowAuth {
 }
 ```
 
-This file imports and initializes the Reflow library. You will be importing this file in your server components in order to obtain a ReflowAuth instance. Remember to replace the `storeID` with the ID of your Reflow store (you can find it in the URL of the store management page), and to add a unique 32 character secret string. The latter is used for encrypting the session cookie.
+This file imports and initializes the Reflow library. You will be importing this file in your server components in order to obtain a ReflowAuth instance. Remember to replace the `storeID` with the ID of your Reflow project (you can find in the dashboard [settings page](https://reflowhq.com/project/settings)), and to add a unique 32 character secret string. The latter is used for encrypting the session cookie.
 
 Notes
 
 - We are using TypeScript in our example, but you can easily convert this to JavaScript by removing the return type declaration, and changing the name to `auth.js`.
 - The name of the file is arbitrary, you can even omit this file altogether, provided that you initialize ReflowAuth somehow.
 - The ReflowAuth constructor [supports additional options](#reflowauth-class).
-- You can generate a 32 char secret string with your password manager, or with a command like this (if you're on an unix-like OS): `tr -dc A-Za-z0-9 </dev/urandom | head -c 32`
+- You can generate a 32 char secret string with your password manager, or with a command like this (if you're on an unix-like OS): `openssl rand -hex 16`
 
 ### app/auth/route.ts
 
@@ -295,7 +295,7 @@ export default async function Page() {
 Notes
 
 - We won't be covering it in this readme, but you can also let users change their plan or cancel their subscription with the `modifySubscription` client functions [example](https://github.com/Reflow-HQ/auth-next-example/blob/master/app/page.tsx)).
-- The `Subscription` object contains feature flags that you define in your Plan creation screen in Reflow. If you build your Next app around them, you can use these flags to create new plans with unique limits, or override the features/limits for a specific subscriber from Reflow's store management UI.
+- The `Subscription` object contains feature flags that you define in your Plan creation screen in Reflow. If you build your Next app around them, you can use these flags to create new plans with unique limits, or override the features/limits for a specific subscriber from Reflow's project management UI.
 
 ### Session Storage and Retrieval
 
@@ -418,7 +418,7 @@ The constructor supports the following options. The first two are required and m
 
 | Parameter    | Required | Type     | Default Value | Description                                                                                                                                                                                                                                                                             |
 | ------------ | -------- | -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| storeID      | yes      | number   | -             | The ID of your Reflow store. You can find it in your Reflow store management page.                                                                                                                                                                                                      |
+| storeID      | yes      | number   | -             | The ID of your Reflow project. You can find in the Reflow dashboard [settings page](https://reflowhq.com/project/settings) page.                                                                                                                                                                                                      |
 | secret       | yes      | string   | -             | A 32 character unique string. It is used to encrypt the session cookie where the auth data is stored. Ideally you should keep this in an .env file that is not committed in your repo.                                                                                                  |
 | cookieName   | no       | string   | "session"     | The name of the session cookie stored in the browser with the http-only flag. By default the name is "session".                                                                                                                                                                         |
 | cookieMaxAge | no       | number   | -             | The lifetime of the session in seconds. By default it is cleared when the browser window is closed.                                                                                                                                                                                     |

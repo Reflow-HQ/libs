@@ -214,7 +214,7 @@ See a [live example](https://codesandbox.io/s/react-reflow-pricing-table-3kdc6l)
 
 ### `auth.isSubscribed()`
 
-This method will return true or false depending on whether the currently signed in user has an active subscription for your store.
+This method will return true or false depending on whether the currently signed in user has an active subscription for your project.
 
 ```js
 auth.isSubscribed();
@@ -222,7 +222,7 @@ auth.isSubscribed();
 
 ## Test Mode
 
-With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your store integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
+With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
 
 To enable test mode, just add `testMode: true` to the config object:
 
@@ -235,7 +235,7 @@ function MyComponent() {
 }
 ```
 
-While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow store, and payments will be made with Paddle's Sandbox and Stripe's test credit card info.
+While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow project, and payments will be made with Paddle's Sandbox and Stripe's test credit card info.
 
 ## License
 
