@@ -496,7 +496,7 @@ export async function createSubscription(options: {
         },
       ],
       customData: {
-        store_id: checkoutData.store.id.toString(),
+        project_id: checkoutData.project.id.toString(),
         user_id: checkoutData.user.id.toString(),
         price_id: options.priceID,
       },

@@ -34,13 +34,13 @@ import { ReflowAuth } from "@reflowhq/auth-next";
 
 export default function getAuth(): ReflowAuth {
   return new ReflowAuth({
-    storeID: 123456,
+    projectID: 123456,
     secret: "REPLACE_ME_WITH_A_32_CHAR_SECRET",
   });
 }
 ```
 
-This file imports and initializes the Reflow library. You will be importing this file in your server components in order to obtain a ReflowAuth instance. Remember to replace the `storeID` with the ID of your Reflow project (you can find in the dashboard [settings page](https://reflowhq.com/project/settings)), and to add a unique 32 character secret string. The latter is used for encrypting the session cookie.
+This file imports and initializes the Reflow library. You will be importing this file in your server components in order to obtain a ReflowAuth instance. Remember to replace the `projectID` with the ID of your Reflow project (you can find it in the dashboard [settings page](https://reflowhq.com/project/settings)), and to add a unique 32 character secret string. The latter is used for encrypting the session cookie.
 
 Notes
 
@@ -160,7 +160,7 @@ import type { User } from "@reflowhq/auth-next/types";
 
 export default function getAuth(): ReflowAuth {
   return new ReflowAuth({
-    storeID: 123456,
+    projectID: 123456,
     secret: "REPLACE_ME_WITH_A_32_CHAR_SECRET",
     beforeSignin: async (user: User) => {
       // Create database records, validate permissions, send emails etc..
@@ -406,7 +406,7 @@ import { ReflowAuth } from "@reflowhq/auth-next";
 
 export default function getAuth(): ReflowAuth {
   return new ReflowAuth({
-    storeID: 123456,
+    projectID: 123456,
     secret: "REPLACE_ME_WITH_A_32_CHAR_SECRET",
   });
 }
@@ -418,7 +418,7 @@ The constructor supports the following options. The first two are required and m
 
 | Parameter    | Required | Type     | Default Value | Description                                                                                                                                                                                                                                                                             |
 | ------------ | -------- | -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| storeID      | yes      | number   | -             | The ID of your Reflow project. You can find in the Reflow dashboard [settings page](https://reflowhq.com/project/settings) page.                                                                                                                                                                                                      |
+| projectID      | yes      | number   | -             | The ID of your Reflow project. You can find it in the Reflow dashboard [settings page](https://reflowhq.com/project/settings).                                                                                                                                                          |
 | secret       | yes      | string   | -             | A 32 character unique string. It is used to encrypt the session cookie where the auth data is stored. Ideally you should keep this in an .env file that is not committed in your repo.                                                                                                  |
 | cookieName   | no       | string   | "session"     | The name of the session cookie stored in the browser with the http-only flag. By default the name is "session".                                                                                                                                                                         |
 | cookieMaxAge | no       | number   | -             | The lifetime of the session in seconds. By default it is cleared when the browser window is closed.                                                                                                                                                                                     |
