@@ -169,6 +169,12 @@ export async function signIn(options?: {
 
         broadcastChannel?.postMessage({ type: "signin" });
 
+        if (options?.onSuccess) {
+          options.onSuccess();
+        } else {
+          console.info("Reflow: user is signed in");
+        }
+
         if (options?.subscribeTo && options?.subscribeWith == "paddle") {
           // The sign in was caused by a call of createSubscription.
           // Proceed with that flow and directly go to Paddle checkout.
@@ -187,12 +193,6 @@ export async function signIn(options?: {
 
           // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
           // No action is required from the library.
-        }
-
-        if (options?.onSuccess) {
-          options.onSuccess();
-        } else {
-          console.info("Reflow: user is signed in");
         }
       }
     },
