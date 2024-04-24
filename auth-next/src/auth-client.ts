@@ -508,6 +508,13 @@ export async function createSubscription(options: {
       };
     }
 
+    if (checkoutData.paddle_setup_fee_price_id) {
+      checkoutSettings.items.push({
+        priceId: checkoutData.paddle_setup_fee_price_id,
+        quantity: 1,
+      });
+    }
+
     loadingDialog.close();
     paddleSubscribeCheckout?.Checkout.open(checkoutSettings);
   }
