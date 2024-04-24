@@ -558,6 +558,13 @@ interface Plan {
   description: string;
   parameters: Record<string, any>;
   trial_days: number;
+  subscription_setup_fee: null | {
+    name: string;
+    description: string;
+    price: number;
+    price_formatted: string;
+    currency: CurrencyCode;
+  };
   is_archived: boolean;
   created: number;
 }
@@ -593,6 +600,7 @@ Here is an example JSON object
     "description": "Access to all premium features",
     "parameters": {},
     "trial_days": 7,
+    "subscription_setup_fee": null,
     "is_archived": false,
     "created": 1630876800
   },
