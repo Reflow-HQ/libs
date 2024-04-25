@@ -133,6 +133,8 @@ export function useSessionSync(options: {
 export async function signIn(options?: {
   authEndpoint?: string;
   onSuccess?: Function;
+  onSignin?: Function;
+  onSubscribe?: Function;
   onError?: Function;
   step?: "login" | "register";
   subscribeTo?: number;
@@ -169,8 +171,8 @@ export async function signIn(options?: {
 
         broadcastChannel?.postMessage({ type: "signin" });
 
-        if (options?.onSuccess) {
-          options.onSuccess();
+        if (options?.onSignin) {
+          options.onSignin();
         } else {
           console.info("Reflow: user is signed in");
         }
@@ -186,13 +188,37 @@ export async function signIn(options?: {
           createSubscription({
             priceID: options.subscribeTo,
             paymentProvider: "paddle",
-            onSuccess: options.onSuccess,
+            onSuccess: (change: any) => {
+              options.onSuccess && options.onSuccess(change);
+              options.onSubscribe && options.onSubscribe(change);
+            },
             onError: options.onError,
           });
           return;
 
           // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
           // No action is required from the library.
+        }
+
+        let change = await refreshSession();
+        if (change?.signout) {
+          broadcastChannel?.postMessage({ type: "signout" });
+          throw new Error("User has been signed out");
+        }
+
+        if (change?.subscription) {
+          broadcastChannel?.postMessage({ type: "subscribe" });
+
+          // Backwards compatibility
+          if (options?.onSuccess) {
+            options.onSuccess(change);
+          }
+
+          if (options?.onSubscribe) {
+            options.onSubscribe(change);
+          } else {
+            console.info("Reflow: user subscription created");
+          }
         }
       }
     },
