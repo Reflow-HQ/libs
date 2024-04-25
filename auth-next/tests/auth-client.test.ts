@@ -353,7 +353,8 @@ describe("Reflow Auth Client", () => {
           provider: "paddle",
           paddle_price_id: "123",
           seller_id: "paddle_id_123",
-          store: { object: "store", id: "123456" },
+          project: { object: "project", id: "123456" },
+          store: { object: "project", id: "123456" },
           user: { object: "user", id: "123456" },
           mode: "live",
         };

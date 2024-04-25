@@ -65,3 +65,15 @@ export interface UpdateUserOptions {
   photo?: Blob;
   meta?: Record<string, any>;
 }
+
+interface ReflowAuthOptions {
+  secret: string;
+  cookieName?: string;
+  cookieMaxAge?: number;
+  apiBase?: string;
+  testMode?: boolean;
+  beforeSignin?: (user: User) => Promise<boolean | undefined>;
+}
+export type ReflowAuthConfig =
+  | (ReflowAuthOptions & { projectID: number; storeID?: never })
+  | (ReflowAuthOptions & { storeID: number; projectID?: never });

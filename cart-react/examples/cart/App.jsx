@@ -4,7 +4,7 @@ import useAuth from "@reflowhq/auth-react";
 import "@reflowhq/cart-react/dist/style.css";
 
 const config = {
-  storeID: "267418190",
+  projectID: "267418190",
 };
 
 function App() {

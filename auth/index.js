@@ -5,8 +5,8 @@ import LoadingDialog from "../helpers/dialogs/LoadingDialog.mjs";
 import Api from "../helpers/Api.mjs";
 
 class Auth {
-  constructor({ storeID, apiBase, autoBind = true, testMode = false }) {
-    this.storeID = storeID;
+  constructor({ projectID, storeID, apiBase, autoBind = true, testMode = false }) {
+    this.projectID = projectID || storeID;
     this.testMode = testMode || false;
 
     this._boundCounter = 0;
@@ -22,7 +22,7 @@ class Auth {
     this._authToken = null;
 
     this._api = new Api({
-      storeID,
+      projectID: this.projectID,
       apiBase,
       testMode,
     });
@@ -87,7 +87,7 @@ class Auth {
     let data = {};
 
     try {
-      data = JSON.parse(localStorage["reflowAuth" + this.storeID]);
+      data = JSON.parse(localStorage["reflowAuth" + this.projectID]);
     } catch (e) {}
 
     if (key) {
@@ -100,11 +100,11 @@ class Auth {
   set(obj) {
     let data = this.get();
     Object.assign(data, obj);
-    localStorage["reflowAuth" + this.storeID] = JSON.stringify(data);
+    localStorage["reflowAuth" + this.projectID] = JSON.stringify(data);
   }
 
   clear() {
-    delete localStorage["reflowAuth" + this.storeID];
+    delete localStorage["reflowAuth" + this.projectID];
   }
 
   isSignedIn() {
@@ -176,15 +176,15 @@ class Auth {
   }
 
   setIsNew() {
-    sessionStorage["reflowAuth" + this.storeID + "IsNew"] = "1";
+    sessionStorage["reflowAuth" + this.projectID + "IsNew"] = "1";
   }
 
   isNew() {
-    return sessionStorage["reflowAuth" + this.storeID + "IsNew"] === "1";
+    return sessionStorage["reflowAuth" + this.projectID + "IsNew"] === "1";
   }
 
   clearIsNew() {
-    delete sessionStorage["reflowAuth" + this.storeID + "IsNew"];
+    delete sessionStorage["reflowAuth" + this.projectID + "IsNew"];
   }
 
   bind() {
@@ -707,7 +707,7 @@ class Auth {
           },
         ],
         customData: {
-          store_id: this.storeID.toString(),
+          project_id: this.projectID.toString(),
           user_id: this.user.id.toString(),
           price_id: data.priceID,
         },
