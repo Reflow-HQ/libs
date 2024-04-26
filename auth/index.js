@@ -719,6 +719,13 @@ class Auth {
         };
       }
 
+      if (checkoutData.paddle_setup_fee_price_id) {
+        checkoutSettings.items.push({
+          priceId: checkoutData.paddle_setup_fee_price_id,
+          quantity: 1,
+        });
+      }
+
       this._paddleSubscribeCheckout.Checkout.open(checkoutSettings);
     }
   }
