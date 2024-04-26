@@ -771,19 +771,22 @@ Handler for the backend API with which the front end JS methods communicate. You
 
 The following functions are available in client components only.
 
-#### `async function signIn(options?: {authEndpoint?: string;onSuccess?: Function;onError?: Function; step?: "login" | "register"; subscribeTo?: number;})`
+#### `async function signIn(options?: {authEndpoint?: string; onSuccess?: Function; onSignin?: Function; onSubscribe?: Function; onError?: Function; step?: "login" | "register"; subscribeTo?: number;})`
 
 Triggers the sign in flow and displays a window with sign in methods. You can see an example [above](#user-sign-in).
 
 Takes the following options
 
-| Property     | Type     | Description                                                                                                                                                                                                                   |
-| ------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| authEndpoint | string   | The path on your website where Next.js serves the auth route handler you created in the setup. By default, this is set to "/auth". If you use a non-standard route handler name or location you will need to change this.     |
-| onSuccess    | Function | Callback function which is called when the user signs in successfully.                                                                                                                                                        |
-| onError      | Function | Callback function which is called when an error occurs during sign in.                                                                                                                                                        |
-| step         | string   | If you use the Username and Password auth provider, this indicates whether to display the login or register screens. This is only for convenience, users can navigate between them from the links in the window regardless.   |
-| subscribeTo  | number   | You can provide a priceID if you wish the user to be presented with a subscription screen immediately after signing in. It is used internally by the createSubscription method if the user is not logged in when it's called. |
+| Property      | Type     | Description                                                                                                                                                                                                                   |
+| ------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| authEndpoint  | string   | The path on your website where Next.js serves the auth route handler you created in the setup. By default, this is set to "/auth". If you use a non-standard route handler name or location you will need to change this.     |
+| onSuccess     | Function | Callback function which is called when the user signs in (and subscribes if `subscribeTo` is provided) successfully.                                                                                                          |
+| onSignin      | Function | Callback function which is called when the user signs in successfully.                                                                                                                                                        |
+| onSubscribe   | Function | Callback function which is called when the user subscribes successfully.                                                                                                                                                      |
+| onError       | Function | Callback function which is called when an error occurs during sign in.                                                                                                                                                        |
+| step          | string   | If you use the Username and Password auth provider, this indicates whether to display the login or register screens. This is only for convenience, users can navigate between them from the links in the window regardless.   |
+| subscribeTo   | number   | You can provide a priceID if you wish the user to be presented with a subscription screen immediately after signing in. It is used internally by the createSubscription method if the user is not logged in when it's called. |
+| subscribeWith | string   | The payment provider that should be used for handling the subscription, either 'stripe' or 'paddle'.                                                                                                                          |
 
 All are optional.
 
