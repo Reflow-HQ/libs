@@ -152,22 +152,12 @@ describe("Reflow Auth Client", () => {
       if (url.includes("?init=true")) {
         response = {
           success: true,
-          signinURL: "https://banana123.com/",
+          signinURL: "https://banana1234.com/",
           nonceHash: "pizza",
         };
       } else if (url.includes("?check=true&auth-token=token777")) {
         response = {
           success: true,
-        };
-      } else if (url.includes("?create-subscription=true&priceID=1337&paymentProvider=paddle")) {
-        response = {
-          status: "success",
-          provider: "paddle",
-          paddle_price_id: "123",
-          seller_id: "paddle_id_123",
-          store: { object: "store", id: "123456" },
-          user: { object: "user", id: "123456" },
-          mode: "live",
         };
       } else if (url.includes("?refresh=true&force=true")) {
         response = {
@@ -202,7 +192,13 @@ describe("Reflow Auth Client", () => {
     let onSubscribe = jest.fn(() => {});
     let onError = jest.fn(() => {});
 
-    await signIn({ onSuccess, onSignin, onSubscribe, onError, subscribeTo: 12345 });
+    await signIn({
+      onSuccess,
+      onSignin,
+      onSubscribe,
+      onError,
+      subscribeTo: 12345,
+    });
 
     expect(global.addEventListener).toHaveBeenCalledTimes(2);
     expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
@@ -214,11 +210,11 @@ describe("Reflow Auth Client", () => {
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-signin",
-      "width=650,height=650,top=59,left=187"
+      "width=590,height=590,top=89,left=217"
     );
 
     expect(signInWindow.location).toEqual(
-      "https://banana123.com/?origin=http%3A%2F%2Flocalhost&nonceHash=pizza&step=login&subscribeTo=12345"
+      "https://banana1234.com/?origin=http%3A%2F%2Flocalhost&nonceHash=pizza&step=login&subscribeTo=12345"
     );
 
     // Fake a received postMessage
