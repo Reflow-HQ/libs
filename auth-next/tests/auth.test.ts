@@ -7,7 +7,7 @@ const sessionCookieName = "sessionCookie123";
 
 function getAuth(): ReflowAuth {
   return new ReflowAuth({
-    storeID: 199976733,
+    projectID: 199976733,
     secret: "B9LliGAV7WtEKtVR9TKorLnLQFPV1Po3",
     cookieName: sessionCookieName,
     cookieMaxAge: 14 * 24 * 60 * 60,
@@ -78,7 +78,12 @@ describe("Reflow Auth Server", () => {
     expect(() => {
       // @ts-ignore
       new ReflowAuth({});
-    }).toThrow("storeID is required");
+    }).toThrow("projectID is required");
+
+    expect(() => {
+      // @ts-ignore
+      new ReflowAuth({ projectID: 1234 });
+    }).toThrow("Secret must be 32 characters long");
 
     expect(() => {
       // @ts-ignore
@@ -87,7 +92,7 @@ describe("Reflow Auth Server", () => {
 
     expect(() => {
       // @ts-ignore
-      new ReflowAuth({ storeID: 1234, secret: "asdf" });
+      new ReflowAuth({ projectID: 1234, secret: "asdf" });
     }).toThrow("Secret must be 32 characters long");
   });
 
@@ -314,7 +319,7 @@ describe("Reflow Auth Server", () => {
 
     expect(json).toEqual({
       success: true,
-      storeID: auth.storeID,
+      projectID: auth.projectID,
       signinURL: "https://asdf.com",
       nonceHash: json.nonceHash,
     });
@@ -323,7 +328,7 @@ describe("Reflow Auth Server", () => {
     expect(await auth.has("_nonce")).toEqual(true);
     expect((await auth.get("_nonce")).length).toBeGreaterThan(10);
     expect(fetch).toHaveBeenCalledWith(
-      "http://api.reflow.local/v2/stores/199976733/auth/urls",
+      "http://api.reflow.local/v2/projects/199976733/auth/urls",
       undefined
     );
 
@@ -404,7 +409,7 @@ describe("Reflow Auth Server", () => {
     expect(await auth.all()).toEqual({ _nonce: "banana123" });
 
     expect(fetch).toHaveBeenCalledWith(
-      "http://api.reflow.local/v2/stores/199976733/auth/validate-token?auth-token=panda&nonce=banana123",
+      "http://api.reflow.local/v2/projects/199976733/auth/validate-token?auth-token=panda&nonce=banana123",
       { method: "POST" }
     );
 
@@ -437,7 +442,7 @@ describe("Reflow Auth Server", () => {
     expect(await auth.isNew()).toEqual(true);
 
     expect(fetch).toHaveBeenCalledWith(
-      "http://api.reflow.local/v2/stores/199976733/auth/validate-token?auth-token=panda&nonce=banana123",
+      "http://api.reflow.local/v2/projects/199976733/auth/validate-token?auth-token=panda&nonce=banana123",
       { method: "POST" }
     );
 
@@ -513,7 +518,7 @@ describe("Reflow Auth Server", () => {
     body.set("paymentProvider", "stripe");
 
     expect(fetch).toHaveBeenCalledWith(
-      "http://api.reflow.local/v2/stores/199976733/auth/user/subscribe",
+      "http://api.reflow.local/v2/projects/199976733/auth/user/subscribe",
       {
         method: "POST",
         headers: {
@@ -550,7 +555,7 @@ describe("Reflow Auth Server", () => {
     });
 
     expect(fetch).toHaveBeenCalledWith(
-      "http://api.reflow.local/v2/stores/199976733/auth/user/manage-subscription",
+      "http://api.reflow.local/v2/projects/199976733/auth/user/manage-subscription",
       {
         method: "GET",
         headers: {
@@ -617,7 +622,7 @@ describe("Reflow Auth Server", () => {
     updatePlanBody.set("priceID", "123");
 
     expect(fetch).toHaveBeenCalledWith(
-      "http://api.reflow.local/v2/stores/199976733/auth/user/update-plan",
+      "http://api.reflow.local/v2/projects/199976733/auth/user/update-plan",
       {
         method: "POST",
         headers: {
@@ -652,7 +657,7 @@ describe("Reflow Auth Server", () => {
     });
 
     expect(fetch).toHaveBeenCalledWith(
-      "http://api.reflow.local/v2/stores/199976733/auth/user/cancel-subscription",
+      "http://api.reflow.local/v2/projects/199976733/auth/user/cancel-subscription",
       {
         method: "POST",
         headers: {
@@ -678,7 +683,7 @@ describe("Reflow Auth Server", () => {
     json = await response.json();
     expect(json).toEqual({ success: true });
 
-    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/stores/199976733/auth/signout", {
+    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/projects/199976733/auth/signout", {
       method: "POST",
       headers: {
         Authorization: "Bearer sess.123",
@@ -762,7 +767,7 @@ describe("Reflow Auth Server", () => {
 
     expect(await auth.lastRefresh()).toEqual(mockedTimestamp);
 
-    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/stores/199976733/auth/user", {
+    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/projects/199976733/auth/user", {
       method: "POST",
       headers: {
         Authorization: "Bearer sess.123",
@@ -784,5 +789,35 @@ describe("Reflow Auth Server", () => {
       success: true,
       pendingEmailVerification: true,
     });
+  });
+
+  test("deleteUser", async () => {
+    await auth.clear();
+    await auth.set("_key", "sess.123");
+    await auth.set("_user", userData);
+
+    // @ts-ignore
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ success: true }),
+      })
+    );
+
+    let response = await auth.deleteUser();
+
+    expect(response).toEqual({
+      success: true,
+    });
+
+    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/projects/199976733/auth/user", {
+      method: "DELETE",
+      headers: {
+        Authorization: "Bearer sess.123",
+      },
+    });
+
+    expect(await auth.isSignedIn()).toEqual(false);
+    expect(await auth.user()).toBeNull();
   });
 });

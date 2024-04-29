@@ -4,7 +4,7 @@ import useAuth from "@reflowhq/auth-react";
 import React, { useState, useEffect } from "react";
 
 const config = {
-  storeID: "199976733",
+  projectID: "199976733",
   apiBase: "http://test-api.reflow.local/v2",
   testMode: true,
 };
@@ -23,7 +23,7 @@ export const App = ({}) => {
   const [activeTab, setActiveTab] = useState("month");
 
   useEffect(() => {
-    fetch(`${config.apiBase}/stores/${config.storeID}/plans/`)
+    fetch(`${config.apiBase}/project/${config.projectID}/plans/`)
       .then((response) => response.json())
       .then((r) => setPlans(r.data))
       .catch((error) => console.error(error));

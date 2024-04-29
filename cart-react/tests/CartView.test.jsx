@@ -9,10 +9,10 @@ import "@testing-library/jest-dom";
 
 import Cart from "./mocks/Cart";
 
-const storeID = "1234";
+const projectID = "1234";
 const cartKey = "key";
 const config = {
-  storeID,
+  projectID,
   apiBase: "http://api.reflow.local/v2",
 };
 
@@ -93,11 +93,11 @@ function mockFetch() {
     let response;
 
     switch (pathname) {
-      case `/v2/stores/${storeID}/carts/`: {
+      case `/v2/projects/${projectID}/carts/`: {
         response = { cartKey };
         break;
       }
-      case `/v2/stores/${storeID}/carts/${cartKey}`: {
+      case `/v2/projects/${projectID}/carts/${cartKey}`: {
         response = cartContentResponse;
         break;
       }
@@ -135,7 +135,7 @@ it("renders an error message when cart is unavailable", async () => {
   expect(await screen.findByText("Unable to load shopping cart.")).toBeInTheDocument();
 });
 
-it("renders an error message when store has no payment methods", async () => {
+it("renders an error message when project has no payment methods", async () => {
   cartContentResponse = { ...defaultCartContent };
 
   render(<Cart config={config} />);
@@ -168,4 +168,23 @@ it("renders the cart slide", async () => {
 
   expect(await screen.findByText("Shopping Cart")).toBeInTheDocument();
   expect(await screen.findByText(physicalProduct.name)).toBeInTheDocument();
+});
+
+it("should work with alias storeID instead of projectID", async () => {
+  cartContentResponse = {
+    ...defaultCartContent,
+    paymentProviders,
+    products: [],
+  };
+
+  render(
+    <Cart
+      config={{
+        storeID: "1234",
+        apiBase: "http://api.reflow.local/v2",
+      }}
+    />
+  );
+
+  expect(await screen.findByText("Your shopping cart is empty.")).toBeInTheDocument();
 });

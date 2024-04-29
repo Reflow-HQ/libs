@@ -4,7 +4,7 @@ This is a JS library for adding user accounts to any frontend using [Reflow](htt
 
 ## Installation
 
-If you've configured sign in providers in your Reflow Store, this library makes it super simple for users to authenticate in your app. You just need to install it in your project with npm or another package manager:
+If you've configured sign in providers in your Reflow project, this library makes it super simple for users to authenticate in your app. You just need to install it in your project with npm or another package manager:
 
 ```bash
 npm install @reflowhq/auth
@@ -12,12 +12,12 @@ npm install @reflowhq/auth
 
 ## Usage
 
-This library is meant to run in the browser. The recommended way to use it is to create an instance and assign it to the window object so that it is available globally. You can find your storeID on your Reflow admin page.
+This library is meant to run in the browser. The recommended way to use it is to create an instance and assign it to the window object so that it is available globally. You can find your projectID in the dashboard [settings page](https://reflowhq.com/project/settings).
 
 ```js
 import Auth from "@reflowhq/auth";
 
-window.auth = new Auth({ storeID: "<your storeid here>" });
+window.auth = new Auth({ projectID: "<your project id here>" });
 ```
 
 You can see a full featured example in the [examples](https://github.com/reflow-hq/libs/tree/master/auth/examples) directory.
@@ -170,7 +170,7 @@ async auth.modifySubscription();
 
 ### `auth.isSubscribed()`
 
-This method will return true or false depending on whether the currently signed in user has an active subscription for your store.
+This method will return true or false depending on whether the currently signed in user has an active subscription for your project.
 
 ```js
 auth.isSubscribed();
@@ -249,17 +249,17 @@ auth.off("change", changeCb);
 
 ## Test Mode
 
-With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your store integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
+With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
 
 To enable test mode, just add `testMode: true` to the config object:
 
 ```js
 import Auth from "@reflowhq/auth";
 
-window.auth = new Auth({ storeID: "<your storeid here>", testMode: true });
+window.auth = new Auth({ projectID: "<your project id here>", testMode: true });
 ```
 
-While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow store, and payments will be made with Paddle's Sandbox and Stripe's test credit card info.
+While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow project, and payments will be made with Paddle's Sandbox and Stripe's test credit card info.
 
 ## License
 

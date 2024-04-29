@@ -10,7 +10,7 @@ import Button from "react-bootstrap/Button";
 import Edit from "./Edit.jsx";
 
 function App() {
-  const auth = useAuth({ storeID: 267418190 });
+  const auth = useAuth({ projectID: 267418190 });
 
   function signIn() {
     auth.signIn();

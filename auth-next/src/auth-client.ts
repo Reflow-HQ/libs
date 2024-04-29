@@ -147,8 +147,8 @@ export async function signIn(options?: {
     label: "reflow-signin",
     title: "Signing in..",
     size: {
-      w: 650,
-      h: 650,
+      w: 590,
+      h: 590,
     },
     onParentRefocus: async () => {
       if (!authToken) {
@@ -543,7 +543,7 @@ export async function createSubscription(options: {
         },
       ],
       customData: {
-        store_id: checkoutData.store.id.toString(),
+        project_id: checkoutData.project.id.toString(),
         user_id: checkoutData.user.id.toString(),
         price_id: options.priceID,
       },
@@ -553,6 +553,13 @@ export async function createSubscription(options: {
       checkoutSettings.customer = {
         email: checkoutData.user.email,
       };
+    }
+
+    if (checkoutData.paddle_setup_fee_price_id) {
+      checkoutSettings.items.push({
+        priceId: checkoutData.paddle_setup_fee_price_id,
+        quantity: 1,
+      });
     }
 
     loadingDialog.close();

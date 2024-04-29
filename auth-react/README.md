@@ -14,10 +14,10 @@ npm install @reflowhq/auth-react
 
 ## Usage
 
-This library is designed to run in the browser. Just import the hook and pass your storeID, which you can obtain from Reflow's website:
+This library is designed to run in the browser. Just import the hook and pass your projectID, which you can find in the Reflow dashboard [settings page](https://reflowhq.com/project/settings).
 
 ```js
-const auth = useAuth({ storeID: 12345678 });
+const auth = useAuth({ projectID: 12345678 });
 ```
 
 Full example:
@@ -27,7 +27,7 @@ import React, { useState } from "react";
 import useAuth from "@reflowhq/auth-react";
 
 function MyComponent() {
-  const auth = useAuth({ storeID: 12345678 });
+  const auth = useAuth({ projectID: 12345678 });
 
   if (auth.isSignedIn()) {
     return (
@@ -214,7 +214,7 @@ See a [live example](https://codesandbox.io/s/react-reflow-pricing-table-3kdc6l)
 
 ### `auth.isSubscribed()`
 
-This method will return true or false depending on whether the currently signed in user has an active subscription for your store.
+This method will return true or false depending on whether the currently signed in user has an active subscription for your project.
 
 ```js
 auth.isSubscribed();
@@ -222,7 +222,7 @@ auth.isSubscribed();
 
 ## Test Mode
 
-With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your store integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
+With Reflow's [test mode](https://reflowhq.com/docs/guide/test-mode) you can try out your integration without making actual payments. The test mode provides a separate environment that supports all of the available features from live mode, without the risk of accidentally making a payment with real money.
 
 To enable test mode, just add `testMode: true` to the config object:
 
@@ -230,12 +230,12 @@ To enable test mode, just add `testMode: true` to the config object:
 import useAuth from "@reflowhq/auth-react";
 
 function MyComponent() {
-  const auth = useAuth({ storeID: "<your storeid here>", testMode: true });
+  const auth = useAuth({ projectID: "<your project id here>", testMode: true });
   // ...
 }
 ```
 
-While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow store, and payments will be made with Paddle's Sandbox and Stripe's test credit card info.
+While testMode is active, user registrations will be recorded in the "Test mode" section of your Reflow project, and payments will be made with Paddle's Sandbox and Stripe's test credit card info.
 
 ## License
 

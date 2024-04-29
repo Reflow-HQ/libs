@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/auth",
-  "version": "2.1.3",
+  "version": "3.0.1",
   "description": "Authentication library for login and account management with Reflow",
   "type": "module",
   "directories": {

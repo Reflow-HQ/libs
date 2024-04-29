@@ -1,7 +1,4 @@
-import {
-  useState,
-  useEffect
-} from "react";
+import { useState, useEffect } from "react";
 import Cart from "@reflowhq/cart";
 
 export const cartMap = new Map();
@@ -26,19 +23,22 @@ function createStore(config) {
 
   state = {
     ...(cart.state || {}),
-    storeID: config.storeID,
+    projectID: config.projectID || config.storeID,
     testMode: cart.testMode,
     localFormData: cart.localFormData,
 
-    showLoading: () => cart.updateState({
-      isLoading: true
-    }),
-    hideLoading: () => cart.updateState({
-      isLoading: false
-    }),
-    setTaxExemptionRemoved: (taxExemptionRemoved) => setState({
-      taxExemptionRemoved
-    }),
+    showLoading: () =>
+      cart.updateState({
+        isLoading: true,
+      }),
+    hideLoading: () =>
+      cart.updateState({
+        isLoading: false,
+      }),
+    setTaxExemptionRemoved: (taxExemptionRemoved) =>
+      setState({
+        taxExemptionRemoved,
+      }),
 
     setDeliveryMethod: cart.setDeliveryMethod.bind(cart),
     setSelectedLocation: cart.setSelectedLocation.bind(cart),
@@ -120,7 +120,7 @@ function createStore(config) {
 
       const onTaxExemptionRemoved = () => {
         setState({
-          taxExemptionRemoved: true
+          taxExemptionRemoved: true,
         });
       };
 
@@ -140,14 +140,16 @@ function createStore(config) {
 export function useCart(config) {
   let store;
 
-  if (config.storeID) {
-    if (!cartMap.has(config.storeID)) {
-      cartMap.set(config.storeID, createStore(config));
+  let projectID = config.projectID || config.storeID;
+
+  if (projectID) {
+    if (!cartMap.has(projectID)) {
+      cartMap.set(projectID, createStore(config));
     }
 
-    store = cartMap.get(config.storeID);
+    store = cartMap.get(projectID);
   } else {
-    throw new Error("storeID config option is required");
+    throw new Error("projectID config option is required");
   }
 
   const [cartObj, setCartObj] = useState(store.getState());

@@ -7,19 +7,24 @@ const authMap = new Map();
 function useAuth(config = {}) {
   let authInstance;
 
+  let projectID = config.projectID || config.storeID;
+
   if (config instanceof Auth) {
     authInstance = config;
-  } else if (config.storeID) {
-    if (!authMap.has(config.storeID)) {
-      authMap.set(config.storeID, new Auth({
-        ...config,
-        autoBind: false
-      }));
+  } else if (projectID) {
+    if (!authMap.has(projectID)) {
+      authMap.set(
+        projectID,
+        new Auth({
+          ...config,
+          autoBind: false,
+        })
+      );
     }
 
-    authInstance = authMap.get(config.storeID);
+    authInstance = authMap.get(projectID);
   } else {
-    throw new Error("storeID config option is required");
+    throw new Error("projectID config option is required");
   }
 
   const [authObj, setAuthObj] = useState(makeAuthObject(authInstance));
@@ -43,9 +48,9 @@ function useAuth(config = {}) {
       authInstance.off("change", authCb);
       config.onSignin && authInstance.off("signin", config.onSignin);
 
-      if (!authInstance.isBound() && authMap.has(config.storeID)) {
+      if (!authInstance.isBound() && authMap.has(projectID)) {
         // No other hook is using this instance
-        authMap.delete(config.storeID);
+        authMap.delete(projectID);
       }
     };
   }, []);
@@ -53,10 +58,7 @@ function useAuth(config = {}) {
   return authObj;
 }
 
-export {
-  useAuth as
-  default, authMap as _authMap
-};
+export { useAuth as default, authMap as _authMap };
 
 function makeAuthObject(auth) {
   // Wrap the auth in a new object which exposes

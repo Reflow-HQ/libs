@@ -115,7 +115,7 @@ describe("Reflow Auth Client", () => {
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-signin",
-      "width=650,height=650,top=59,left=187"
+      "width=590,height=590,top=89,left=217"
     );
 
     expect(signInWindow.location).toEqual(
@@ -458,7 +458,8 @@ describe("Reflow Auth Client", () => {
           provider: "paddle",
           paddle_price_id: "123",
           seller_id: "paddle_id_123",
-          store: { object: "store", id: "123456" },
+          project: { object: "project", id: "123456" },
+          store: { object: "project", id: "123456" },
           user: { object: "user", id: "123456" },
           mode: "live",
         };

@@ -1,8 +1,14 @@
 import { cookies } from "next/headers";
-import { User, AuthRefreshChange, Subscription, UpdateUserOptions } from "./auth-types";
+import {
+  ReflowAuthConfig,
+  User,
+  AuthRefreshChange,
+  Subscription,
+  UpdateUserOptions,
+} from "./auth-types";
 
 export class ReflowAuth {
-  public storeID: number;
+  public projectID: number;
   public cookieName: string;
   public cookieMaxAge: number | undefined;
   public apiBase: string;
@@ -11,6 +17,7 @@ export class ReflowAuth {
   protected beforeSignin?: (user: User) => Promise<boolean | undefined>;
 
   constructor({
+    projectID,
     storeID,
     secret,
     cookieName = "session",
@@ -18,24 +25,19 @@ export class ReflowAuth {
     apiBase,
     testMode = false,
     beforeSignin,
-  }: {
-    storeID: number;
-    secret: string;
-    cookieName?: string;
-    cookieMaxAge?: number;
-    apiBase?: string;
-    testMode?: boolean;
-    beforeSignin?: (user: User) => Promise<boolean | undefined>;
-  }) {
-    if (!storeID) {
-      throw new Error("storeID is required");
+  }: ReflowAuthConfig) {
+    if (projectID) {
+      this.projectID = projectID;
+    } else if (storeID) {
+      this.projectID = storeID;
+    } else {
+      throw new Error("projectID is required");
     }
 
     if (!secret || secret.length != 32) {
       throw new Error("Secret must be 32 characters long");
     }
 
-    this.storeID = storeID;
     this.secret = secret;
     this.cookieName = cookieName;
     this.cookieMaxAge = cookieMaxAge;
@@ -47,7 +49,7 @@ export class ReflowAuth {
   }
 
   protected api(endpoint: string, options?: object): Promise<object> {
-    return fetch(this.apiBase + "/stores/" + this.storeID + endpoint, options).then(
+    return fetch(this.apiBase + "/projects/" + this.projectID + endpoint, options).then(
       async (response) => {
         let data = await response.json();
 
@@ -228,6 +230,31 @@ export class ReflowAuth {
     }
 
     return response;
+  }
+
+  /**
+   * Deletes the logged in user's account
+   */
+  public async deleteUser(): Promise<{ success: boolean }> {
+    if (!(await this.isSignedIn())) {
+      return { success: false };
+    }
+
+    try {
+      let result: any = await this.api("/auth/user", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${await this.get("_key")}`,
+        },
+      });
+    } catch (e) {
+      return { success: false };
+    }
+
+    await this.clearSystem();
+    await this.clearIsNew();
+
+    return { success: true };
   }
 
   /**
@@ -450,7 +477,7 @@ export class ReflowAuth {
 
       return Response.json({
         success: true,
-        storeID: this.storeID,
+        projectID: this.projectID,
         signinURL: response.signinURL,
         nonceHash: await this.generateNonceHash(nonce),
       });
