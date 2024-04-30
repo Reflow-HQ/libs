@@ -181,7 +181,7 @@ export async function signIn(options?: {
           if (options?.subscribeTo && options?.subscribeWith == "paddle") {
             const subscription = await getSubscription();
 
-            if (subscription?.status !== "canceled") return;
+            if (subscription && subscription?.status !== "canceled") return;
 
             // The sign in was caused by a call of createSubscription.
             // Proceed with that flow and directly go to Paddle checkout.
