@@ -133,6 +133,8 @@ export function useSessionSync(options: {
 export async function signIn(options?: {
   authEndpoint?: string;
   onSuccess?: Function;
+  onSignin?: Function;
+  onSubscribe?: Function;
   onError?: Function;
   step?: "login" | "register";
   subscribeTo?: number;
@@ -169,31 +171,76 @@ export async function signIn(options?: {
 
         broadcastChannel?.postMessage({ type: "signin" });
 
-        if (options?.subscribeTo && options?.subscribeWith == "paddle") {
-          // The sign in was caused by a call of createSubscription.
-          // Proceed with that flow and directly go to Paddle checkout.
-
-          // NOTE: this behavior can be very buggy depending on the onSuccess/onError handling.
-          // e.g. if user is already subscribed, they will be logged in but onSuccess won't be called:
-          // if auth state is handled in onSuccess this will break the app
-
-          createSubscription({
-            priceID: options.subscribeTo,
-            paymentProvider: "paddle",
-            onSuccess: options.onSuccess,
-            onError: options.onError,
-          });
-          return;
-
-          // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
-          // No action is required from the library.
-        }
-
-        if (options?.onSuccess) {
-          options.onSuccess();
+        if (options?.onSignin) {
+          options.onSignin();
         } else {
           console.info("Reflow: user is signed in");
         }
+
+        try {
+          if (options?.subscribeTo && options?.subscribeWith == "paddle") {
+            const subscription = await getSubscription();
+
+            if (subscription?.status !== "canceled") return;
+
+            // The sign in was caused by a call of createSubscription.
+            // Proceed with that flow and directly go to Paddle checkout.
+
+            // NOTE: this behavior can be very buggy depending on the onSuccess/onError handling.
+            // e.g. if user is already subscribed, they will be logged in but onSuccess won't be called:
+            // if auth state is handled in onSuccess this will break the app
+
+            await createSubscription({
+              priceID: options.subscribeTo,
+              paymentProvider: "paddle",
+              onSuccess: (change: any) => {
+                options.onSuccess && options.onSuccess(change);
+                options.onSubscribe && options.onSubscribe(change);
+              },
+              onError: options.onError,
+            });
+
+            return;
+
+            // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
+            // No action is required from the library.
+          }
+
+          let change = await refreshSession();
+          if (change?.signout) {
+            broadcastChannel?.postMessage({ type: "signout" });
+            throw new Error("User has been signed out");
+          }
+
+          // Backwards compatibility
+          if (options?.onSuccess) {
+            options.onSuccess(change);
+          }
+
+          if (change?.subscription) {
+            broadcastChannel?.postMessage({ type: "subscribe" });
+
+            if (options?.onSubscribe) {
+              options.onSubscribe(change);
+            } else {
+              console.info("Reflow: user subscription created");
+            }
+          }
+        } catch (e: any) {
+          if (options?.onError) {
+            options.onError(e);
+          } else {
+            console.error("Reflow:", e);
+          }
+
+          popupWindow.close();
+        }
+
+        setTimeout(() => {
+          if (popupWindow.isClosed()) {
+            popupWindow.offParentRefocus();
+          }
+        }, 500);
       }
     },
   });

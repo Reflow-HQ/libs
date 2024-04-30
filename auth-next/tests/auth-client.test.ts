@@ -99,9 +99,11 @@ describe("Reflow Auth Client", () => {
     global.setInterval = jest.fn((cb) => intervals.push(cb));
 
     let onSuccess = jest.fn(() => {});
+    let onSignin = jest.fn(() => {});
+    let onSubscribe = jest.fn(() => {});
     let onError = jest.fn(() => {});
 
-    await signIn({ onSuccess, onError, subscribeTo: 12345 });
+    await signIn({ onSuccess, onSignin, onSubscribe, onError, subscribeTo: 12345 });
 
     expect(global.addEventListener).toHaveBeenCalledTimes(2);
     expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
@@ -130,6 +132,105 @@ describe("Reflow Auth Client", () => {
     await listeners.focus();
 
     expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSignin).toHaveBeenCalledTimes(1);
+    expect(onSubscribe).toHaveBeenCalledTimes(0);
+    expect(onError).toHaveBeenCalledTimes(0);
+  });
+
+  test("signInAndSubscribe", async () => {
+    // @ts-ignore
+    global.fetch = jest.fn((url: string) => {
+      let response = {};
+
+      if (url.includes("?get-subscription=true")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(null),
+        });
+      }
+
+      if (url.includes("?init=true")) {
+        response = {
+          success: true,
+          signinURL: "https://banana1234.com/",
+          nonceHash: "pizza",
+        };
+      } else if (url.includes("?check=true&auth-token=token777")) {
+        response = {
+          success: true,
+        };
+      } else if (url.includes("?refresh=true&force=true")) {
+        response = {
+          subscription: true,
+        };
+      }
+
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(response),
+      });
+    });
+
+    let signInWindow = { document: { write: jest.fn(() => {}) }, location: "" };
+
+    // @ts-ignore
+    global.open = jest.fn(() => signInWindow);
+    let listeners: Record<string, any> = {};
+    // @ts-ignore
+    global.addEventListener = jest.fn((type: string, cb: Function) => {
+      listeners[type] = cb;
+    });
+    global.removeEventListener = jest.fn(() => {});
+    global.clearInterval = jest.fn(() => {});
+
+    let intervals: Function[] = [];
+    // @ts-ignore
+    global.setInterval = jest.fn((cb) => intervals.push(cb));
+
+    let onSuccess = jest.fn(() => {});
+    let onSignin = jest.fn(() => {});
+    let onSubscribe = jest.fn(() => {});
+    let onError = jest.fn(() => {});
+
+    await signIn({
+      onSuccess,
+      onSignin,
+      onSubscribe,
+      onError,
+      subscribeTo: 12345,
+    });
+
+    expect(global.addEventListener).toHaveBeenCalledTimes(2);
+    expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
+    expect(global.addEventListener).toBeCalledWith("message", expect.any(Function));
+    expect(global.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(global.clearInterval).toHaveBeenCalledTimes(1);
+
+    expect(global.open).toHaveBeenCalledTimes(1);
+    expect(global.open).toHaveBeenCalledWith(
+      "about:blank",
+      "reflow-signin",
+      "width=590,height=590,top=89,left=217"
+    );
+
+    expect(signInWindow.location).toEqual(
+      "https://banana1234.com/?origin=http%3A%2F%2Flocalhost&nonceHash=pizza&step=login&subscribeTo=12345"
+    );
+
+    // Fake a received postMessage
+    listeners.message({
+      source: signInWindow,
+      data: { authToken: "token777" },
+    });
+
+    // Fake refocusing the main document after opening popup
+    await listeners.focus();
+
+    expect(onSignin).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledWith({ subscription: true });
+    expect(onSubscribe).toHaveBeenCalledTimes(1);
+    expect(onSubscribe).toHaveBeenCalledWith({ subscription: true });
     expect(onError).toHaveBeenCalledTimes(0);
   });
 
