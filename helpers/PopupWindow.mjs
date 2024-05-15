@@ -14,9 +14,8 @@ class PopupWindow {
   }
 
   open(options) {
-    if (this._popupWindow && this._popupWindow.focus) {
-      // Already open
-      this._popupWindow.focus();
+    if (this.isOpen()) {
+      this.focus();
       return;
     }
 
@@ -138,7 +137,11 @@ class PopupWindow {
   }
 
   isOpen() {
-    return !!this._popupWindow;
+    return !!(this._popupWindow && this._popupWindow.focus);
+  }
+
+  focus() {
+    this._popupWindow.focus();
   }
 
   isClosed() {

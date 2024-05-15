@@ -9,8 +9,10 @@ declare class PopupWindow {
     open(options: any): void;
     setURL(url: any): void;
     close(): void;
+    cleanup(): void;
     isOpen(): boolean;
+    focus(): void;
     isClosed(): boolean;
     offParentRefocus(): void;
 }
-//# sourceMappingURL=PopupWindow.d.ts.map
+//# sourceMappingURL=PopupWindow.d.mts.map

@@ -153,6 +153,7 @@ describe("Auth", () => {
       document: {
         write: jest.fn(() => {}),
       },
+      focus: jest.fn(() => {}),
       location: "",
     };
 

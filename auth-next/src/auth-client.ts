@@ -142,6 +142,11 @@ export async function signIn(options?: {
 }) {
   let base = apiBase(options?.authEndpoint);
 
+  if (popupWindow.isOpen()) {
+    popupWindow.focus();
+    return;
+  }
+
   popupWindow.open({
     url: null,
     label: "reflow-signin",
