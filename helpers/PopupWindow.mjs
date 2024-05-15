@@ -3,7 +3,6 @@ class PopupWindow {
     this._popupWindow = null;
     this._checkPopupWindowClosedInterval = null;
     this._onParentRefocusCallback = null;
-    this._url = null;
   }
 
   unbind() {
@@ -117,11 +116,6 @@ class PopupWindow {
   }
 
   setURL(url) {
-    if (url == this._url) {
-      return;
-    }
-
-    this._url = url;
     this._popupWindow.location = url;
   }
 
@@ -139,7 +133,6 @@ class PopupWindow {
 
   cleanup() {
     this._popupWindow = null;
-    this._url = null;
 
     clearInterval(this._checkPopupWindowClosedInterval);
   }
