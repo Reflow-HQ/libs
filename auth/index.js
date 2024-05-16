@@ -444,6 +444,11 @@ class Auth {
       return;
     }
 
+    if (this._popupWindow.isOpen()) {
+      this._popupWindow.focus();
+      return;
+    }
+
     this._popupWindow.open({
       url: null,
       label: "reflow-signin",

@@ -3,7 +3,6 @@ class PopupWindow {
     this._popupWindow = null;
     this._checkPopupWindowClosedInterval = null;
     this._onParentRefocusCallback = null;
-    this._url = null;
   }
 
   unbind() {
@@ -15,9 +14,8 @@ class PopupWindow {
   }
 
   open(options) {
-    if (this._popupWindow && this._popupWindow.focus) {
-      // Already open
-      this._popupWindow.focus();
+    if (this.isOpen()) {
+      this.focus();
       return;
     }
 
@@ -117,11 +115,6 @@ class PopupWindow {
   }
 
   setURL(url) {
-    if (url == this._url) {
-      return;
-    }
-
-    this._url = url;
     this._popupWindow.location = url;
   }
 
@@ -139,13 +132,16 @@ class PopupWindow {
 
   cleanup() {
     this._popupWindow = null;
-    this._url = null;
 
     clearInterval(this._checkPopupWindowClosedInterval);
   }
 
   isOpen() {
-    return !!this._popupWindow;
+    return !!(this._popupWindow && this._popupWindow.focus);
+  }
+
+  focus() {
+    this._popupWindow.focus();
   }
 
   isClosed() {

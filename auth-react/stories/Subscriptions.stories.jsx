@@ -23,7 +23,7 @@ export const App = ({}) => {
   const [activeTab, setActiveTab] = useState("month");
 
   useEffect(() => {
-    fetch(`${config.apiBase}/project/${config.projectID}/plans/`)
+    fetch(`${config.apiBase}/projects/${config.projectID}/plans/`)
       .then((response) => response.json())
       .then((r) => setPlans(r.data))
       .catch((error) => console.error(error));
