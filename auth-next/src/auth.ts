@@ -288,6 +288,36 @@ export class ReflowAuth {
     });
   }
 
+  /**
+   * Returns whether the user has recently started a new subscription. The hasNewSubscription
+   * flag is stored in a cookie which expires at the end of the browser session.
+   */
+  public async hasNewSubscription(): Promise<boolean> {
+    const cookieStore = cookies();
+    return cookieStore.has(this.cookieName + "-has-new-subscription");
+  }
+
+  /**
+   * Sets the hasNewSubscription flag for the current session. Will create a cookie which
+   * expires at the end of the browser session.
+   */
+  public async setHasNewSubscription(): Promise<void> {
+    const cookieStore = cookies();
+    cookieStore.set(this.cookieName + "-has-new-subscription", "1", {
+      httpOnly: true,
+    });
+  }
+
+  /**
+   * Clear the hasNewSubscription cookie forcefully.
+   */
+  public async clearHasNewSubscription(): Promise<void> {
+    cookies().set(this.cookieName + "-has-new-subscription", "", {
+      httpOnly: true,
+      maxAge: 0,
+    });
+  }
+
   protected async generateNonce(): Promise<string> {
     const nonceBytes = crypto.getRandomValues(new Uint8Array(12));
     return this.arrayBufferToBase64(nonceBytes);
@@ -419,7 +449,10 @@ export class ReflowAuth {
         update.push({ key: "_user", value: result.user });
       }
 
-      if (!(await this.subscriptionSameAs(result.subscription))) {
+      if (
+        (await this.hasNewSubscription()) ||
+        !(await this.subscriptionSameAs(result.subscription))
+      ) {
         changes.subscription = true;
         update.push({ key: "_subscription", value: result.subscription });
       }
@@ -505,7 +538,7 @@ export class ReflowAuth {
           const result = await this.beforeSignin(status.user);
 
           if (result === false) {
-            return errorResponse("Something went wrong");
+            return errorResponse("Sign-in prevented.");
           }
         }
 
@@ -520,6 +553,10 @@ export class ReflowAuth {
 
         if (status.isNew) {
           await this.setIsNew();
+        }
+
+        if (status.hasNewSubscription) {
+          await this.setHasNewSubscription();
         }
 
         return Response.json({ success: true });
@@ -539,9 +576,12 @@ export class ReflowAuth {
       }
       await this.clearSystem();
       await this.clearIsNew();
+      await this.clearHasNewSubscription();
       return Response.json({ success: true });
     } else if (params.has("is-signed-in")) {
       return Response.json({ status: await this.isSignedIn() });
+    } else if (params.has("is-subscribed")) {
+      return Response.json({ status: await this.isSubscribed() });
     } else if (params.has("create-subscription")) {
       if (!params.has("priceID")) {
         return errorResponse("Price ID missing");

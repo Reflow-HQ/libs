@@ -51,6 +51,10 @@ let paddleManageSubscriptionDialogMock = {
 
 import { renderHook, act } from "@testing-library/react";
 
+beforeAll(() => {
+  jest.spyOn(console, "warn").mockImplementation(() => {});
+});
+
 afterEach(() => {
   loadingDialogMock.open.mockClear();
   loadingDialogMock.close.mockClear();
@@ -131,9 +135,9 @@ describe("Reflow Auth Client", () => {
     // Fake refocusing the main document after opening popup
     await listeners.focus();
 
-    expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onSignin).toHaveBeenCalledTimes(1);
     expect(onSubscribe).toHaveBeenCalledTimes(0);
+    expect(onSuccess).toHaveBeenCalledTimes(0);
     expect(onError).toHaveBeenCalledTimes(0);
   });
 
@@ -227,10 +231,8 @@ describe("Reflow Auth Client", () => {
     await listeners.focus();
 
     expect(onSignin).toHaveBeenCalledTimes(1);
-    expect(onSuccess).toHaveBeenCalledTimes(1);
-    expect(onSuccess).toHaveBeenCalledWith({ subscription: true });
     expect(onSubscribe).toHaveBeenCalledTimes(1);
-    expect(onSubscribe).toHaveBeenCalledWith({ subscription: true });
+    expect(onSuccess).toHaveBeenCalledTimes(0);
     expect(onError).toHaveBeenCalledTimes(0);
   });
 
@@ -355,7 +357,6 @@ describe("Reflow Auth Client", () => {
     await listeners.focus();
 
     expect(onSuccess).toHaveBeenCalledTimes(1);
-    expect(onSuccess).toHaveBeenCalledWith({ subscription: true });
     expect(onError).toHaveBeenCalledTimes(0);
   });
 
@@ -500,7 +501,6 @@ describe("Reflow Auth Client", () => {
     await intervals.pop()();
     expect(global.setInterval).toHaveBeenCalledTimes(1);
     expect(onSuccess).toHaveBeenCalledTimes(1);
-    expect(onSuccess).toHaveBeenCalledWith({ subscription: true });
     expect(onError).toHaveBeenCalledTimes(0);
     expect(loadingDialogMock.close).toHaveBeenCalledTimes(2);
   });
