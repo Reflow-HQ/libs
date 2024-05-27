@@ -132,15 +132,40 @@ export function useSessionSync(options: {
 /* Triggers the sign in flow and displays a window with sign in methods */
 export async function signIn(options?: {
   authEndpoint?: string;
-  onSuccess?: Function;
   onSignin?: Function;
   onSubscribe?: Function;
+  onSuccess?: Function;
   onError?: Function;
   step?: "login" | "register";
   subscribeTo?: number;
   subscribeWith?: string;
 }) {
   let base = apiBase(options?.authEndpoint);
+
+  if (options?.onSuccess) {
+    console.warn(
+      "The `onSuccess` option of the signIn method is deprecated. Please update your code to use the `onSignin` and `onSubscribe` callbacks instead."
+    );
+  }
+
+  let isSignedIn = false;
+  let authCheckInProgress = false;
+
+  let callbacks: { onSignIn: Function; onSubscribe: Function; onError: Function } = {
+    onSignIn: () => {
+      if (options?.onSignin) return options.onSignin();
+      if (options?.onSuccess) return options.onSuccess();
+      console.info("Reflow: user has signed in");
+    },
+    onSubscribe: () => {
+      if (options?.onSubscribe) return options.onSubscribe();
+      console.info("Reflow: user has subscribed");
+    },
+    onError: (e: any) => {
+      if (options?.onError) return options.onError(e);
+      console.error("Reflow:", e);
+    },
+  };
 
   if (popupWindow.isOpen()) {
     popupWindow.focus();
@@ -156,97 +181,83 @@ export async function signIn(options?: {
       h: 590,
     },
     onParentRefocus: async () => {
-      if (!authToken) {
-        return;
-      }
-
-      let status: any;
-
-      try {
-        let response = await apiCall(base + "?check=true&auth-token=" + authToken);
-
-        status = await response.json();
-      } catch (e) {
-        popupWindow.offParentRefocus();
-        return;
-      }
-
-      if (status.success) {
-        popupWindow.offParentRefocus();
-
-        broadcastChannel?.postMessage({ type: "signin" });
-
-        if (options?.onSignin) {
-          options.onSignin();
-        } else {
-          console.info("Reflow: user is signed in");
-        }
+      if (!isSignedIn && authToken && !authCheckInProgress) {
+        // Attempt sign in.
 
         try {
-          if (options?.subscribeTo && options?.subscribeWith == "paddle") {
-            const subscription = await getSubscription();
+          authCheckInProgress = true;
 
-            if (subscription && subscription?.status !== "canceled") return;
+          let attemptSigninResponse = await apiCall(base + "?check=true&auth-token=" + authToken);
 
-            // The sign in was caused by a call of createSubscription.
-            // Proceed with that flow and directly go to Paddle checkout.
+          authCheckInProgress = false;
 
-            // NOTE: this behavior can be very buggy depending on the onSuccess/onError handling.
-            // e.g. if user is already subscribed, they will be logged in but onSuccess won't be called:
-            // if auth state is handled in onSuccess this will break the app
+          // Check if the user has signed in using the popup window.
+          // If they haven't done it yet, try again on next refocus.
 
-            await createSubscription({
-              priceID: options.subscribeTo,
-              paymentProvider: "paddle",
-              onSuccess: (change: any) => {
-                options.onSuccess && options.onSuccess(change);
-                options.onSubscribe && options.onSubscribe(change);
-              },
-              onError: options.onError,
-            });
-
-            return;
-
-            // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
-            // No action is required from the library.
+          if ((await attemptSigninResponse.json()).success) {
+            broadcastChannel?.postMessage({ type: "signin" });
+            callbacks.onSignIn();
+            isSignedIn = true;
           }
+        } catch (e) {
+          // There was an error during sign in or beforeSignin=false was used - do not try again.
+          callbacks.onError(e);
+          popupWindow.close();
+          return;
+        }
+      }
 
-          let change = await refreshSession();
-          if (change?.signout) {
-            broadcastChannel?.postMessage({ type: "signout" });
-            throw new Error("User has been signed out");
-          }
+      if (isSignedIn && options?.subscribeTo) {
+        // At this point the user has signed in.
+        // If subscribeTo is not set, there are no next steps - the popup window will self-close.
 
-          // Backwards compatibility
-          if (options?.onSuccess) {
-            options.onSuccess(change);
-          }
+        // If it is set, we continue with the subscription process, depending on the payment provider.
 
-          if (change?.subscription) {
-            broadcastChannel?.postMessage({ type: "subscribe" });
-
-            if (options?.onSubscribe) {
-              options.onSubscribe(change);
-            } else {
-              console.info("Reflow: user subscription created");
-            }
-          }
-        } catch (e: any) {
-          if (options?.onError) {
-            options.onError(e);
-          } else {
-            console.error("Reflow:", e);
-          }
+        if (options?.subscribeWith == "paddle") {
+          // For paddle, make sure the popup window is closed and continue to createSubscription.
 
           popupWindow.close();
-        }
 
-        setTimeout(() => {
-          if (popupWindow.isClosed()) {
-            popupWindow.offParentRefocus();
+          await createSubscription({
+            priceID: options.subscribeTo,
+            paymentProvider: "paddle",
+            onSignin: callbacks.onSignIn,
+            onSubscribe: callbacks.onSubscribe,
+            onError: callbacks.onError,
+          });
+
+          return;
+        } else {
+          // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
+          // On refocus, check if the subscription process has been successful.
+
+          try {
+            let change = await refreshSession();
+
+            if (change?.signout) {
+              broadcastChannel?.postMessage({ type: "signout" });
+              throw new Error("User has been signed out");
+            }
+
+            if (change?.subscription) {
+              // The user has subscribed with Stripe. The popup window will self-close.
+              broadcastChannel?.postMessage({ type: "subscribe" });
+              callbacks.onSubscribe();
+            }
+          } catch (e: any) {
+            callbacks.onError(e);
+            return popupWindow.close();
           }
-        }, 500);
+        }
       }
+
+      // The popup window has self-closed or was closed by the user.
+      // Either way, cleanup the popup window event listener.
+      setTimeout(() => {
+        if (popupWindow.isClosed()) {
+          popupWindow.offParentRefocus();
+        }
+      }, 500);
     },
   });
 
@@ -282,11 +293,7 @@ export async function signIn(options?: {
         popupWindow.close();
       }, Math.max(2500 - (Date.now() - openTimestamp), 0)); // Keep the window visible for at least 2.5 sec
 
-      if (options?.onSuccess) {
-        options.onSuccess();
-      } else {
-        console.info("Reflow: user is already signed in");
-      }
+      callbacks.onSignIn();
 
       return;
     }
@@ -310,13 +317,8 @@ export async function signIn(options?: {
 
     popupWindow.setURL(url.toString());
   } catch (e) {
+    callbacks.onError();
     popupWindow.close();
-
-    if (options?.onError) {
-      options.onError(e);
-    } else {
-      console.error("Reflow:", e);
-    }
   }
 }
 
@@ -345,7 +347,7 @@ export async function signOut(options?: {
       if (options?.onSuccess) {
         options.onSuccess();
       } else {
-        console.info("Reflow: user is signed out");
+        console.info("Reflow: user has signed out");
       }
     }
   } catch (e: any) {
@@ -364,6 +366,8 @@ export async function createSubscription(options: {
   priceID: number;
   authEndpoint?: string;
   paymentProvider?: string;
+  onSignin?: Function;
+  onSubscribe?: Function;
   onSuccess?: Function;
   onError?: Function;
 }) {
@@ -371,21 +375,48 @@ export async function createSubscription(options: {
     return;
   }
 
-  initializeDialogs({ authEndpoint: options.authEndpoint });
+  if (options?.onSuccess) {
+    console.warn(
+      "The `onSuccess` option of the createSubscription method is deprecated. Please update your code to use the `onSignin` and `onSubscribe` callbacks instead."
+    );
+  }
 
   let base = apiBase(options.authEndpoint);
   let paymentProvider = options.paymentProvider || "stripe";
 
+  let callbacks: { onSignIn: Function; onSubscribe: Function; onError: Function } = {
+    onSignIn: () => {
+      if (options.onSignin) return options.onSignin();
+      console.info("Reflow: user has signed in");
+    },
+    onSubscribe: () => {
+      if (options.onSubscribe) return options.onSubscribe();
+      if (options.onSuccess) return options.onSuccess();
+      console.info("Reflow: user has subscribed");
+    },
+    onError: (e: any) => {
+      if (options.onError) return options.onError(e);
+      console.error("Reflow:", e);
+    },
+  };
+
   if (!(await isSignedIn())) {
-    // Sign in and initiate a subscription in the same window
+    // Open the sign in window instead, passing the callbacks from options.
     signIn({
       subscribeTo: options.priceID,
       subscribeWith: paymentProvider,
-      onSuccess: options.onSuccess,
-      onError: options.onError,
+      onSignin: callbacks.onSignIn,
+      onSubscribe: callbacks.onSubscribe,
+      onError: callbacks.onError,
     });
     return;
   }
+
+  if (await isSubscribed()) {
+    return;
+  }
+
+  initializeDialogs({ authEndpoint: options.authEndpoint });
 
   if (paymentProvider == "stripe") {
     // Stripe checkout is displayed in a Stripe-hosted page loaded inside a popup window.
@@ -402,37 +433,29 @@ export async function createSubscription(options: {
       onParentRefocus: async () => {
         try {
           working = true;
+
           let change = await refreshSession();
+
+          working = false;
+
           if (change?.signout) {
             broadcastChannel?.postMessage({ type: "signout" });
             throw new Error("User has been signed out");
           }
 
-          working = false;
-
           if (change?.subscription) {
+            // The user has subscribed with Stripe. The popup window will self-close.
             broadcastChannel?.postMessage({ type: "subscribe" });
-
-            if (options.onSuccess) {
-              options.onSuccess(change);
-            } else {
-              console.info("Reflow: user subscription created");
-            }
-
-            popupWindow.close();
+            callbacks.onSubscribe();
           }
         } catch (e: any) {
           working = false;
-
-          if (options.onError) {
-            options.onError(e);
-          } else {
-            console.error("Reflow:", e);
-          }
-
+          callbacks.onError(e);
           popupWindow.close();
         }
 
+        // The popup window has self-closed or was closed by the user.
+        // Either way, cleanup all event listeners.
         setTimeout(() => {
           if (popupWindow.isClosed()) {
             popupWindow.offParentRefocus();
@@ -462,12 +485,7 @@ export async function createSubscription(options: {
     checkoutData = await response.json();
     working = false;
   } catch (e: any) {
-    if (options.onError) {
-      options.onError(e);
-    } else {
-      console.error("Reflow:", e);
-    }
-
+    callbacks.onError(e);
     popupWindow.close();
     loadingDialog.close();
     working = false;
@@ -498,33 +516,23 @@ export async function createSubscription(options: {
                 working = true;
 
                 let change = await refreshSession();
+
+                working = false;
+
                 if (change?.signout) {
                   broadcastChannel?.postMessage({ type: "signout" });
                   throw new Error("User has been signed out");
                 }
 
-                working = false;
-
                 if (change?.subscription) {
                   broadcastChannel?.postMessage({ type: "subscribe" });
-
-                  if (options.onSuccess) {
-                    options.onSuccess(change);
-                  } else {
-                    console.info("Reflow: user subscription created");
-                  }
-
                   clearInterval(paddleSubscriptionCheckInterval);
+                  callbacks.onSubscribe();
                   loadingDialog.close();
                 }
               } catch (e: any) {
                 working = false;
-
-                if (options.onError) {
-                  options.onError(e);
-                } else {
-                  console.error("Reflow:", e);
-                }
+                callbacks.onError(e);
               }
             }, 1000 * 1); // Check every second
 
@@ -687,6 +695,16 @@ export async function isSignedIn(options?: { authEndpoint?: string }): Promise<b
   let base = apiBase(options?.authEndpoint);
 
   let response = await apiCall(base + "?is-signed-in=true");
+
+  let data = await response.json();
+  return data.status;
+}
+
+/* Returns a boolean indicating whether the user has an active subscription */
+export async function isSubscribed(options?: { authEndpoint?: string }): Promise<boolean> {
+  let base = apiBase(options?.authEndpoint);
+
+  let response = await apiCall(base + "?is-subscribed=true");
 
   let data = await response.json();
   return data.status;

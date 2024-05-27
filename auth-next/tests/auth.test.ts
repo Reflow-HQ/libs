@@ -404,7 +404,7 @@ describe("Reflow Auth Server", () => {
     );
 
     json = await response.json();
-    expect(json).toEqual({ error: "Something went wrong", success: false });
+    expect(json).toEqual({ error: "Sign-in prevented.", success: false });
 
     expect(await auth.all()).toEqual({ _nonce: "banana123" });
 
@@ -683,12 +683,15 @@ describe("Reflow Auth Server", () => {
     json = await response.json();
     expect(json).toEqual({ success: true });
 
-    expect(fetch).toHaveBeenCalledWith("http://api.reflow.local/v2/projects/199976733/auth/signout", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer sess.123",
-      },
-    });
+    expect(fetch).toHaveBeenCalledWith(
+      "http://api.reflow.local/v2/projects/199976733/auth/signout",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer sess.123",
+        },
+      }
+    );
 
     expect(await auth.all()).toEqual({ someprop: true });
     expect(await auth.isNew()).toEqual(false);
