@@ -88,19 +88,14 @@ export function useSessionSync(options: {
 
     if (window && window.setInterval && !syncListeners) {
       window.clearInterval(sessionSyncInterval);
-      sessionSyncInterval = window.setInterval(async () => {
-        try {
-          let response = await apiCall(base + "?refresh=true");
-          let data: AuthRefreshChange | null = await response.json();
 
-          if (data?.signout) {
-            // We only care about the signout event, which might arise when the
-            // user session is reset from the Reflow backend. The other broadcast
-            // events are triggered in the other client functions in this file.
-            broadcastChannel?.postMessage({ type: "signout" });
-          }
-        } catch (e) {}
-      }, 5 * 60 * 1000);
+      setTimeout(async () => {
+        await sessionSignOutCheck();
+
+        sessionSyncInterval = window.setInterval(async () => {
+          await sessionSignOutCheck();
+        }, 5 * 60 * 1000);
+      }, 30 * 1000);
     }
 
     syncListeners++;
@@ -232,7 +227,7 @@ export async function signIn(options?: {
           // On refocus, check if the subscription process has been successful.
 
           try {
-            let change = await refreshSession();
+            let change = await forceRefreshSession();
 
             if (change?.signout) {
               broadcastChannel?.postMessage({ type: "signout" });
@@ -434,7 +429,7 @@ export async function createSubscription(options: {
         try {
           working = true;
 
-          let change = await refreshSession();
+          let change = await forceRefreshSession();
 
           working = false;
 
@@ -515,7 +510,7 @@ export async function createSubscription(options: {
 
                 working = true;
 
-                let change = await refreshSession();
+                let change = await forceRefreshSession();
 
                 working = false;
 
@@ -603,7 +598,7 @@ export async function modifySubscription(options?: {
   let onRefocusAuthChanged = async () => {
     try {
       working = true;
-      let change = await refreshSession();
+      let change = await forceRefreshSession();
       if (change?.signout) {
         broadcastChannel?.postMessage({ type: "signout" });
         throw new Error("User has been signed out");
@@ -723,7 +718,7 @@ export async function getSubscription(options?: {
 }
 
 /* Forces the auth session to refresh. */
-export async function refreshSession(options?: {
+export async function forceRefreshSession(options?: {
   authEndpoint?: string;
 }): Promise<AuthRefreshChange | null> {
   let base = apiBase(options?.authEndpoint);
@@ -731,6 +726,27 @@ export async function refreshSession(options?: {
   let response = await apiCall(base + "?refresh=true&force=true");
 
   return await response.json();
+}
+
+// Sign out the user if the session has ended on the backend.
+// Will only check if last refresh was > 5 min ago.
+export async function sessionSignOutCheck(options?: {
+  authEndpoint?: string;
+}): Promise<AuthRefreshChange | null> {
+  let base = apiBase(options?.authEndpoint);
+
+  let response = await apiCall(base + "?refresh=true");
+
+  let data: AuthRefreshChange | null = await response.json();
+
+  if (data?.signout) {
+    // We only care about the signout event, which might arise when the
+    // user session is reset from the Reflow backend. The other broadcast
+    // events are triggered in the other client functions in this file.
+    broadcastChannel?.postMessage({ type: "signout" });
+  }
+
+  return data;
 }
 
 // Helper functions
