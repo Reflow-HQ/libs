@@ -124,16 +124,14 @@ class PopupWindow {
     }
 
     this.cleanup();
-
-    if (this._onParentRefocusCallback) {
-      this.offParentRefocus();
-    }
   }
 
   cleanup() {
     this._popupWindow = null;
 
     clearInterval(this._checkPopupWindowClosedInterval);
+
+    this.offParentRefocus();
   }
 
   isOpen() {
