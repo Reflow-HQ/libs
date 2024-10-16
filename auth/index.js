@@ -621,7 +621,7 @@ class Auth {
           w: 650,
           h: 800,
         },
-        onParentRefocus: (() => {
+        onParentRefocus: (async () => {
           this.refresh.bind(this);
 
           setTimeout(() => {
@@ -761,7 +761,7 @@ class Auth {
           w: 650,
           h: 800,
         },
-        onParentRefocus: (() => {
+        onParentRefocus: (async () => {
           onSuccess();
 
           setTimeout(() => {
