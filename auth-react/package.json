@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/auth-react",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "React hook for login and account management with Reflow",
   "exports": "./index.js",
   "type": "module",
@@ -49,7 +49,7 @@
   },
   "homepage": "https://github.com/reflow-hq/libs#readme",
   "dependencies": {
-    "@reflowhq/auth": "^3.0.2"
+    "@reflowhq/auth": "^3.0.3"
   },
   "main": "index.js"
 }
