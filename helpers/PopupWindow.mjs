@@ -3,6 +3,7 @@ class PopupWindow {
     this._popupWindow = null;
     this._checkPopupWindowClosedInterval = null;
     this._onParentRefocusCallback = null;
+    this._isCallbackScheduled = false;
   }
 
   unbind() {
@@ -94,8 +95,25 @@ class PopupWindow {
     // This callback should make sure to cleanup the event listener by calling either .close or .offParentRefocus.
 
     if (onParentRefocus) {
-      this._onParentRefocusCallback = onParentRefocus;
+      this._onParentRefocusCallback = async () => {
+        if (!document.hidden && !this._isCallbackScheduled) {
+          this._isCallbackScheduled = true;
+
+          try {
+            await onParentRefocus();
+          } catch (error) {
+            console.error("Reflow: Error in onParentRefocus callback:", error);
+          } finally {
+            this._isCallbackScheduled = false;
+          }
+        }
+      };
+
       window.addEventListener("focus", this._onParentRefocusCallback);
+
+      // window.focus event is not reliable so we try the visibilitychange event as well
+
+      document.addEventListener("visibilitychange", this._onParentRefocusCallback);
     }
 
     // This interval cleans up the _popupWindow after the popup window is closed.
@@ -124,16 +142,14 @@ class PopupWindow {
     }
 
     this.cleanup();
-
-    if (this._onParentRefocusCallback) {
-      this.offParentRefocus();
-    }
   }
 
   cleanup() {
     this._popupWindow = null;
 
     clearInterval(this._checkPopupWindowClosedInterval);
+
+    this.offParentRefocus();
   }
 
   isOpen() {
@@ -150,6 +166,7 @@ class PopupWindow {
 
   offParentRefocus() {
     window.removeEventListener("focus", this._onParentRefocusCallback);
+    document.removeEventListener("visibilitychange", this._onParentRefocusCallback);
     this._onParentRefocusCallback = null;
   }
 }

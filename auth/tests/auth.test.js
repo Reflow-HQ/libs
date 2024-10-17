@@ -625,7 +625,7 @@ describe("Auth", () => {
     auth6.unbind();
 
     expect(addEventListener).toHaveBeenCalledTimes(2);
-    expect(removeEventListener).toHaveBeenCalledTimes(1);
+    expect(removeEventListener).toHaveBeenCalledTimes(2);
     expect(removeEventListener).toHaveBeenCalledWith("message", auth6._messageListener);
     expect(clearInterval).toHaveBeenCalledTimes(2);
     expect(auth6._popupWindow._checkPopupWindowClosedInterval).toBe(null);
