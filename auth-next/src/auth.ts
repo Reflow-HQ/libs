@@ -122,7 +122,7 @@ export class ReflowAuth {
       all[key] = value;
     }
 
-    this.setCookie(await this.encrypt(JSON.stringify(all)));
+    await this.setCookie(await this.encrypt(JSON.stringify(all)));
   }
 
   /**
@@ -147,14 +147,14 @@ export class ReflowAuth {
   public async forget(key: string): Promise<void> {
     let all: { [key: string]: any } = await this.all();
     delete all[key];
-    this.setCookie(await this.encrypt(JSON.stringify(all)));
+    await this.setCookie(await this.encrypt(JSON.stringify(all)));
   }
 
   /**
    * Clears all data in the session
    */
   public async clear(): Promise<void> {
-    this.clearCookie();
+    await this.clearCookie();
   }
 
   /**
@@ -171,7 +171,7 @@ export class ReflowAuth {
       if (rule[0] !== "_") filtered[rule] = all[rule];
     }
 
-    this.setCookie(await this.encrypt(JSON.stringify(filtered)));
+    await this.setCookie(await this.encrypt(JSON.stringify(filtered)));
   }
 
   /**
