@@ -181,7 +181,7 @@ export class ReflowAuth {
     let data = {};
 
     try {
-      data = JSON.parse(await this.decrypt(this.getCookie()));
+      data = JSON.parse(await this.decrypt(await this.getCookie()));
     } catch (e) {}
 
     return data;
@@ -263,7 +263,7 @@ export class ReflowAuth {
    * flag is stored in a cookie which expires at the end of the browser session.
    */
   public async isNew(): Promise<boolean> {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     return cookieStore.has(this.cookieName + "-is-new");
   }
 
@@ -272,7 +272,7 @@ export class ReflowAuth {
    * expires at the end of the browser session.
    */
   public async setIsNew(): Promise<void> {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set(this.cookieName + "-is-new", "1", {
       httpOnly: true,
     });
@@ -282,7 +282,7 @@ export class ReflowAuth {
    * Clear the isNew cookie forcefully.
    */
   public async clearIsNew(): Promise<void> {
-    cookies().set(this.cookieName + "-is-new", "", {
+    await cookies().set(this.cookieName + "-is-new", "", {
       httpOnly: true,
       maxAge: 0,
     });
@@ -293,7 +293,7 @@ export class ReflowAuth {
    * flag is stored in a cookie which expires at the end of the browser session.
    */
   public async hasNewSubscription(): Promise<boolean> {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     return cookieStore.has(this.cookieName + "-has-new-subscription");
   }
 
@@ -302,7 +302,7 @@ export class ReflowAuth {
    * expires at the end of the browser session.
    */
   public async setHasNewSubscription(): Promise<void> {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.set(this.cookieName + "-has-new-subscription", "1", {
       httpOnly: true,
     });
@@ -312,7 +312,7 @@ export class ReflowAuth {
    * Clear the hasNewSubscription cookie forcefully.
    */
   public async clearHasNewSubscription(): Promise<void> {
-    cookies().set(this.cookieName + "-has-new-subscription", "", {
+    await cookies().set(this.cookieName + "-has-new-subscription", "", {
       httpOnly: true,
       maxAge: 0,
     });
@@ -327,21 +327,21 @@ export class ReflowAuth {
     return await this.generateSHA256Hash(nonce);
   }
 
-  protected getCookie(): string {
-    const cookieStore = cookies();
+  protected async getCookie(): Promise<string> {
+    const cookieStore = await cookies();
     return cookieStore.get(this.cookieName)?.value ?? "";
   }
 
-  protected setCookie(value: string) {
-    const cookieStore = cookies();
+  protected async setCookie(value: string) {
+    const cookieStore = await cookies();
     return cookieStore.set(this.cookieName, value, {
       httpOnly: true,
       maxAge: this.cookieMaxAge,
     });
   }
 
-  protected clearCookie() {
-    cookies().set(this.cookieName, "", {
+  protected async clearCookie() {
+    await cookies().set(this.cookieName, "", {
       httpOnly: true,
       maxAge: 0,
     });
