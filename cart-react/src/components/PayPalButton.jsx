@@ -54,6 +54,10 @@ export default function PayPalButton({
         data["auth-account-id"] = auth.user.id;
       }
 
+      if (cart.customFields) {
+        data["custom-fields"] = true;
+      }
+
       let result = await cart.paypalCreateOrder(data);
       return result;
     } catch (e) {

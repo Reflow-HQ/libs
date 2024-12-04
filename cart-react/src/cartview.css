@@ -113,6 +113,19 @@
   color: inherit;
 }
 
+.ref-form-checkbox-group span {
+  display: inline-block;
+  margin-right: 8px;
+  margin-bottom: 0;
+}
+
+.ref-form-checkbox-group input {
+  font-size: 1rem;
+  display: inline-block;
+  margin-bottom: 3px;
+  margin-left: 0;
+}
+
 .ref-validation-error {
   color: red;
   font-size: 0.85em;
