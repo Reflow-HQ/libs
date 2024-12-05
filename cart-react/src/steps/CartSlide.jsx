@@ -21,7 +21,10 @@ const CartSlide = ({ successURL, onMessage, step, setStep, demoMode }) => {
 
   const isInVactionMode = !!vacationMode?.enabled;
   const shouldShowPaypalButtons =
-    cart.isPaypalSupported() && !isInVactionMode && !cart.hasZeroValue();
+    cart.isPaypalSupported() &&
+    !isInVactionMode &&
+    !cart.hasZeroValue() &&
+    !!cart.getPaymentProvider("paypal").quickCheckout;
 
   const taxAmount = taxes?.amount || 0;
 

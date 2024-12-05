@@ -142,23 +142,12 @@
         if (isNaN(newQuantity)) return;
 
         if (newQuantity !== product.quantity) {
-          cart.updateProductQuantity(
-            {
-              id: product.id,
-              variantID: product.variant?.id,
-              personalization: product.personalization,
-            },
-            newQuantity
-          );
+          cart.updateLineItemQuantity(product.lineItemID, newQuantity);
         }
       }
 
       function removeProduct(product) {
-        cart.removeProduct({
-          id: product.id,
-          variantID: product.variant?.id,
-          personalization: product.personalization,
-        });
+        cart.removeLineItem(product.lineItemID);
       }
 
       function renderCartProducts() {

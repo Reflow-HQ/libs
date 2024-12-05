@@ -12,6 +12,7 @@ import AuthButton from "../components/AuthButton";
 import PaymentButton from "../components/PaymentButton";
 import PayPalButton from "../components/PayPalButton";
 import PayPalDemoButton from "../components/PayPalDemoButton";
+import CustomFields from "../components/CustomFields";
 
 export default function CheckoutForm({
   successURL,
@@ -62,6 +63,7 @@ export default function CheckoutForm({
     paymentProviders,
     signInProviders,
     collectPhone,
+    customFields,
   } = cart;
 
   const [deliveryMethod, setDeliveryMethod] = [cart.deliveryMethod, cart.setDeliveryMethod];
@@ -242,6 +244,10 @@ export default function CheckoutForm({
 
     if (auth && auth.isSignedIn()) {
       data["auth-account-id"] = auth.user.id;
+    }
+
+    if (cart.customFields) {
+      data["custom-fields"] = true;
     }
 
     showLoading();
@@ -475,6 +481,14 @@ export default function CheckoutForm({
           </div>
           <input type="hidden" name="delivery-method" value="digital" />
         </fieldset>
+      )}
+
+      {!!customFields && (
+        <CustomFields
+          customFields={customFields}
+          useFormData={useFormData}
+          formErrors={formErrors}
+        />
       )}
 
       <div className="ref-heading ref-heading-delivery">{t("delivery")}</div>
