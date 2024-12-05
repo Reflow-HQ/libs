@@ -1,6 +1,6 @@
 {
   "name": "@reflowhq/cart",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Shopping Cart management library for Reflow",
   "type": "module",
   "directories": {
