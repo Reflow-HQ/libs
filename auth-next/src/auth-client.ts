@@ -162,98 +162,100 @@ export async function signIn(options?: {
     },
   };
 
-  if (popupWindow.isOpen()) {
+  if (popupWindow.isOpen() && popupWindow.getLabel() === "reflow-signin") {
     popupWindow.focus();
     return;
   }
 
-  popupWindow.open({
-    url: null,
-    label: "reflow-signin",
-    title: "Signing in..",
-    size: {
-      w: 590,
-      h: 590,
-    },
-    onParentRefocus: async () => {
-      if (!isSignedIn && authToken && !authCheckInProgress) {
-        // Attempt sign in.
+  if (!popupWindow.isOpen()) {
+    popupWindow.open({
+      label: "reflow-signin",
+      size: {
+        w: 590,
+        h: 590,
+      },
+    });
+  }
+
+  popupWindow.setLabel("reflow-signin");
+  popupWindow.setOnParentRefocus(async () => {
+    if (!isSignedIn && authToken && !authCheckInProgress) {
+      // Attempt sign in.
+
+      try {
+        authCheckInProgress = true;
+
+        let attemptSigninResponse = await apiCall(base + "?check=true&auth-token=" + authToken);
+
+        authCheckInProgress = false;
+
+        // Check if the user has signed in using the popup window.
+        // If they haven't done it yet, try again on next refocus.
+
+        if ((await attemptSigninResponse.json()).success) {
+          broadcastChannel?.postMessage({ type: "signin" });
+          callbacks.onSignIn();
+          isSignedIn = true;
+        }
+      } catch (e) {
+        // There was an error during sign in or beforeSignin=false was used - do not try again.
+        callbacks.onError(e);
+        popupWindow.close();
+        return;
+      }
+    }
+
+    if (isSignedIn && options?.subscribeTo) {
+      // At this point the user has signed in.
+      // If subscribeTo is not set, there are no next steps - the popup window will self-close.
+
+      // If it is set, we continue with the subscription process, depending on the payment provider.
+
+      if (options?.subscribeWith == "paddle") {
+        // For paddle, make sure the popup window is closed and continue to createSubscription.
+
+        popupWindow.close();
+
+        await createSubscription({
+          priceID: options.subscribeTo,
+          paymentProvider: "paddle",
+          onSignin: callbacks.onSignIn,
+          onSubscribe: callbacks.onSubscribe,
+          onError: callbacks.onError,
+        });
+
+        return;
+      } else {
+        // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
+        // On refocus, check if the subscription process has been successful.
 
         try {
-          authCheckInProgress = true;
+          let change = await forceRefreshSession();
 
-          let attemptSigninResponse = await apiCall(base + "?check=true&auth-token=" + authToken);
-
-          authCheckInProgress = false;
-
-          // Check if the user has signed in using the popup window.
-          // If they haven't done it yet, try again on next refocus.
-
-          if ((await attemptSigninResponse.json()).success) {
-            broadcastChannel?.postMessage({ type: "signin" });
-            callbacks.onSignIn();
-            isSignedIn = true;
+          if (change?.signout) {
+            broadcastChannel?.postMessage({ type: "signout" });
+            throw new Error("User has been signed out");
           }
-        } catch (e) {
-          // There was an error during sign in or beforeSignin=false was used - do not try again.
+
+          if (change?.subscription) {
+            // The user has subscribed with Stripe. The popup window will self-close.
+            broadcastChannel?.postMessage({ type: "subscribe" });
+            callbacks.onSubscribe();
+          }
+        } catch (e: any) {
           callbacks.onError(e);
-          popupWindow.close();
-          return;
+          return popupWindow.close();
         }
       }
+    }
 
-      if (isSignedIn && options?.subscribeTo) {
-        // At this point the user has signed in.
-        // If subscribeTo is not set, there are no next steps - the popup window will self-close.
-
-        // If it is set, we continue with the subscription process, depending on the payment provider.
-
-        if (options?.subscribeWith == "paddle") {
-          // For paddle, make sure the popup window is closed and continue to createSubscription.
-
-          popupWindow.close();
-
-          await createSubscription({
-            priceID: options.subscribeTo,
-            paymentProvider: "paddle",
-            onSignin: callbacks.onSignIn,
-            onSubscribe: callbacks.onSubscribe,
-            onError: callbacks.onError,
-          });
-
-          return;
-        } else {
-          // For stripe, the same popup window used for sign in will redirect to the Stripe checkout URL.
-          // On refocus, check if the subscription process has been successful.
-
-          try {
-            let change = await forceRefreshSession();
-
-            if (change?.signout) {
-              broadcastChannel?.postMessage({ type: "signout" });
-              throw new Error("User has been signed out");
-            }
-
-            if (change?.subscription) {
-              // The user has subscribed with Stripe. The popup window will self-close.
-              broadcastChannel?.postMessage({ type: "subscribe" });
-              callbacks.onSubscribe();
-            }
-          } catch (e: any) {
-            callbacks.onError(e);
-            return popupWindow.close();
-          }
-        }
+    // The popup window has self-closed or was closed by the user.
+    // Either way, cleanup the popup window event listener.
+    setTimeout(() => {
+      if (popupWindow.isClosed()) {
+        popupWindow.offParentRefocus();
       }
-
-      // The popup window has self-closed or was closed by the user.
-      // Either way, cleanup the popup window event listener.
-      setTimeout(() => {
-        if (popupWindow.isClosed()) {
-          popupWindow.offParentRefocus();
-        }
-      }, 500);
-    },
+    }, 500);
   });
 
   let openTimestamp = Date.now();
@@ -396,11 +398,11 @@ export async function createSubscription(options: {
   };
 
   if (paymentProvider == "stripe") {
-    // Open the popup window before doing any potentially slow actions such as api requests.
+    // Stripe checkout is displayed in a Stripe-hosted page loaded inside a popup window.
+    // Open the window in an empty state immediately to make sure the browser understands it was opened due to user action.
     popupWindow.open({
       url: null,
       label: "reflow-subscription",
-      title: "Loading..",
       size: {
         w: 650,
         h: 800,
@@ -428,51 +430,36 @@ export async function createSubscription(options: {
   initializeDialogs({ authEndpoint: options.authEndpoint });
 
   if (paymentProvider == "stripe") {
-    // Stripe checkout is displayed in a Stripe-hosted page loaded inside a popup window.
-    // Open the window in an empty state immediately to make sure the browser understands it was opened due to user action.
-
-    popupWindow.open({
-      url: null,
-      label: "reflow-subscription",
-      title: "Loading..",
-      size: {
-        w: 650,
-        h: 800,
-      },
-      onParentRefocus: async () => {
-        try {
-          working = true;
-
-          let change = await forceRefreshSession();
-
-          working = false;
-
-          if (change?.signout) {
-            broadcastChannel?.postMessage({ type: "signout" });
-            throw new Error("User has been signed out");
-          }
-
-          if (change?.subscription) {
-            // The user has subscribed with Stripe. The popup window will self-close.
-            broadcastChannel?.postMessage({ type: "subscribe" });
-            callbacks.onSubscribe();
-          }
-        } catch (e: any) {
-          working = false;
-          callbacks.onError(e);
-          popupWindow.close();
+    popupWindow.setOnParentRefocus(async () => {
+      try {
+        working = true;
+        let change = await forceRefreshSession();
+        working = false;
+        if (change?.signout) {
+          broadcastChannel?.postMessage({ type: "signout" });
+          throw new Error("User has been signed out");
         }
-
-        // The popup window has self-closed or was closed by the user.
-        // Either way, cleanup all event listeners.
-        setTimeout(() => {
-          if (popupWindow.isClosed()) {
-            popupWindow.offParentRefocus();
-          }
-        }, 500);
-      },
+        if (change?.subscription) {
+          // The user has subscribed with Stripe. The popup window will self-close.
+          broadcastChannel?.postMessage({ type: "subscribe" });
+          callbacks.onSubscribe();
+        }
+      } catch (e: any) {
+        working = false;
+        callbacks.onError(e);
+        popupWindow.close();
+      }
+      // The popup window has self-closed or was closed by the user.
+      // Either way, cleanup all event listeners.
+      setTimeout(() => {
+        if (popupWindow.isClosed()) {
+          popupWindow.offParentRefocus();
+        }
+      }, 500);
     });
-  } else if (paymentProvider == "paddle") {
+  }
+
+  if (paymentProvider == "paddle") {
     loadingDialog.open();
   }
 
@@ -602,9 +589,7 @@ export async function modifySubscription(options?: {
 
   // Open the popup window before doing any potentially slow actions such as api requests.
   popupWindow.open({
-    url: null,
     label: "reflow-subscription",
-    title: "Loading..",
     size: {
       w: 650,
       h: 800,
@@ -652,25 +637,18 @@ export async function modifySubscription(options?: {
 
   if (subscription.payment_provider == "stripe") {
     // If the subscription is stripe based, prepare a popup window for the Stripe-hosted management page.
-    popupWindow.open({
-      url: null,
-      label: "reflow-subscription",
-      title: "Loading..",
-      size: {
-        w: 650,
-        h: 800,
-      },
-      onParentRefocus: async () => {
-        await onRefocusAuthChanged();
+    popupWindow.setOnParentRefocus(async () => {
+      await onRefocusAuthChanged();
 
-        setTimeout(() => {
-          if (popupWindow.isClosed()) {
-            popupWindow.offParentRefocus();
-          }
-        }, 500);
-      },
+      setTimeout(() => {
+        if (popupWindow.isClosed()) {
+          popupWindow.offParentRefocus();
+        }
+      }, 500);
     });
-  } else if (subscription.payment_provider == "paddle") {
+  }
+
+  if (subscription.payment_provider == "paddle") {
     // For paddle subscriptions we show a loading dialog.
     popupWindow.close();
     loadingDialog.open();
