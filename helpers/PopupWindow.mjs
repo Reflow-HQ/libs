@@ -4,6 +4,7 @@ class PopupWindow {
     this._checkPopupWindowClosedInterval = null;
     this._onParentRefocusCallback = null;
     this._isCallbackScheduled = false;
+    this._label = null;
   }
 
   unbind() {
@@ -12,6 +13,14 @@ class PopupWindow {
 
   getWindowInstance() {
     return this._popupWindow;
+  }
+
+  getLabel() {
+    return this._label;
+  }
+
+  setLabel(label) {
+    this._label = label;
   }
 
   open(options) {
@@ -26,6 +35,8 @@ class PopupWindow {
     const y = window.outerHeight / 2 + window.screenY - h / 2;
     const x = window.outerWidth / 2 + window.screenX - w / 2;
 
+    this.setLabel(label);
+
     this._popupWindow = window.open(
       url || "about:blank",
       label,
@@ -37,7 +48,7 @@ class PopupWindow {
         `<!DOCTYPE html>
         <html>
           <head>
-            <title>${title}</title>
+            <title>Loading..</title>
                 <style>
     * {
       box-sizing: border-box;
@@ -95,25 +106,7 @@ class PopupWindow {
     // This callback should make sure to cleanup the event listener by calling either .close or .offParentRefocus.
 
     if (onParentRefocus) {
-      this._onParentRefocusCallback = async () => {
-        if (!document.hidden && !this._isCallbackScheduled) {
-          this._isCallbackScheduled = true;
-
-          try {
-            await onParentRefocus();
-          } catch (error) {
-            console.error("Reflow: Error in onParentRefocus callback:", error);
-          } finally {
-            this._isCallbackScheduled = false;
-          }
-        }
-      };
-
-      window.addEventListener("focus", this._onParentRefocusCallback);
-
-      // window.focus event is not reliable so we try the visibilitychange event as well
-
-      document.addEventListener("visibilitychange", this._onParentRefocusCallback);
+      this.setOnParentRefocus(onParentRefocus);
     }
 
     // This interval cleans up the _popupWindow after the popup window is closed.
@@ -136,6 +129,30 @@ class PopupWindow {
     this._popupWindow.location = url;
   }
 
+  setOnParentRefocus(onParentRefocus) {
+    this.offParentRefocus();
+
+    this._onParentRefocusCallback = async () => {
+      if (!document.hidden && !this._isCallbackScheduled) {
+        this._isCallbackScheduled = true;
+
+        try {
+          await onParentRefocus();
+        } catch (error) {
+          console.error("Reflow: Error in onParentRefocus callback:", error);
+        } finally {
+          this._isCallbackScheduled = false;
+        }
+      }
+    };
+
+    window.addEventListener("focus", this._onParentRefocusCallback);
+
+    // window.focus event is not reliable so we try the visibilitychange event as well
+
+    document.addEventListener("visibilitychange", this._onParentRefocusCallback);
+  }
+
   close() {
     if (this._popupWindow) {
       this._popupWindow.close();
@@ -149,6 +166,7 @@ class PopupWindow {
 
     clearInterval(this._checkPopupWindowClosedInterval);
 
+    this.setLabel(null);
     this.offParentRefocus();
   }
 
