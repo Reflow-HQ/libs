@@ -395,6 +395,19 @@ export async function createSubscription(options: {
     },
   };
 
+  if (paymentProvider == "stripe") {
+    // Open the popup window before doing any potentially slow actions such as api requests.
+    popupWindow.open({
+      url: null,
+      label: "reflow-subscription",
+      title: "Loading..",
+      size: {
+        w: 650,
+        h: 800,
+      },
+    });
+  }
+
   if (!(await isSignedIn())) {
     // Open the sign in window instead, passing the callbacks from options.
     signIn({
@@ -408,6 +421,7 @@ export async function createSubscription(options: {
   }
 
   if (await isSubscribed()) {
+    popupWindow.close();
     return;
   }
 
@@ -582,14 +596,26 @@ export async function modifySubscription(options?: {
   onSuccess?: Function;
   onError?: Function;
 }) {
+  if (working) {
+    return;
+  }
+
+  // Open the popup window before doing any potentially slow actions such as api requests.
+  popupWindow.open({
+    url: null,
+    label: "reflow-subscription",
+    title: "Loading..",
+    size: {
+      w: 650,
+      h: 800,
+    },
+  });
+
   let subscription = await getSubscription();
 
   if (!subscription) {
     console.error("Reflow: User does not have a subscription");
-    return;
-  }
-
-  if (working) {
+    popupWindow.close();
     return;
   }
 
@@ -646,6 +672,7 @@ export async function modifySubscription(options?: {
     });
   } else if (subscription.payment_provider == "paddle") {
     // For paddle subscriptions we show a loading dialog.
+    popupWindow.close();
     loadingDialog.open();
   }
 
