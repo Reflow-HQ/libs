@@ -342,7 +342,7 @@ describe("Reflow Auth Client", () => {
     });
 
     expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
-    expect(global.open).toHaveBeenCalledTimes(1);
+    expect(global.open).toHaveBeenCalledTimes(2);
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-subscription",
@@ -351,7 +351,7 @@ describe("Reflow Auth Client", () => {
 
     expect(subWindow.location).toEqual("https://example.com/payment-page");
 
-    expect(global.clearInterval).toHaveBeenCalledTimes(1);
+    expect(global.open).toHaveBeenCalledTimes(2);
 
     // Simulate document focus after opening the popup
     await listeners.focus();
@@ -410,7 +410,7 @@ describe("Reflow Auth Client", () => {
 
     expect(global.addEventListener).toHaveBeenCalledTimes(1);
     expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
-    expect(global.open).toHaveBeenCalledTimes(1);
+    expect(global.open).toHaveBeenCalledTimes(2);
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-subscription",
@@ -508,6 +508,15 @@ describe("Reflow Auth Client", () => {
   test("modifySubscriptionPaddle", async () => {
     let onSuccess = jest.fn(() => {});
     let onError = jest.fn(() => {});
+
+    let subWindow = {
+      document: { write: jest.fn(() => {}) },
+      location: "",
+      close() {},
+    };
+
+    // @ts-ignore
+    global.open = jest.fn(() => subWindow);
 
     let listeners: Record<string, any> = {};
     // @ts-ignore
