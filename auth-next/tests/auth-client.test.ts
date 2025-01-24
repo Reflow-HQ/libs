@@ -112,7 +112,7 @@ describe("Reflow Auth Client", () => {
     expect(global.addEventListener).toHaveBeenCalledTimes(2);
     expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
     expect(global.addEventListener).toBeCalledWith("message", expect.any(Function));
-    expect(global.removeEventListener).toHaveBeenCalledTimes(0);
+    expect(global.removeEventListener).toHaveBeenCalledTimes(1);
     expect(global.clearInterval).toHaveBeenCalledTimes(1);
 
     expect(global.open).toHaveBeenCalledTimes(1);
@@ -207,7 +207,7 @@ describe("Reflow Auth Client", () => {
     expect(global.addEventListener).toHaveBeenCalledTimes(2);
     expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
     expect(global.addEventListener).toBeCalledWith("message", expect.any(Function));
-    expect(global.removeEventListener).toHaveBeenCalledTimes(1);
+    expect(global.removeEventListener).toHaveBeenCalledTimes(2);
     expect(global.clearInterval).toHaveBeenCalledTimes(1);
 
     expect(global.open).toHaveBeenCalledTimes(1);
@@ -342,7 +342,7 @@ describe("Reflow Auth Client", () => {
     });
 
     expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
-    expect(global.open).toHaveBeenCalledTimes(2);
+    expect(global.open).toHaveBeenCalledTimes(1);
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-subscription",
@@ -351,7 +351,7 @@ describe("Reflow Auth Client", () => {
 
     expect(subWindow.location).toEqual("https://example.com/payment-page");
 
-    expect(global.open).toHaveBeenCalledTimes(2);
+    expect(global.open).toHaveBeenCalledTimes(1);
 
     // Simulate document focus after opening the popup
     await listeners.focus();
@@ -410,7 +410,7 @@ describe("Reflow Auth Client", () => {
 
     expect(global.addEventListener).toHaveBeenCalledTimes(1);
     expect(global.addEventListener).toBeCalledWith("focus", expect.any(Function));
-    expect(global.open).toHaveBeenCalledTimes(2);
+    expect(global.open).toHaveBeenCalledTimes(1);
     expect(global.open).toHaveBeenCalledWith(
       "about:blank",
       "reflow-subscription",
