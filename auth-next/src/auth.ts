@@ -282,7 +282,7 @@ export class ReflowAuth {
    * Clear the isNew cookie forcefully.
    */
   public async clearIsNew(): Promise<void> {
-    await cookies().set(this.cookieName + "-is-new", "", {
+    (await cookies()).set(this.cookieName + "-is-new", "", {
       httpOnly: true,
       maxAge: 0,
     });
@@ -312,7 +312,7 @@ export class ReflowAuth {
    * Clear the hasNewSubscription cookie forcefully.
    */
   public async clearHasNewSubscription(): Promise<void> {
-    await cookies().set(this.cookieName + "-has-new-subscription", "", {
+    (await cookies()).set(this.cookieName + "-has-new-subscription", "", {
       httpOnly: true,
       maxAge: 0,
     });
@@ -341,7 +341,7 @@ export class ReflowAuth {
   }
 
   protected async clearCookie() {
-    await cookies().set(this.cookieName, "", {
+    (await cookies()).set(this.cookieName, "", {
       httpOnly: true,
       maxAge: 0,
     });
@@ -390,7 +390,7 @@ export class ReflowAuth {
     return hashHex;
   }
 
-  protected arrayBufferToBase64(buffer: ArrayBuffer): string {
+  protected arrayBufferToBase64(buffer: Uint8Array<ArrayBuffer> | ArrayBuffer): string {
     let binary = "";
     let bytes = new Uint8Array(buffer);
     let len = bytes.byteLength;
