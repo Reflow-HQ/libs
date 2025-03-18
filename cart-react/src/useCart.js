@@ -53,8 +53,8 @@ function createStore(config) {
     hasProducts: cart.hasProducts.bind(cart),
     hasPhysicalProducts: cart.hasPhysicalProducts.bind(cart),
 
-    getCountryByCode: cart.getCountryByCode.bind(cart),
     getShippableCountries: cart.getShippableCountries.bind(cart),
+    getBillableCountries: cart.getBillableCountries.bind(cart),
 
     offersShipping: cart.offersShipping.bind(cart),
     offersLocalPickup: cart.offersLocalPickup.bind(cart),

@@ -64,6 +64,8 @@ export default function CheckoutForm({
     signInProviders,
     collectPhone,
     customFields,
+    getShippableCountries,
+    getBillableCountries,
   } = cart;
 
   const [deliveryMethod, setDeliveryMethod] = [cart.deliveryMethod, cart.setDeliveryMethod];
@@ -464,7 +466,7 @@ export default function CheckoutForm({
         <fieldset className="ref-digital-delivery">
           <div className="ref-digital-address-holder">
             <AddressWidget
-              countries={shippableCountries}
+              countries={getBillableCountries()}
               prefix="digital"
               fields={["country"]}
               isDigital={true}
@@ -584,7 +586,7 @@ export default function CheckoutForm({
                       </div>
                       <div className="ref-billing-address-holder">
                         <AddressWidget
-                          countries={shippableCountries}
+                          countries={getBillableCountries()}
                           prefix="billing"
                           model={billingAddress}
                           onChange={(key, value) =>
@@ -629,7 +631,7 @@ export default function CheckoutForm({
                 <div className="ref-heading-small">{t("shipping_address")}</div>
                 <div className="ref-shipping-address-holder">
                   <AddressWidget
-                    countries={shippableCountries}
+                    countries={getShippableCountries()}
                     prefix="shipping"
                     model={getShippingAddressInput()}
                     onChange={(key, value) => {
@@ -677,7 +679,7 @@ export default function CheckoutForm({
                       </div>
                       <div className="ref-billing-address-holder">
                         <AddressWidget
-                          countries={shippableCountries}
+                          countries={getBillableCountries()}
                           prefix="billing"
                           model={billingAddress}
                           onChange={(key, value) =>

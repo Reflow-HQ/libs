@@ -296,7 +296,7 @@ export default class Cart {
     let code = address.countryCode;
     if (!code) return;
 
-    let country = this.getCountryByCode(code);
+    let country = this.getShippableCountries().find((c) => c.country_code == code);
     if (!country) return;
 
     ret.country = code;
@@ -334,7 +334,7 @@ export default class Cart {
     let code = address.countryCode;
     if (!code) return;
 
-    let country = this.getCountryByCode(code);
+    let country = this.getBillableCountries().find((c) => c.country_code == code);
     if (!country) return;
 
     ret.country = code;
@@ -379,16 +379,18 @@ export default class Cart {
     return this.state && this.state.shippableCountries ? this.state.shippableCountries : [];
   }
 
+  getBillableCountries() {
+    const shippable = this.getShippableCountries();
+    const billable = this.state?.billableCountries || "same-as-shipping";
+    return billable == "same-as-shipping" ? shippable : billable;
+  }
+
   offersShipping() {
     return !!this.getShippableCountries().length;
   }
 
   offersLocalPickup() {
     return this.state && this.state.locations ? !!this.state.locations.length : false;
-  }
-
-  getCountryByCode(code) {
-    return this.getShippableCountries().find((c) => c.country_code == code);
   }
 
   getTaxPricingType() {
